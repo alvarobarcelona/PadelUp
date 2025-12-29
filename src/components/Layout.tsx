@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { Home, Trophy, PlusCircle, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
