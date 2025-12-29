@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Trophy, History as HistoryIcon, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -28,7 +28,7 @@ interface MatchPreview {
 const Home = () => {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [recentMatches, setRecentMatches] = useState<MatchPreview[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [, setLoading] = useState(true);
 
     useEffect(() => {
         loadDashboardData();

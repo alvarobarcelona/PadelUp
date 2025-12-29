@@ -1,8 +1,8 @@
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
-import { Loader2, UserPlus, Users } from 'lucide-react';
+import { Loader2, UserPlus } from 'lucide-react';
 
 interface Player {
     id: string;

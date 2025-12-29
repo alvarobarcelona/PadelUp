@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
-import { Users, Save, X, Trophy, Loader2 } from 'lucide-react';
+import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { calculateTeamAverage, calculateExpectedScore, calculateNewRating } from '../lib/elo';
 

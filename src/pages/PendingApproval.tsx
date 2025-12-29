@@ -1,4 +1,3 @@
-import React from 'react';
 import { LogOut, Clock, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';

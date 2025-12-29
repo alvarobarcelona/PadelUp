@@ -1,14 +1,14 @@
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
-import { Trash2, Edit2, ShieldAlert, Loader2 } from 'lucide-react';
+import { Trash2, ShieldAlert, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Admin = () => {
     const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [, setLoading] = useState(true);
     const [players, setPlayers] = useState<any[]>([]);
     const [matches, setMatches] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches'>('pending');
