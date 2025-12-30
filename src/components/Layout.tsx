@@ -1,12 +1,13 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Home, Trophy, PlusCircle, Users } from 'lucide-react';
+import { Home, Trophy, PlusCircle, Users, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
 
 const Layout = () => {
     const navigate = useNavigate();
+    const [verifying, setVerifying] = useState(true);
 
     useEffect(() => {
         const checkAccess = async () => {
@@ -22,6 +23,11 @@ const Layout = () => {
                 .eq('auth_id', user.id)
                 .single();
 
+            // Strict Access Control:
+            // 1. If Banned -> /banned
+            // 2. If NO Profile -> /pending (Assume new user waiting for trigger/approval)
+            // 3. If Profile exists but NOT approved -> /pending
+
             if (profile) {
                 if (profile.banned) {
                     navigate('/banned');
@@ -34,7 +40,10 @@ const Layout = () => {
                 }
 
                 // Admins bypass subscription check
-                if (profile.is_admin) return;
+                if (profile.is_admin) {
+                    setVerifying(false);
+                    return;
+                }
 
                 const isExpired = !profile.subscription_end_date || new Date(profile.subscription_end_date) < new Date();
 
@@ -42,11 +51,23 @@ const Layout = () => {
                 if (isExpired && window.location.pathname !== '/subscription') {
                     navigate('/subscription');
                 }
+            } else {
+                // No profile found? Treat as pending/unregistered.
+                navigate('/pending');
+                return;
             }
+
+            setVerifying(false);
         };
 
         checkAccess();
     }, [navigate]);
+
+    if (verifying) {
+        return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-green-500">
+            <Loader2 className="animate-spin" size={48} />
+        </div>;
+    }
 
     return (
         <div className="mx-auto min-h-screen max-w-md bg-slate-900 text-slate-100 shadow-2xl transition-colors duration-300">
