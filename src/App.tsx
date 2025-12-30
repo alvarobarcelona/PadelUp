@@ -8,11 +8,12 @@ import NewMatch from './pages/NewMatch';
 import History from './pages/History';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
-import Players from './pages/Players'; // New import
+import Players from './pages/Players';
 import Admin from './pages/Admin';
 import Settings from './pages/Settings';
 
 import PendingApproval from './pages/PendingApproval';
+import Subscription from './pages/Subscription';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
       <Routes>
         <Route path="/auth" element={<Auth />} />
         <Route path="/pending" element={<PendingApproval />} />
+        <Route path="/subscription" element={<Subscription />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="rankings" element={<Rankings />} />

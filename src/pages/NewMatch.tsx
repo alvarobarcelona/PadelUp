@@ -6,6 +6,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { calculateTeamAverage, calculateExpectedScore, calculateNewRating } from '../lib/elo';
+import { checkAchievements } from '../lib/achievements';
 
 interface Player {
     id: string;
@@ -128,6 +129,14 @@ const NewMatch = () => {
                 supabase.from('profiles').update({ elo: newRatings.t1p2 }).eq('id', selectedPlayers.t1p2.id),
                 supabase.from('profiles').update({ elo: newRatings.t2p1 }).eq('id', selectedPlayers.t2p1.id),
                 supabase.from('profiles').update({ elo: newRatings.t2p2 }).eq('id', selectedPlayers.t2p2.id),
+            ]);
+
+            // 3. Check Achievements for all players
+            await Promise.all([
+                checkAchievements(selectedPlayers.t1p1.id),
+                checkAchievements(selectedPlayers.t1p2.id),
+                checkAchievements(selectedPlayers.t2p1.id),
+                checkAchievements(selectedPlayers.t2p2.id),
             ]);
 
             navigate('/history');

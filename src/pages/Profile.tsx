@@ -2,15 +2,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
-import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck } from 'lucide-react';
+import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck, Flame, Swords } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
+import { checkAchievements } from '../lib/achievements';
 import { useNavigate } from 'react-router-dom';
+
+const iconMap: Record<string, any> = {
+    'Trophy': Trophy,
+    'Medal': Medal,
+    'Flame': Flame,
+    'Camera': Camera,
+    'Sword': Swords
+};
 
 const Profile = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [achievements, setAchievements] = useState<any[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [user, setUser] = useState<{
         id: string; // Added ID for storage path
@@ -45,6 +55,15 @@ const Profile = () => {
                 .single();
 
             if (profileError) throw profileError;
+
+            // Check & Fetch Achievements
+            await checkAchievements(profileData.id);
+            const { data: myAchievements } = await supabase
+                .from('user_achievements')
+                .select('*, achievements(*)')
+                .eq('user_id', profileData.id);
+
+            setAchievements(myAchievements || []);
 
             // Calculate Stats... (Same as before)
             const { data: matches } = await supabase
@@ -237,20 +256,35 @@ const Profile = () => {
             </div>
 
             {/* Recent Badges / Achievements */}
-            <div className="rounded-xl bg-slate-800 p-5 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
-                <h3 className="mb-4 text-sm font-semibold uppercase text-slate-400 tracking-wider">Achievements (Coming Soon)</h3>
-                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-                    {['First Win', 'Hot Streak', 'Top 10'].map((badge, i) => (
-                        <div key={i} className="flex flex-col items-center flex-shrink-0 space-y-2">
-                            <div className="h-14 w-14 rounded-full bg-slate-700 p-[2px]">
-                                <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-800">
-                                    <Trophy size={20} className="text-slate-500" />
+            <div className="rounded-xl bg-slate-800 p-5 border border-slate-700/50">
+                <h3 className="mb-4 text-sm font-semibold uppercase text-slate-400 tracking-wider flex items-center gap-2">
+                    Achievements <span className="text-xs bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">{achievements.length}</span>
+                </h3>
+
+                {achievements.length === 0 ? (
+                    <div className="text-center py-6 text-slate-500 text-sm">
+                        <p>Play matches to unlock badges!</p>
+                    </div>
+                ) : (
+                    <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+                        {achievements.map((item: any) => {
+                            const badge = item.achievements;
+                            const Icon = iconMap[badge.icon] || Trophy;
+
+                            return (
+                                <div key={badge.id} className="flex flex-col items-center flex-shrink-0 space-y-2 w-20">
+                                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-yellow-400/20 to-orange-500/20 p-[2px] shadow-lg shadow-orange-500/10">
+                                        <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-800 border-2 border-slate-700">
+                                            <Icon size={24} className="text-yellow-500" />
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-300 text-center leading-tight">{badge.name}</span>
+                                    <span className="text-[9px] text-slate-500 text-center hidden">{badge.point_value}</span>
                                 </div>
-                            </div>
-                            <span className="text-[10px] font-medium text-slate-500">{badge}</span>
-                        </div>
-                    ))}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* Action Buttons */}

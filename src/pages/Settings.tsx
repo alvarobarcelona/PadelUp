@@ -6,7 +6,6 @@ import {
     ChevronLeft,
     User,
     Bell,
-    Moon,
     Shield,
     LogOut,
     ChevronRight,
@@ -25,35 +24,24 @@ const Settings = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [newUsername, setNewUsername] = useState('');
 
+    // Password Change State
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+
     // Preferences
     const [notifications, setNotifications] = useState(true);
-    const [darkMode, setDarkMode] = useState(true);
 
     useEffect(() => {
         getProfile();
-        loadPreferences();
     }, []);
-
-    const loadPreferences = () => {
-        const storedNotifs = localStorage.getItem('padelup_notifications');
-        const storedDarkMode = localStorage.getItem('padelup_dark_mode');
-
-        if (storedNotifs !== null) setNotifications(JSON.parse(storedNotifs));
-
-        // Default to true if not set, as app is dark by default
-        if (storedDarkMode !== null) {
-            const isDark = JSON.parse(storedDarkMode);
-            setDarkMode(isDark);
-            toggleTheme(isDark);
-        }
-    };
 
     const getProfile = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             const { data } = await supabase
                 .from('profiles')
-                .select('username')
+                .select('username, notifications_enabled')
                 .eq('auth_id', user.id)
                 .single();
 
@@ -62,28 +50,28 @@ const Settings = () => {
                 email: user.email || ''
             });
             setNewUsername(data?.username || '');
+            if (data?.notifications_enabled !== undefined) {
+                setNotifications(data.notifications_enabled);
+            }
         }
     };
 
-    const toggleTheme = (isDark: boolean) => {
-        if (isDark) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    };
-
-    const handleNotificationToggle = () => {
+    const handleNotificationToggle = async () => {
         const newState = !notifications;
-        setNotifications(newState);
-        localStorage.setItem('padelup_notifications', JSON.stringify(newState));
-    };
+        setNotifications(newState); // Optimistic update
 
-    const handleDarkModeToggle = () => {
-        const newState = !darkMode;
-        setDarkMode(newState);
-        localStorage.setItem('padelup_dark_mode', JSON.stringify(newState));
-        toggleTheme(newState);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await supabase
+                    .from('profiles')
+                    .update({ notifications_enabled: newState })
+                    .eq('auth_id', user.id);
+            }
+        } catch (error) {
+            console.error('Failed to save notification preference', error);
+            // Revert on error? For now, keep optimistic.
+        }
     };
 
     const handleUpdateProfile = async () => {
@@ -118,6 +106,34 @@ const Settings = () => {
         }
     };
 
+    const handleUpdatePassword = async () => {
+        if (newPassword !== confirmPassword) {
+            alert('Passwords do not match');
+            return;
+        }
+        if (newPassword.length < 6) {
+            alert('Password must be at least 6 characters');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+            if (error) throw error;
+
+            alert('Password updated successfully!');
+            setIsChangingPassword(false);
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error: any) {
+            console.error('Error updating password:', error);
+            alert(`Error updating password: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleLogout = async () => {
         await supabase.auth.signOut();
         navigate('/auth');
@@ -137,7 +153,7 @@ const Settings = () => {
                 {/* Profile Section */}
                 <div className="space-y-2">
                     <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Account</h2>
-                    <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden">
+                    <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden shadow-none transition-colors duration-300">
 
                         {/* Username Edit Row */}
                         <div className="w-full flex items-center justify-between p-4 border-b border-slate-700/50">
@@ -151,7 +167,7 @@ const Settings = () => {
                                             type="text"
                                             value={newUsername}
                                             onChange={(e) => setNewUsername(e.target.value)}
-                                            className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
+                                            className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 transition-colors"
                                             autoFocus
                                         />
                                     ) : (
@@ -195,15 +211,63 @@ const Settings = () => {
                             </div>
                         </div>
 
-                        <button className="w-full flex items-center justify-between p-4 hover:bg-slate-700/50 transition-colors">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-orange-500/10 text-orange-400">
-                                    <Shield size={20} />
+                        {/* Security Section */}
+                        <div className="border-t border-slate-700/50">
+                            <button
+                                onClick={() => setIsChangingPassword(!isChangingPassword)}
+                                className="w-full flex items-center justify-between p-4 hover:bg-slate-700/50 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-full bg-orange-500/10 text-orange-400">
+                                        <Shield size={20} />
+                                    </div>
+                                    <span className="font-medium text-white">Security & Password</span>
                                 </div>
-                                <span className="font-medium text-white">Security & Password</span>
-                            </div>
-                            <ChevronRight size={18} className="text-slate-500" />
-                        </button>
+                                {isChangingPassword ? <ChevronLeft size={18} className="text-slate-500 -rotate-90" /> : <ChevronRight size={18} className="text-slate-500" />}
+                            </button>
+
+                            {/* Password Change Form */}
+                            {isChangingPassword && (
+                                <div className="p-4 pt-0 space-y-3 bg-slate-800/50">
+                                    <input
+                                        type="password"
+                                        placeholder="New Password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        className="w-full bg-slate-900 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                                    />
+                                    <input
+                                        type="password"
+                                        placeholder="Confirm Password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="w-full bg-slate-900 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                                    />
+                                    <div className="flex justify-end gap-2 pt-2">
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setIsChangingPassword(false);
+                                                setNewPassword('');
+                                                setConfirmPassword('');
+                                            }}
+                                            className="text-slate-400 hover:text-white"
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            onClick={handleUpdatePassword}
+                                            disabled={loading || !newPassword || !confirmPassword}
+                                            className="bg-orange-500 hover:bg-orange-600 text-white"
+                                        >
+                                            {loading ? <Loader2 size={16} className="animate-spin" /> : 'Update Password'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -211,7 +275,7 @@ const Settings = () => {
                 <div className="space-y-2">
                     <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Preferences</h2>
                     <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden">
-                        <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
+                        <div className="flex items-center justify-between p-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-full bg-purple-500/10 text-purple-400">
                                     <Bell size={20} />
@@ -225,35 +289,24 @@ const Settings = () => {
                                 <div className={`absolute top-1 left-1 bg-white h-4 w-4 rounded-full transition-transform ${notifications ? 'translate-x-5' : ''}`} />
                             </div>
                         </div>
-
-                        <div className="flex items-center justify-between p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-full bg-indigo-500/10 text-indigo-400">
-                                    <Moon size={20} />
-                                </div>
-                                <span className="font-medium text-white">Dark Mode</span>
-                            </div>
-                            <div
-                                onClick={handleDarkModeToggle}
-                                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${darkMode ? 'bg-green-500' : 'bg-slate-600'}`}
-                            >
-                                <div className={`absolute top-1 left-1 bg-white h-4 w-4 rounded-full transition-transform ${darkMode ? 'translate-x-5' : ''}`} />
-                            </div>
-                        </div>
                     </div>
                 </div>
 
                 {/* Support */}
                 <div className="space-y-2">
                     <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Support</h2>
-                    <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden">
-                        <button className="w-full flex items-center justify-between p-4 hover:bg-slate-700/50 transition-colors">
+                    <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden shadow-none transition-colors duration-300">
+                        <button
+                            onClick={() => window.location.href = 'mailto:support@padelup.com?subject=Feedback%20for%20PadelUp'}
+                            className="w-full flex items-center justify-between p-4 hover:bg-slate-700/50 transition-colors"
+                        >
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-full bg-emerald-500/10 text-emerald-400">
                                     <HelpCircle size={20} />
                                 </div>
                                 <span className="font-medium text-white">Help & Feedback</span>
                             </div>
+                            <ChevronRight size={18} className="text-slate-500" />
                         </button>
                     </div>
                 </div>
@@ -269,8 +322,8 @@ const Settings = () => {
                 </Button>
 
                 <div className="text-center pt-4">
-                    <p className="text-xs text-slate-600">PadelUp v1.2.1</p>
-                    <p className="text-[10px] text-slate-700 mt-1">Built with ❤️ for Padel Lovers</p>
+                    <p className="text-xs text-slate-500">PadelUp v1.2.1</p>
+                    <p className="text-[10px] text-slate-500 mt-1">Built with ❤️ for Padel Lovers</p>
                 </div>
             </div>
         </div>

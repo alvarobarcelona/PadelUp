@@ -52,11 +52,94 @@ const Admin = () => {
     };
 
     const handleDeleteMatch = async (id: number) => {
-        if (!confirm('Delete this match? ELO wil NOT be reverted automatically.')) return;
+        if (!confirm('This will DELETE the match and REVERT ELO points for all players. Are you sure?')) return;
 
-        const { error } = await supabase.from('matches').delete().eq('id', id);
-        if (error) alert(error.message);
-        else fetchData();
+        setLoading(true);
+        try {
+            // 1. Fetch match data with player IDs
+            const { data: match, error: matchError } = await supabase
+                .from('matches')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (matchError) throw matchError;
+
+            // 2. Fetch current player profiles
+            const playerIds = [match.team1_p1, match.team1_p2, match.team2_p1, match.team2_p2];
+            const { data: currentPlayers, error: playersError } = await supabase
+                .from('profiles')
+                .select('id, elo')
+                .in('id', playerIds);
+
+            if (playersError) throw playersError;
+
+            const p1 = currentPlayers.find(p => p.id === match.team1_p1);
+            const p2 = currentPlayers.find(p => p.id === match.team1_p2);
+            const p3 = currentPlayers.find(p => p.id === match.team2_p1);
+            const p4 = currentPlayers.find(p => p.id === match.team2_p2);
+
+            if (!p1 || !p2 || !p3 || !p4) throw new Error('Could not find all players to revert ELO.');
+
+            // 3. Calculate points to revert (Approximation using current ELOs)
+            // Function imported from elo.ts (Need to ensure imports)
+            // For now, I'll inline the logic or rely on imports if I added them.
+            // I need to add imports to the top of the file! 
+            // I will assume I will add imports in a separate Edit or this one if I can. 
+            // I can't edit multiple chunks easily here. 
+            // I will use HARDCODED logic here to be safe and avoid import issues if I mess up line numbers.
+            // Actually, I should use the library functions. I'll add imports in a separate step? 
+            // No, I'll allow this step to assume imports exist, and I'll add imports in the NEXT step or PREVIOUS step?
+            // The user prompt is to do sequential.
+            // I will add imports FIRST in a separate tool call.
+            // Wait, I am already in the tool call.
+            // I will abort this tool call and add imports first.
+            // But I can't abort. 
+            // I will just use the logic inline to be robust.
+
+            const K_FACTOR = 32;
+            const getExpected = (a: number, b: number) => 1 / (1 + Math.pow(10, (b - a) / 400));
+
+            const t1Avg = Math.round((p1.elo + p2.elo) / 2);
+            const t2Avg = Math.round((p3.elo + p4.elo) / 2);
+
+            let points = 0;
+            if (match.winner_team === 1) {
+                const expected = getExpected(t1Avg, t2Avg);
+                points = Math.round(K_FACTOR * (1 - expected));
+                // T1 won, so they gained points. We must SUBTRACT.
+                // T2 lost, so they lost points. We must ADD.
+                await Promise.all([
+                    supabase.from('profiles').update({ elo: p1.elo - points }).eq('id', p1.id),
+                    supabase.from('profiles').update({ elo: p2.elo - points }).eq('id', p2.id),
+                    supabase.from('profiles').update({ elo: p3.elo + points }).eq('id', p3.id),
+                    supabase.from('profiles').update({ elo: p4.elo + points }).eq('id', p4.id)
+                ]);
+            } else {
+                const expected = getExpected(t2Avg, t1Avg);
+                points = Math.round(K_FACTOR * (1 - expected));
+                // T2 won, gained points. SUBTRACT.
+                // T1 lost, lost points. ADD.
+                await Promise.all([
+                    supabase.from('profiles').update({ elo: p1.elo + points }).eq('id', p1.id),
+                    supabase.from('profiles').update({ elo: p2.elo + points }).eq('id', p2.id),
+                    supabase.from('profiles').update({ elo: p3.elo - points }).eq('id', p3.id),
+                    supabase.from('profiles').update({ elo: p4.elo - points }).eq('id', p4.id)
+                ]);
+            }
+
+            // 4. Delete the match path
+            const { error: deleteError } = await supabase.from('matches').delete().eq('id', id);
+            if (deleteError) throw deleteError;
+
+            alert(`Match deleted and ELO reverted (approx ${points} pts).`);
+            fetchData();
+        } catch (error: any) {
+            console.error(error);
+            alert('Error: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleApprovePlayer = async (id: string, username: string) => {
@@ -147,22 +230,34 @@ const Admin = () => {
             {/* PLAYERS TAB */}
             {activeTab === 'players' && (
                 <div className="space-y-2">
-                    {activeUsers.map(p => (
-                        <div key={p.id} className="flex justify-between items-center bg-slate-800 p-3 rounded-lg">
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-bold text-white">{p.username}</p>
-                                    {p.is_admin && <ShieldAlert size={14} className="text-red-400" />}
+                    {activeUsers.map(p => {
+                        const isExpired = !p.subscription_end_date || new Date(p.subscription_end_date) < new Date();
+                        const daysLeft = p.subscription_end_date ? Math.ceil((new Date(p.subscription_end_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)) : 0;
+
+                        return (
+                            <div key={p.id} className="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-bold text-white">{p.username}</p>
+                                        {p.is_admin && <ShieldAlert size={14} className="text-red-400" />} {p.is_admin && "admin"}
+                                    </div>
+                                    <div className="flex flex-col gap-1 mt-1">
+                                        <p className="text-xs text-slate-500">ELO: {p.elo} | ID: ...{p.id.slice(-4)}</p>
+                                        <p className={`text-xs font-mono flex items-center gap-1 ${isExpired ? 'text-red-400 font-bold' : 'text-green-400'}`}>
+                                            {isExpired ? '⚠️ Expired' : '✅ Active'}
+                                            {p.subscription_end_date ? ` (${new Date(p.subscription_end_date).toLocaleDateString()})` : ' (No Date)'}
+                                            {!isExpired && <span className="text-slate-500 font-normal">[{daysLeft}d left]</span>}
+                                        </p>
+                                    </div>
                                 </div>
-                                <p className="text-xs text-slate-500">ELO: {p.elo} | {p.id.slice(0, 8)}...</p>
+                                <div className="flex gap-2">
+                                    <Button size="sm" variant="danger" onClick={() => handleDeletePlayer(p.id)}>
+                                        <Trash2 size={16} />
+                                    </Button>
+                                </div>
                             </div>
-                            <div className="flex gap-2">
-                                <Button size="sm" variant="danger" onClick={() => handleDeletePlayer(p.id)}>
-                                    <Trash2 size={16} />
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 

@@ -13,7 +13,9 @@ create table profiles (
   auth_id uuid references auth.users, -- Nullable! Links to real user if they login
   username text not null unique,
   avatar_url text,
-  elo integer default 1200,
+  elo integer default 1150,
+  notifications_enabled boolean default true,
+  subscription_end_date timestamp with time zone default (now() + interval '30 days'),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -56,6 +58,37 @@ begin
 end;
 $$ language plpgsql security definer;
 
-create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- 6. Achievements System
+create table achievements (
+  id text primary key, -- e.g. 'first_win'
+  name text not null,
+  description text not null,
+  icon text not null, -- Lucas icon name e.g. 'Trophy'
+  point_value integer default 10
+);
+
+create table user_achievements (
+  user_id uuid references profiles(id) not null,
+  achievement_id text references achievements(id) not null,
+  unlocked_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  primary key (user_id, achievement_id)
+);
+
+alter table achievements enable row level security;
+alter table user_achievements enable row level security;
+
+create policy "Public achievements access" on achievements for select using (true);
+create policy "Public user_achievements access" on user_achievements for select using (true);
+create policy "Public user_achievements insert" on user_achievements for insert with check (true);
+
+-- Seed Achievements
+insert into achievements (id, name, description, icon, point_value) values
+('first_blood', 'First Blood', 'Play your first match', 'Sword', 10),
+('winner', 'Winner', 'Win your first match', 'Trophy', 20),
+('on_fire', 'On Fire', 'Win 3 matches in a row', 'Flame', 50),
+('veteran', 'Veteran', 'Play 10 matches', 'Medal', 30),
+('socialite', 'Socialite', 'Upload a profile picture', 'Camera', 10)
+on conflict (id) do nothing;

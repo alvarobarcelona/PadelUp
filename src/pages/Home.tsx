@@ -28,6 +28,7 @@ interface MatchPreview {
 const Home = () => {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [recentMatches, setRecentMatches] = useState<MatchPreview[]>([]);
+    const [recentForm, setRecentForm] = useState<boolean[]>([]);
     const [, setLoading] = useState(true);
 
     useEffect(() => {
@@ -47,7 +48,26 @@ const Home = () => {
                     .eq('auth_id', user.id)
                     .single();
 
-                if (profileData) setProfile(profileData);
+                if (profileData) {
+                    setProfile(profileData);
+
+                    // Fetch user's last 5 matches for form
+                    const { data: userMatches } = await supabase
+                        .from('matches')
+                        .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2')
+                        .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
+                        .order('created_at', { ascending: false })
+                        .limit(5);
+
+                    if (userMatches) {
+                        const form = userMatches.map(m => {
+                            const isTeam1 = m.team1_p1 === profileData.id || m.team1_p2 === profileData.id;
+                            const isTeam2 = m.team2_p1 === profileData.id || m.team2_p2 === profileData.id;
+                            return (isTeam1 && m.winner_team === 1) || (isTeam2 && m.winner_team === 2);
+                        });
+                        setRecentForm(form.reverse()); // Show oldest to newest left to right? Or newest left? usually newest right. Let's keep newest right.
+                    }
+                }
             }
 
             // 2. Fetch Recent Matches (Global Feed)
@@ -97,13 +117,19 @@ const Home = () => {
                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Current Level</p>
                                 <p className="text-3xl font-black text-white">
                                     {getLevelFromElo(profile.elo).level}
-                                    <span className="text-sm font-normal text-slate-400 ml-2">{getLevelFromElo(profile.elo).label}</span>
+
                                 </p>
                             </div>
+                           
                             <div className="text-right">
                                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Elo</p>
                                 <p className="text-lg font-bold text-green-400">{profile.elo}</p>
                             </div>
+
+                            
+                        </div>
+                        <div>
+                            <span className="text-sm font-normal text-slate-400 ml-2">{getLevelFromElo(profile.elo).label}</span>
                         </div>
 
                         {/* Progress Bar (Visual flair) */}
@@ -121,11 +147,17 @@ const Home = () => {
                     <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">
                         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Recent Form</p>
                         <div className="flex gap-1.5 mt-1">
-                            {/* Mock Form for now - simpler than heavy join queries for MVP */}
-                            <div className="h-3 w-3 rounded-full bg-green-500 shadow-sm shadow-green-500/50"></div>
-                            <div className="h-3 w-3 rounded-full bg-green-500 shadow-sm shadow-green-500/50"></div>
-                            <div className="h-3 w-3 rounded-full bg-red-500/50"></div>
-                            <div className="h-3 w-3 rounded-full bg-green-500 shadow-sm shadow-green-500/50"></div>
+                            {recentForm.length === 0 ? (
+                                <span className="text-xs text-slate-500">No matches yet</span>
+                            ) : (
+                                recentForm.map((won, i) => (
+                                    <div
+                                        key={i}
+                                        className={`h-3 w-3 rounded-full shadow-sm ${won ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500/50'}`}
+                                        title={won ? 'Win' : 'Loss'}
+                                    />
+                                ))
+                            )}
                         </div>
                         <p className="text-[10px] text-slate-500 mt-2 font-medium">Last 5 matches</p>
                     </div>
@@ -140,6 +172,7 @@ const Home = () => {
                         Or just record matches as guest below
                     </div>
                 </div>
+
             )}
 
             {/* Main Action - Floating/Prominent */}

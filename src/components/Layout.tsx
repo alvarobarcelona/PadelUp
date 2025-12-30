@@ -18,12 +18,25 @@ const Layout = () => {
 
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('approved')
+                .select('approved, subscription_end_date, is_admin')
                 .eq('auth_id', user.id)
                 .single();
 
-            if (profile && profile.approved === false) {
-                navigate('/pending');
+            if (profile) {
+                if (profile.approved === false) {
+                    navigate('/pending');
+                    return;
+                }
+
+                // Admins bypass subscription check
+                if (profile.is_admin) return;
+
+                const isExpired = !profile.subscription_end_date || new Date(profile.subscription_end_date) < new Date();
+
+                // Allow access to subscription page if expired
+                if (isExpired && window.location.pathname !== '/subscription') {
+                    navigate('/subscription');
+                }
             }
         };
 
@@ -31,13 +44,13 @@ const Layout = () => {
     }, [navigate]);
 
     return (
-        <div className="mx-auto min-h-screen max-w-md bg-slate-900 text-slate-100 shadow-2xl">
+        <div className="mx-auto min-h-screen max-w-md bg-slate-900 text-slate-100 shadow-2xl transition-colors duration-300">
             <main className="min-h-[calc(100vh-80px)] p-4 pb-24">
                 <Outlet />
             </main>
 
             {/* Bottom Navigation */}
-            <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm px-2 py-4 z-50">
+            <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm px-2 py-4 z-50 transition-colors duration-300">
                 <ul className="flex items-center justify-around">
                     <li>
                         <NavLink to="/" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
@@ -53,7 +66,7 @@ const Layout = () => {
                     </li>
                     <li>
                         <NavLink to="/new-match" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
-                            <PlusCircle size={36} className="-mt-8 text-green-500 bg-slate-900 rounded-full p-1 shadow-lg shadow-green-500/20" />
+                            <PlusCircle size={36} className="-mt-8 text-green-500 bg-slate-900 rounded-full p-1 shadow-lg shadow-green-500/20 transition-colors duration-300" />
                         </NavLink>
                     </li>
                     <li>
