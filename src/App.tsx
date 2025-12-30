@@ -14,6 +14,7 @@ import Settings from './pages/Settings';
 
 import PendingApproval from './pages/PendingApproval';
 import Subscription from './pages/Subscription';
+import Banned from './pages/Banned';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/pending" element={<PendingApproval />} />
         <Route path="/subscription" element={<Subscription />} />
+        <Route path="/banned" element={<Banned />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="rankings" element={<Rankings />} />

@@ -18,11 +18,16 @@ const Layout = () => {
 
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('approved, subscription_end_date, is_admin')
+                .select('approved, subscription_end_date, is_admin, banned')
                 .eq('auth_id', user.id)
                 .single();
 
             if (profile) {
+                if (profile.banned) {
+                    navigate('/banned');
+                    return;
+                }
+
                 if (profile.approved === false) {
                     navigate('/pending');
                     return;

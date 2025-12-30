@@ -32,9 +32,38 @@ const Settings = () => {
     // Preferences
     const [notifications, setNotifications] = useState(true);
 
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
     useEffect(() => {
         getProfile();
+
+        const handleBeforeInstallPrompt = (e: any) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            setDeferredPrompt(e);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
     }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+
+        // Show the install prompt
+        deferredPrompt.prompt();
+
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+
+        // We've used the prompt, and can't use it again, throw it away
+        setDeferredPrompt(null);
+    };
 
     const getProfile = async () => {
         const { data: { user } } = await supabase.auth.getUser();
@@ -320,6 +349,22 @@ const Settings = () => {
                     <LogOut size={18} />
                     Log Out
                 </Button>
+
+                {/* PWA Install Button (Only visible if installable) */}
+                {deferredPrompt && (
+                    <div className="pt-4">
+                        <Button
+                            onClick={handleInstallClick}
+                            className="w-full h-12 gap-2 bg-green-500 hover:bg-green-600 text-slate-900 font-bold"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2" /><line x1="8" x2="16" y1="21" y2="21" /><line x1="12" x2="12" y1="17" y2="21" /></svg>
+                            Install App
+                        </Button>
+                        <p className="text-[10px] text-center text-slate-500 mt-2">
+                            Add PadelUp to your home screen for the best experience.
+                        </p>
+                    </div>
+                )}
 
                 <div className="text-center pt-4">
                     <p className="text-xs text-slate-500">PadelUp v1.2.1</p>
