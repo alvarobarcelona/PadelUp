@@ -6,7 +6,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { calculateTeamAverage, calculateExpectedScore, calculateNewRating } from '../lib/elo';
-import { checkAchievements } from '../lib/achievements';
+
 
 interface Player {
     id: string;
