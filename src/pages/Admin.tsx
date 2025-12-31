@@ -2,10 +2,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
-import { Trash2, ShieldAlert, Loader2, Pencil, X, Save, Search } from 'lucide-react';
+import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getMatchPointsFromHistory } from '../lib/elo';
+
 // Helper for ELO
-const getExpected = (a: number, b: number) => 1 / (1 + Math.pow(10, (b - a) / 400));
+// const getExpected = (a: number, b: number) => 1 / (1 + Math.pow(10, (b - a) / 400));
+// const K_FACTOR = 32;
 
 const Admin = () => {
     const navigate = useNavigate();
@@ -21,7 +24,7 @@ const Admin = () => {
 
     // Edit State
     const [editingPlayer, setEditingPlayer] = useState<any | null>(null);
-    const [editingMatch, setEditingMatch] = useState<any | null>(null);
+
 
     useEffect(() => {
         checkAdmin();
@@ -45,8 +48,7 @@ const Admin = () => {
         setLoading(true);
         // Fetch all profiles
         const { data: p } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-        // Fetch matches
-        const { data: m } = await supabase.from('matches').select('id, created_at, winner_team, team1_p1, team1_p2, team2_p1, team2_p2').order('created_at', { ascending: false });
+        const { data: m } = await supabase.from('matches').select('*').order('created_at', { ascending: false });
 
         if (p) setPlayers(p);
         if (m) setMatches(m);
@@ -92,7 +94,16 @@ const Admin = () => {
     };
 
     const revertEloForMatch = async (match: any) => {
-        // 2. Fetch current player profiles
+        // Use History Replay to find exact points exchanged
+        const replayData = getMatchPointsFromHistory(matches, match.id);
+
+        if (!replayData) {
+            throw new Error('Could not calculate historic match points. Aborting.');
+        }
+
+        const { points } = replayData;
+
+        // Fetch CURRENT profiles to update
         const playerIds = [match.team1_p1, match.team1_p2, match.team2_p1, match.team2_p2];
         const { data: currentPlayers, error: playersError } = await supabase
             .from('profiles')
@@ -108,14 +119,7 @@ const Admin = () => {
 
         if (!p1 || !p2 || !p3 || !p4) throw new Error('Could not find all players to revert ELO.');
 
-        const K_FACTOR = 32;
-        const t1Avg = Math.round((p1.elo + p2.elo) / 2);
-        const t2Avg = Math.round((p3.elo + p4.elo) / 2);
-
-        let points = 0;
         if (match.winner_team === 1) {
-            const expected = getExpected(t1Avg, t2Avg);
-            points = Math.round(K_FACTOR * (1 - expected));
             // T1 won, so they gained points. We must SUBTRACT.
             // T2 lost, so they lost points. We must ADD.
             await Promise.all([
@@ -125,8 +129,6 @@ const Admin = () => {
                 supabase.from('profiles').update({ elo: p4.elo + points }).eq('id', p4.id)
             ]);
         } else {
-            const expected = getExpected(t2Avg, t1Avg);
-            points = Math.round(K_FACTOR * (1 - expected));
             // T2 won, gained points. SUBTRACT.
             // T1 lost, lost points. ADD.
             await Promise.all([
@@ -202,104 +204,11 @@ const Admin = () => {
 
 
 
-    const handleSaveMatch = async () => {
-        if (!editingMatch) return;
 
-        // Find the ORIGINAL match data from the 'matches' state to compare
-        const originalMatch = matches.find(m => m.id === editingMatch.id);
-        if (!originalMatch) return;
 
-        if (originalMatch.winner_team === editingMatch.winner_team) {
-            // No winner change, just maybe date?
-            // For now only winner change is critical. 
-            // If date changed, just update match row.
-            const { error } = await supabase.from('matches').update({ created_at: editingMatch.created_at }).eq('id', editingMatch.id);
-            if (error) alert(error.message);
-            else {
-                alert("Match updated.");
-                setEditingMatch(null);
-                fetchData();
-            }
-            return;
-        }
+    if (!isAdmin) return <div className="p-10 text-center flex flex-col items-center justify-center gap-2 text-slate-500"><Loader2 className="animate-spin text-green-500" /> Verifying privileges...</div>;
 
-        // Winner CHANGED! complex logic.
-        if (!confirm("Changing the winner will REVERT the old ELO changes and APPLY NEW ONES. This affects 4 players. Proceed?")) return;
-
-        setLoading(true);
-        try {
-            // 1. Revert Old ELO
-            await revertEloForMatch(originalMatch);
-
-            // 2. Apply NEW ELO
-            // We need to fetch FRESH player data because revertEloForMatch just updated them!
-            const playerIds = [originalMatch.team1_p1, originalMatch.team1_p2, originalMatch.team2_p1, originalMatch.team2_p2];
-            const { data: currentPlayers, error: playersError } = await supabase
-                .from('profiles')
-                .select('id, elo')
-                .in('id', playerIds);
-
-            if (playersError) throw playersError;
-
-            const p1 = currentPlayers.find(p => p.id === originalMatch.team1_p1);
-            const p2 = currentPlayers.find(p => p.id === originalMatch.team1_p2);
-            const p3 = currentPlayers.find(p => p.id === originalMatch.team2_p1);
-            const p4 = currentPlayers.find(p => p.id === originalMatch.team2_p2);
-
-            if (!p1 || !p2 || !p3 || !p4) throw new Error('Could not find all players to apply new ELO.');
-
-            const K_FACTOR = 32;
-            const t1Avg = Math.round((p1.elo + p2.elo) / 2);
-            const t2Avg = Math.round((p3.elo + p4.elo) / 2);
-
-            // Calculate for the NEW winner
-            const newWinner = parseInt(editingMatch.winner_team);
-            let points = 0;
-            if (newWinner === 1) {
-                const expected = getExpected(t1Avg, t2Avg);
-                points = Math.round(K_FACTOR * (1 - expected));
-                // T1 Wins (Add), T2 Loses (Sub)
-                await Promise.all([
-                    supabase.from('profiles').update({ elo: p1.elo + points }).eq('id', p1.id),
-                    supabase.from('profiles').update({ elo: p2.elo + points }).eq('id', p2.id),
-                    supabase.from('profiles').update({ elo: p3.elo - points }).eq('id', p3.id),
-                    supabase.from('profiles').update({ elo: p4.elo - points }).eq('id', p4.id)
-                ]);
-            } else {
-                const expected = getExpected(t2Avg, t1Avg);
-                points = Math.round(K_FACTOR * (1 - expected));
-                // T2 Wins (Add), T1 Loses (Sub)
-                await Promise.all([
-                    supabase.from('profiles').update({ elo: p1.elo - points }).eq('id', p1.id),
-                    supabase.from('profiles').update({ elo: p2.elo - points }).eq('id', p2.id),
-                    supabase.from('profiles').update({ elo: p3.elo + points }).eq('id', p3.id),
-                    supabase.from('profiles').update({ elo: p4.elo + points }).eq('id', p4.id)
-                ]);
-            }
-
-            // 3. Update Match Record
-            const { error: updateError } = await supabase
-                .from('matches')
-                .update({
-                    winner_team: newWinner,
-                    created_at: editingMatch.created_at
-                })
-                .eq('id', editingMatch.id);
-
-            if (updateError) throw updateError;
-
-            alert(`Match updated! ELO corrected (approx ${points} pts adjusted).`);
-            setEditingMatch(null);
-            fetchData();
-        } catch (error: any) {
-            console.error(error);
-            alert('Error updating match: ' + error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (!isAdmin) return <div className="p-10 text-center"><Loader2 className="animate-spin inline" /> Verifying privileges...</div>;
+    if (loading) return <div className="p-10 text-center flex flex-col items-center justify-center gap-2 text-slate-500"><Loader2 className="animate-spin text-green-500" /> Loading Admin Data...</div>;
 
     return (
         <div className="space-y-6 animate-fade-in pb-20 relative">
@@ -352,6 +261,7 @@ const Admin = () => {
                                     </div>
                                     <p className="text-sm text-slate-400">Signed up: {new Date(p.created_at).toLocaleDateString()}</p>
                                     <p className="text-xs text-slate-500 font-mono">{p.id}</p>
+                                    <p className="text-xs text-slate-500 font-mono">{p.email}</p>
                                 </div>
                                 <div className="flex gap-2 w-full sm:w-auto">
                                     <Button size="sm" className="flex-1 sm:flex-none bg-green-600 hover:bg-green-500" onClick={() => handleApprovePlayer(p.id, p.username)}>
@@ -442,12 +352,16 @@ const Admin = () => {
                             <div key={m.id} className="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700">
                                 <div>
                                     <p className="font-bold text-white">Match #{m.id}</p>
-                                    <p className="text-xs text-slate-500">{new Date(m.created_at).toLocaleDateString()} | Winner: Team {m.winner_team}</p>
+                                    <p className="text-xs text-slate-500">
+                                        {new Date(m.created_at).toLocaleDateString()} | Winner: Team {m.winner_team}
+                                        {m.winner_team === 1 ?
+                                            ` (${players.find(p => p.id === m.team1_p1)?.username || 'Unknown'} & ${players.find(p => p.id === m.team1_p2)?.username || 'Unknown'})` :
+                                            ` (${players.find(p => p.id === m.team2_p1)?.username || 'Unknown'} & ${players.find(p => p.id === m.team2_p2)?.username || 'Unknown'})`
+                                        }
+                                    </p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10" onClick={() => setEditingMatch(m)}>
-                                        <Pencil size={16} />
-                                    </Button>
+
                                     <Button size="sm" variant="danger" onClick={() => handleDeleteMatch(m.id)}>
                                         <Trash2 size={16} />
                                     </Button>
@@ -532,52 +446,7 @@ const Admin = () => {
                 </div>
             )}
 
-            {/* EDIT MATCH MODAL */}
-            {editingMatch && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-                    <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative">
-                        <button onClick={() => setEditingMatch(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
-                            <X size={24} />
-                        </button>
-                        <h2 className="text-xl font-bold text-white mb-6">Edit Match #{editingMatch.id}</h2>
 
-                        <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded mb-4">
-                            <p className="text-xs text-yellow-500 flex items-start gap-2">
-                                <ShieldAlert size={14} className="min-w-[14px] mt-0.5" />
-                                Warning: Changing the winner will recalculate ELO for all 4 players based on their CURRENT ranking.
-                            </p>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-xs text-slate-400 block mb-1">Date</label>
-                                <input
-                                    type="datetime-local"
-                                    className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
-                                    value={editingMatch.created_at ? new Date(editingMatch.created_at).toISOString().slice(0, 16) : ''}
-                                    onChange={(e) => setEditingMatch({ ...editingMatch, created_at: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-400 block mb-1">Winner Team</label>
-                                <select
-                                    className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
-                                    value={editingMatch.winner_team}
-                                    onChange={(e) => setEditingMatch({ ...editingMatch, winner_team: parseInt(e.target.value) })}
-                                >
-                                    <option value={1}>Team 1 (Won)</option>
-                                    <option value={2}>Team 2 (Won)</option>
-                                </select>
-                            </div>
-
-                            <Button onClick={handleSaveMatch} className="w-full mt-4 flex items-center justify-center gap-2">
-                                <Save size={18} />
-                                {loading ? <Loader2 className="animate-spin" /> : 'Save & Recalculate'}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
         </div>
     );

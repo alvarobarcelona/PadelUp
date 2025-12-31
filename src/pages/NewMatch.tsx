@@ -39,7 +39,11 @@ const NewMatch = () => {
 
     const fetchPlayers = async () => {
         try {
-            const { data, error } = await supabase.from('profiles').select('id, username, avatar_url, elo');
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id, username, avatar_url, elo')
+                .eq('approved', true) // Only select approved players
+                .order('username');
             if (error) throw error;
             setAvailablePlayers(data || []);
         } catch (error) {
@@ -77,6 +81,13 @@ const NewMatch = () => {
 
     const handleSave = async () => {
         if (!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2) return;
+
+        // Validation: Check if at least one game has been played
+        const totalGames = sets.reduce((acc, s) => acc + s.t1 + s.t2, 0);
+        if (totalGames === 0) {
+            alert('Please enter a valid result (at least one game played).');
+            return;
+        }
 
         setLoading(true);
         try {
@@ -294,10 +305,16 @@ const NewMatch = () => {
                         />
                     </div>
                 ))}
+                <p className="text-center text-xs text-slate-500 italic px-4">
+                    Enter the result in games (e.g., 6-3, 6-4). <br />
+                    Use the third set if there is a tie. If it is decided by a tiebreak, record it as 7-6.
+                </p>
             </div>
 
+
             <div className="pt-8 space-y-3">
-                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading}>
+
+                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm="Are you sure?">
                     <Trophy size={20} />
                     Finish Match
                 </Button>

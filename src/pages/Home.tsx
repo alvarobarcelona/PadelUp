@@ -120,13 +120,13 @@ const Home = () => {
 
                                 </p>
                             </div>
-                           
+
                             <div className="text-right">
                                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Elo</p>
                                 <p className="text-lg font-bold text-green-400">{profile.elo}</p>
                             </div>
 
-                            
+
                         </div>
                         <div>
                             <span className="text-sm font-normal text-slate-400 ml-2">{getLevelFromElo(profile.elo).label}</span>

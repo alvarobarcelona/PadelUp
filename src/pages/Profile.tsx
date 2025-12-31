@@ -20,7 +20,8 @@ const Profile = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
-    const [achievements, setAchievements] = useState<any[]>([]);
+    const [allAchievements, setAllAchievements] = useState<any[]>([]);
+    const [userAchievementIds, setUserAchievementIds] = useState<Set<string>>(new Set());
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [user, setUser] = useState<{
         id: string; // Added ID for storage path
@@ -30,6 +31,10 @@ const Profile = () => {
         avatar_url: string | null;
         matchesPlayed: number;
         winRate: number;
+        currentStreak: number;
+        bestStreak: number;
+        setsWon: number;
+        gamesWon: number;
         is_admin?: boolean;
     } | null>(null);
 
@@ -58,29 +63,91 @@ const Profile = () => {
 
             // Check & Fetch Achievements
             await checkAchievements(profileData.id);
+
+            // 1. Fetch user's unlocked achievement IDs
             const { data: myAchievements } = await supabase
                 .from('user_achievements')
-                .select('*, achievements(*)')
+                .select('achievement_id')
                 .eq('user_id', profileData.id);
 
-            setAchievements(myAchievements || []);
+            const unlockedIds = new Set(myAchievements?.map((ua: any) => ua.achievement_id) || []);
+            setUserAchievementIds(unlockedIds);
+
+            // 2. Fetch ALL available achievements
+            const { data: availableAchievements } = await supabase
+                .from('achievements')
+                .select('*')
+                .order('point_value', { ascending: true }); // Base sort by difficulty/points
+
+            setAllAchievements(availableAchievements || []);
 
             // Calculate Stats... (Same as before)
+            // Calculate Stats
             const { data: matches } = await supabase
                 .from('matches')
-                .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2')
-                .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`);
+                .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2, created_at, score')
+                .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
+                .order('created_at', { ascending: false }); // Newest first
 
             let wins = 0;
+            let currentStreak = 0;
+            let bestStreak = 0;
+            let tempStreak = 0;
+            let totalSetsWon = 0;
+            let totalGamesWon = 0;
+
+            // Calculate Current Streak (Newest -> Oldest)
+            // We stop counting as soon as we find a loss or a match they didn't play (shouldn't happen with query)
+            if (matches) {
+                for (const m of matches) {
+                    const isTeam1 = m.team1_p1 === profileData.id || m.team1_p2 === profileData.id;
+                    const won = (isTeam1 && m.winner_team === 1) || (!isTeam1 && m.winner_team === 2);
+
+                    if (won) {
+                        currentStreak++;
+                    } else {
+                        break; // Streak broken
+                    }
+                }
+
+                // Calculate Best Streak, Total Wins, Sets & Games (Oldest -> Newest is easier, or just iterate all)
+                // Let's iterate all (reverse of matches since matches is Descending)
+                const chronological = [...matches].reverse();
+
+                chronological.forEach(m => {
+                    const isTeam1 = m.team1_p1 === profileData.id || m.team1_p2 === profileData.id;
+                    const won = (isTeam1 && m.winner_team === 1) || (!isTeam1 && m.winner_team === 2);
+
+                    // Stats Calculation
+                    if (won) {
+                        wins++;
+                        tempStreak++;
+                    } else {
+                        tempStreak = 0;
+                    }
+                    if (tempStreak > bestStreak) bestStreak = tempStreak;
+
+                    // Sets & Games Calculation
+                    if (m.score && Array.isArray(m.score)) {
+                        m.score.forEach((set: { t1: number, t2: number }) => {
+                            const myScore = isTeam1 ? set.t1 : set.t2;
+                            const oppScore = isTeam1 ? set.t2 : set.t1;
+
+                            // Add Games
+                            totalGamesWon += myScore;
+
+                            // Add Set (if won this set)
+                            // A set is won if myScore > oppScore (assuming standard rules or just raw score comparison)
+                            // Typically 6-4, 7-6 etc. simpler logic: score > opponent
+                            if (myScore > oppScore) {
+                                totalSetsWon++;
+                            }
+                        });
+                    }
+                });
+            }
+
             const totalMatches = matches?.length || 0;
-
-            matches?.forEach(m => {
-                const isTeam1 = m.team1_p1 === profileData.id || m.team1_p2 === profileData.id;
-                const isTeam2 = m.team2_p1 === profileData.id || m.team2_p2 === profileData.id;
-
-                if ((isTeam1 && m.winner_team === 1) || (isTeam2 && m.winner_team === 2)) wins++;
-            });
-
             const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
 
             setUser({
@@ -91,6 +158,10 @@ const Profile = () => {
                 avatar_url: profileData.avatar_url,
                 matchesPlayed: totalMatches,
                 winRate: winRate,
+                currentStreak: currentStreak,
+                bestStreak: bestStreak,
+                setsWon: totalSetsWon,
+                gamesWon: totalGamesWon,
                 is_admin: profileData.is_admin
             });
 
@@ -103,63 +174,43 @@ const Profile = () => {
 
     const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         try {
-            setUploading(true);
-
             if (!event.target.files || event.target.files.length === 0) {
-                throw new Error('You must select an image to upload.');
+                return;
             }
+            if (!user) return;
 
+            setUploading(true);
             const file = event.target.files[0];
             const fileExt = file.name.split('.').pop();
-            const fileName = `${user?.id}/${Math.random()}.${fileExt}`;
+            const fileName = `${user.id}/${Math.random()}.${fileExt}`;
             const filePath = `${fileName}`;
 
-            // 1. Upload to Storage
+            // Upload to Supabase Storage
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file);
 
-            if (uploadError) {
-                console.error('Storage Upload Error:', uploadError);
-                throw new Error(`Storage Error: ${uploadError.message}`);
-            }
+            if (uploadError) throw uploadError;
 
-            // 2. Get Public URL
+            // Get Public URL
             const { data: { publicUrl } } = supabase.storage
                 .from('avatars')
                 .getPublicUrl(filePath);
 
-            // 3. Update Profile Database
-            if (user) {
-                console.log('Attempting to update profile for User ID:', user.id);
-                console.log('New Avatar URL:', publicUrl);
+            // Update Profile
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ avatar_url: publicUrl })
+                .eq('id', user.id);
 
-                const { data: updatedData, error: updateError } = await supabase
-                    .from('profiles')
-                    .update({ avatar_url: publicUrl })
-                    .eq('id', user.id)
-                    .select();
+            if (updateError) throw updateError;
 
-                if (updateError) {
-                    console.error('Database Update Error:', updateError);
-                    alert(`Database Error: ${updateError.message}. Check your RLS policies.`);
-                    return;
-                }
+            // Update Local State
+            setUser(prev => prev ? { ...prev, avatar_url: publicUrl } : null);
 
-                if (!updatedData || updatedData.length === 0) {
-                    console.error('Update succeeded but NO rows were modified.');
-                    alert('Update failed silently. This usually means an RLS policy is hiding the row or the ID is wrong.');
-                    return;
-                }
-
-                console.log('Database updated successfully:', updatedData);
-                setUser({ ...user, avatar_url: publicUrl });
-                alert('Profile picture updated successfully! (Saved to DB)');
-            }
-
-        } catch (error: any) {
-            console.error('Avatar Upload Error:', error);
-            alert(`Error: ${error.message || 'Unknown error occurred'}`);
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            alert('Error uploading avatar. Please try again.');
         } finally {
             setUploading(false);
         }
@@ -175,6 +226,7 @@ const Profile = () => {
 
     return (
         <div className="space-y-6 animate-fade-in">
+            {/* Header ... */}
             <header className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-white">My Profile</h1>
                 <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
@@ -182,7 +234,7 @@ const Profile = () => {
                 </Button>
             </header>
 
-            {/* Profile Header */}
+            {/* Profile Header (Components Omitted) */}
             <div className="flex flex-col items-center space-y-4 rounded-2xl bg-slate-800 p-6 shadow-lg">
                 <div className="relative">
                     <Avatar fallback={user.username} src={user.avatar_url} size="xl" className="h-24 w-24 border-4 border-slate-700 shadow-xl" />
@@ -253,36 +305,78 @@ const Profile = () => {
                     <p className="text-3xl font-bold text-white">{user.matchesPlayed}</p>
                     <p className="text-xs text-slate-500 mt-1">Total played</p>
                 </div>
+                {/* NEW: Streak Stats */}
+                <div className="rounded-xl bg-slate-800 p-4 border border-slate-700/50">
+                    <div className="flex items-center gap-2 text-yellow-500 mb-2">
+                        <Flame size={18} />
+                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Streak</span>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{user.currentStreak}<span className="text-sm text-slate-500 ml-1">W</span></p>
+                    <p className="text-xs text-slate-500 mt-1">Current form</p>
+                </div>
+                <div className="rounded-xl bg-slate-800 p-4 border border-slate-700/50">
+                    <div className="flex items-center gap-2 text-purple-400 mb-2">
+                        <Trophy size={18} />
+                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Best</span>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{user.bestStreak}<span className="text-sm text-slate-500 ml-1">W</span></p>
+                    <p className="text-xs text-slate-500 mt-1">Record Streak</p>
+                </div>
+
+                {/* NEW: Sets & Games Stats */}
+                <div className="rounded-xl bg-slate-800 p-4 border border-slate-700/50">
+                    <div className="flex items-center gap-2 text-blue-400 mb-2">
+                        <Swords size={18} />
+                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Sets</span>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{user.setsWon}</p>
+                    <p className="text-xs text-slate-500 mt-1">Sets Won</p>
+                </div>
+                <div className="rounded-xl bg-slate-800 p-4 border border-slate-700/50">
+                    <div className="flex items-center gap-2 text-green-400 mb-2">
+                        <div className="h-4 w-4 bg-green-500 rounded-full opacity-60"></div>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Games</span>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{user.gamesWon}</p>
+                    <p className="text-xs text-slate-500 mt-1">Games Won</p>
+                </div>
             </div>
 
             {/* Recent Badges / Achievements */}
             <div className="rounded-xl bg-slate-800 p-5 border border-slate-700/50">
                 <h3 className="mb-4 text-sm font-semibold uppercase text-slate-400 tracking-wider flex items-center gap-2">
-                    Achievements <span className="text-xs bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">{achievements.length}</span>
+                    Achievements <span className="text-xs bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">{userAchievementIds.size} / {allAchievements.length}</span>
                 </h3>
 
-                {achievements.length === 0 ? (
+                {allAchievements.length === 0 ? (
                     <div className="text-center py-6 text-slate-500 text-sm">
-                        <p>Play matches to unlock badges!</p>
+                        <p>No achievements available.</p>
                     </div>
                 ) : (
-                    <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-                        {achievements.map((item: any) => {
-                            const badge = item.achievements;
-                            const Icon = iconMap[badge.icon] || Trophy;
+                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        {allAchievements
+                            .sort((a, b) => {
+                                const aOwned = userAchievementIds.has(a.id);
+                                const bOwned = userAchievementIds.has(b.id);
+                                if (aOwned && !bOwned) return -1;
+                                if (!aOwned && bOwned) return 1;
+                                return 0;
+                            })
+                            .map((badge: any) => {
+                                const isUnlocked = userAchievementIds.has(badge.id);
+                                const Icon = iconMap[badge.icon] || Trophy;
 
-                            return (
-                                <div key={badge.id} className="flex flex-col items-center flex-shrink-0 space-y-2 w-20">
-                                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-yellow-400/20 to-orange-500/20 p-[2px] shadow-lg shadow-orange-500/10">
-                                        <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-800 border-2 border-slate-700">
-                                            <Icon size={24} className="text-yellow-500" />
+                                return (
+                                    <div key={badge.id} className={`flex flex-col items-center flex-shrink-0 space-y-2 w-20 transition-all ${isUnlocked ? '' : 'opacity-40 grayscale'}`}>
+                                        <div className={`h-14 w-14 rounded-full p-[2px] shadow-lg ${isUnlocked ? 'bg-gradient-to-br from-yellow-400/20 to-orange-500/20 shadow-orange-500/10' : 'bg-slate-700/50 shadow-none'}`}>
+                                            <div className={`flex h-full w-full items-center justify-center rounded-full border-2 ${isUnlocked ? 'bg-slate-800 border-slate-700' : 'bg-slate-800/50 border-slate-700/50'}`}>
+                                                <Icon size={24} className={isUnlocked ? "text-yellow-500" : "text-slate-500"} />
+                                            </div>
                                         </div>
+                                        <span className="text-[10px] font-bold text-slate-300 text-center leading-tight line-clamp-2 min-h-[2.5em] flex items-center justify-center">{badge.name}</span>
                                     </div>
-                                    <span className="text-[10px] font-bold text-slate-300 text-center leading-tight">{badge.name}</span>
-                                    <span className="text-[9px] text-slate-500 text-center hidden">{badge.point_value}</span>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
                     </div>
                 )}
             </div>
@@ -295,7 +389,7 @@ const Profile = () => {
                 </Button>
             </div>
             <div className="text-center text-xs text-slate-600">
-                PadelUp Version 1.2.0 (Admin Mode)
+                PadelUp Version 1.2.0 {user?.is_admin ? " (Admin Mode)" : ""}
             </div>
         </div>
     );

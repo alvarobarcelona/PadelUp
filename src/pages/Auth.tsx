@@ -8,13 +8,54 @@ const Auth = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
+    const [isForgotPassword, setIsForgotPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
     const [error, setError] = useState<string | null>(null);
 
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+
+        try {
+            const { data: profileCheck, error: profileCheckError } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('email', email) 
+                .single();
+
+            if (profileCheckError || !profileCheck) {
+                
+                if (profileCheckError?.code === 'PGRST116' || !profileCheck) {
+                    throw new Error('Email not found in our records.');
+                }
+                
+            }
+
+
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/reset-password', // or just root
+            });
+            if (error) throw error;
+            alert('Password reset link sent! Check your email.');
+            setIsForgotPassword(false);
+            setIsLogin(true);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isForgotPassword) {
+            await handleResetPassword(e);
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -33,6 +74,7 @@ const Auth = () => {
                     options: {
                         data: {
                             username,
+                            email, // Ensure email is saved in metadata if needed, though usually automatic
                         },
                     },
                 });
@@ -52,12 +94,12 @@ const Auth = () => {
                 <div className="text-center">
                     <h1 className="text-4xl font-bold text-green-400">PadelUp</h1>
                     <p className="mt-2 text-slate-400">
-                        {isLogin ? 'Welcome back, Champion' : 'Join the Club'}
+                        {isForgotPassword ? 'Reset Password' : (isLogin ? 'Welcome back, Champion' : 'Join the Club')}
                     </p>
                 </div>
 
                 <form onSubmit={handleAuth} className="space-y-4">
-                    {!isLogin && (
+                    {!isLogin && !isForgotPassword && (
                         <div>
                             <label className="block text-sm font-medium text-slate-400">Username</label>
                             <input
@@ -81,16 +123,30 @@ const Auth = () => {
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-400">Password</label>
-                        <input
-                            type="password"
-                            required
-                            className="mt-1 block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 transition-colors"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </div>
+                    {/* Password Field - Hide in Forgot Password Mode */}
+                    {!isForgotPassword && (
+                        <div>
+                            <div className="flex items-center justify-between">
+                                <label className="block text-sm font-medium text-slate-400">Password</label>
+                                {isLogin && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsForgotPassword(true)}
+                                        className="text-xs text-green-400 hover:text-green-300"
+                                    >
+                                        Forgot?
+                                    </button>
+                                )}
+                            </div>
+                            <input
+                                type="password"
+                                required={!isForgotPassword}
+                                className="mt-1 block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 transition-colors"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </div>
+                    )}
 
                     {error && (
                         <div className="p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">
@@ -99,13 +155,28 @@ const Auth = () => {
                     )}
 
                     <Button type="submit" className="w-full" isLoading={loading}>
-                        {isLogin ? 'Sign In' : 'Create Account'}
+                        {isForgotPassword ? 'Send Reset Link' : (isLogin ? 'Sign In' : 'Create Account')}
                     </Button>
+
+                    {isForgotPassword && (
+                        <div className="text-center mt-2">
+                            <button
+                                type="button"
+                                onClick={() => setIsForgotPassword(false)}
+                                className="text-sm text-slate-500 hover:text-white transition-colors"
+                            >
+                                Back to Login
+                            </button>
+                        </div>
+                    )}
 
                     <div className="text-center">
                         <button
                             type="button"
-                            onClick={() => setIsLogin(!isLogin)}
+                            onClick={() => {
+                                setIsLogin(!isLogin);
+                                setIsForgotPassword(false);
+                            }}
                             className="text-sm text-slate-500 hover:text-green-400 transition-colors"
                         >
                             {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}

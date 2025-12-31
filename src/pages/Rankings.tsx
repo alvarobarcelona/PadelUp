@@ -27,6 +27,7 @@ const Rankings = () => {
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*')
+                .eq('approved', true) // Only show approved users
                 .order('elo', { ascending: false });
 
             if (error) throw error;

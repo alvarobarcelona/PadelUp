@@ -11,10 +11,10 @@ interface Match {
     score: any;
     winner_team: number;
     // Raw foreign key objects (Supabase returns them nested under column name usually)
-    team1_p1: { username: string } | null;
-    team1_p2: { username: string } | null;
-    team2_p1: { username: string } | null;
-    team2_p2: { username: string } | null;
+    team1_p1: { username: string, avatar_url: string | null } | null;
+    team1_p2: { username: string, avatar_url: string | null } | null;
+    team2_p1: { username: string, avatar_url: string | null } | null;
+    team2_p2: { username: string, avatar_url: string | null } | null;
 }
 
 const History = () => {
@@ -41,10 +41,10 @@ const History = () => {
           created_at,
           score,
           winner_team,
-          team1_p1(username),
-          team1_p2(username),
-          team2_p1(username),
-          team2_p2(username)
+          team1_p1(username, avatar_url),
+          team1_p2(username, avatar_url),
+          team2_p1(username, avatar_url),
+          team2_p2(username, avatar_url)
         `)
                 .order('created_at', { ascending: false });
 
@@ -103,6 +103,7 @@ const MatchCard = ({ match }: { match: Match }) => {
     // Extract Usernames safely (in case join returned null)
     // Supabase returns object { username: '...' } or null
     const getUsername = (obj: any) => obj?.username || 'Unknown';
+    const getAvatar = (obj: any) => obj?.avatar_url || null;
 
     return (
         <div className="relative overflow-hidden rounded-xl bg-slate-800 border border-slate-700 shadow-md">
@@ -119,8 +120,8 @@ const MatchCard = ({ match }: { match: Match }) => {
                 {/* Team 1 */}
                 <div className={`flex flex-col items-center w-5/12 ${match.winner_team === 1 ? 'opacity-100' : 'opacity-60 grayscale'}`}>
                     <div className="flex -space-x-3 mb-2">
-                        <Avatar fallback={getUsername(match.team1_p1)} />
-                        <Avatar fallback={getUsername(match.team1_p2)} />
+                        <Avatar fallback={getUsername(match.team1_p1)} src={getAvatar(match.team1_p1)} />
+                        <Avatar fallback={getUsername(match.team1_p2)} src={getAvatar(match.team1_p2)} />
                     </div>
                     <span className={`text-xs font-bold truncate max-w-full text-center ${match.winner_team === 1 ? 'text-green-400' : 'text-slate-400'}`}>
                         {getUsername(match.team1_p1)} & {getUsername(match.team1_p2)}
@@ -135,8 +136,8 @@ const MatchCard = ({ match }: { match: Match }) => {
                 {/* Team 2 */}
                 <div className={`flex flex-col items-center w-5/12 ${match.winner_team === 2 ? 'opacity-100' : 'opacity-60 grayscale'}`}>
                     <div className="flex -space-x-3 mb-2">
-                        <Avatar fallback={getUsername(match.team2_p1)} />
-                        <Avatar fallback={getUsername(match.team2_p2)} />
+                        <Avatar fallback={getUsername(match.team2_p1)} src={getAvatar(match.team2_p1)} />
+                        <Avatar fallback={getUsername(match.team2_p2)} src={getAvatar(match.team2_p2)} />
                     </div>
                     <span className={`text-xs font-bold truncate max-w-full text-center ${match.winner_team === 2 ? 'text-blue-400' : 'text-slate-400'}`}>
                         {getUsername(match.team2_p1)} & {getUsername(match.team2_p2)}

@@ -12,10 +12,20 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
     size?: 'sm' | 'md' | 'lg' | 'icon';
     isLoading?: boolean;
+    confirm?: string;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant = 'primary', size = 'md', isLoading, children, ...props }, ref) => {
+    ({ className, variant = 'primary', size = 'md', isLoading, children, confirm, onClick, ...props }, ref) => {
+        const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+            if (confirm) {
+                if (!window.confirm(confirm)) {
+                    return;
+                }
+            }
+            onClick?.(e);
+        };
+
         return (
             <button
                 ref={ref}
@@ -35,6 +45,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                     className
                 )}
                 disabled={isLoading || props.disabled}
+                onClick={handleClick}
                 {...props}
             >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

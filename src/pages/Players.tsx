@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, UserPlus } from 'lucide-react';
+import { getLevelFromElo } from '../lib/elo';
 
 interface Player {
     id: string;
@@ -20,7 +21,7 @@ const Players = () => {
     }, []);
 
     const fetchPlayers = async () => {
-        const { data } = await supabase.from('profiles').select('*').order('username');
+        const { data } = await supabase.from('profiles').select('*').eq('approved', true).order('username');
         if (data) setPlayers(data);
         setLoading(false);
     };
@@ -57,6 +58,7 @@ const Players = () => {
                                 </div>
                             </div>
                             <span className="text-sm font-mono font-bold text-green-400">ELO {player.elo}</span>
+                            <span className="text-sm font-mono font-bold text-green-400">Lvl {getLevelFromElo(player.elo).level}</span>
                         </div>
                     ))
                 )}
