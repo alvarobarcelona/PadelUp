@@ -20,7 +20,7 @@ const Layout = () => {
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('approved, subscription_end_date, is_admin, banned')
-                .eq('auth_id', user.id)
+                .eq('id', user.id)
                 .single();
 
             // Strict Access Control:

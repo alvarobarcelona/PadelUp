@@ -71,7 +71,7 @@ const Settings = () => {
             const { data } = await supabase
                 .from('profiles')
                 .select('username, notifications_enabled')
-                .eq('auth_id', user.id)
+                .eq('id', user.id)
                 .single();
 
             setProfile({
@@ -95,7 +95,7 @@ const Settings = () => {
                 await supabase
                     .from('profiles')
                     .update({ notifications_enabled: newState })
-                    .eq('auth_id', user.id);
+                    .eq('id', user.id);
             }
         } catch (error) {
             console.error('Failed to save notification preference', error);
@@ -115,7 +115,7 @@ const Settings = () => {
             const { error } = await supabase
                 .from('profiles')
                 .update({ username: newUsername })
-                .eq('auth_id', user.id);
+                .eq('id', user.id);
 
             if (error) throw error;
 

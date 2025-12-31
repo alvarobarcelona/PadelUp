@@ -91,6 +91,27 @@ const NewMatch = () => {
 
         setLoading(true);
         try {
+            // 0. Check for duplicates (last 2 hours)
+            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+            const { data: recentMatches } = await supabase
+                .from('matches')
+                .select('team1_p1, team1_p2, team2_p1, team2_p2')
+                .gte('created_at', twoHoursAgo);
+
+            if (recentMatches) {
+                const currentIds = new Set([selectedPlayers.t1p1.id, selectedPlayers.t1p2.id, selectedPlayers.t2p1.id, selectedPlayers.t2p2.id]);
+                const isDuplicate = recentMatches.some(m => {
+                    const matchIds = new Set([m.team1_p1, m.team1_p2, m.team2_p1, m.team2_p2]);
+                    return matchIds.size === currentIds.size && [...currentIds].every(id => matchIds.has(id));
+                });
+
+                if (isDuplicate) {
+                    alert("It looks like this match has already been recorded recently(range:2 hours ago) by another player. No need to duplicate it. Please be fair :) ");
+                    setLoading(false);
+                    return;
+                }
+            }
+
             // Calculate Winner
             let t1Sets = 0;
             let t2Sets = 0;

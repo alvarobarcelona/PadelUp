@@ -45,7 +45,7 @@ const Home = () => {
                 const { data: profileData } = await supabase
                     .from('profiles')
                     .select('*')
-                    .eq('auth_id', user.id)
+                    .eq('id', user.id)
                     .single();
 
                 if (profileData) {

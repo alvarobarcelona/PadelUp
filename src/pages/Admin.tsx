@@ -34,7 +34,7 @@ const Admin = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { navigate('/'); return; }
 
-        const { data } = await supabase.from('profiles').select('is_admin').eq('auth_id', user.id).single();
+        const { data } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
 
         if (data?.is_admin) {
             setIsAdmin(true);

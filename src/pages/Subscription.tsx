@@ -21,7 +21,7 @@ const Subscription = () => {
                 .update({
                     subscription_end_date: nextMonth.toISOString()
                 })
-                .eq('auth_id', user.id);
+                .eq('id', user.id);
 
             if (error) throw error;
 

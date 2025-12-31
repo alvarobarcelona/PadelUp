@@ -56,7 +56,7 @@ const Profile = () => {
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('auth_id', authUser.id)
+                .eq('id', authUser.id)
                 .single();
 
             if (profileError) throw profileError;
