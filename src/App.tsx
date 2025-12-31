@@ -24,7 +24,7 @@ function AppRoutes() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, _session) => {
       // Listen for PASSWORD_RECOVERY event to redirect to reset page
       if (event === 'PASSWORD_RECOVERY') {
         navigate('/reset-password');
