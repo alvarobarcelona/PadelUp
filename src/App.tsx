@@ -15,12 +15,14 @@ import Settings from './pages/Settings';
 import PendingApproval from './pages/PendingApproval';
 import Subscription from './pages/Subscription';
 import Banned from './pages/Banned';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/pending" element={<PendingApproval />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/banned" element={<Banned />} />
