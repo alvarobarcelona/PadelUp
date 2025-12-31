@@ -12,7 +12,7 @@ interface Player {
     id: string;
     username: string;
     avatar_url: string | null;
-    elo: number; // Added elo needed for calculation
+    elo: number;
 }
 
 const NewMatch = () => {
@@ -28,6 +28,7 @@ const NewMatch = () => {
     });
 
     const [sets, setSets] = useState([{ t1: 0, t2: 0 }, { t1: 0, t2: 0 }, { t1: 0, t2: 0 }]);
+    const [commentary, setCommentary] = useState('');
 
     // Selection Modal State
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
@@ -133,7 +134,6 @@ const NewMatch = () => {
             const t2Expected = calculateExpectedScore(t2Avg, t1Avg);
 
             // Calculate new individual ratings
-            // Team members share the same outcome and average opponent strength for now
             const newRatings = {
                 t1p1: calculateNewRating(selectedPlayers.t1p1.elo, t1Score, t1Expected),
                 t1p2: calculateNewRating(selectedPlayers.t1p2.elo, t1Score, t1Expected),
@@ -149,13 +149,13 @@ const NewMatch = () => {
                 team2_p1: selectedPlayers.t2p1.id,
                 team2_p2: selectedPlayers.t2p2.id,
                 score: sets,
-                winner_team: winnerTeam
+                winner_team: winnerTeam,
+                commentary: commentary.trim() || null
             });
 
             if (matchError) throw matchError;
 
             // 2. Update Player Profiles
-            // We use Promise.all to update all 4 in parallel.
             await Promise.all([
                 supabase.from('profiles').update({ elo: newRatings.t1p1 }).eq('id', selectedPlayers.t1p1.id),
                 supabase.from('profiles').update({ elo: newRatings.t1p2 }).eq('id', selectedPlayers.t1p2.id),
@@ -273,7 +273,7 @@ const NewMatch = () => {
 
     // STEP 2: SCORE
     return (
-        <div className="space-y-8 animate-fade-in">
+        <div className="space-y-8 animate-fade-in pb-10">
             <header className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => setStep(1)}><X size={24} /></Button>
                 <h1 className="text-2xl font-bold text-white">Match Result</h1>
@@ -304,6 +304,14 @@ const NewMatch = () => {
                 </div>
             </div>
 
+            {/* Fair Play Disclaimer */}
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-center">
+                <p className="text-xs text-yellow-500 font-medium leading-relaxed">
+                    Please ensure scores are recorded fairly.
+                    If an admin detects false records, the match will be deleted and ELO points reverted to maintain a fair and real community.
+                </p>
+            </div>
+
             {/* Score Inputs */}
             <div className="space-y-4">
                 <h3 className="text-center text-slate-400 text-sm tracking-widest uppercase">Set Scores</h3>
@@ -332,9 +340,21 @@ const NewMatch = () => {
                 </p>
             </div>
 
+            {/* Commentary Input */}
+            <div className="space-y-2 px-1">
+                <label className="text-xs font-semibold uppercase text-slate-500 tracking-wider">
+                    Match Notes (Optional)
+                </label>
+                <textarea
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                    rows={3}
+                    placeholder="Describe the match... (e.g., 'Epic comeback!', 'Windy day', 'Great rally')"
+                    value={commentary}
+                    onChange={(e) => setCommentary(e.target.value)}
+                />
+            </div>
 
             <div className="pt-8 space-y-3">
-
                 <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm="Are you sure?">
                     <Trophy size={20} />
                     Finish Match

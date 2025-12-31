@@ -18,6 +18,7 @@ interface MatchPreview {
     id: number;
     created_at: string;
     winner_team: number;
+    commentary?: string | null;
     // We only need basic info for the feed
     t1p1: { username: string };
     t1p2: { username: string };
@@ -74,7 +75,7 @@ const Home = () => {
             const { data: matchesData } = await supabase
                 .from('matches')
                 .select(`
-                id, created_at, winner_team,
+                id, created_at, winner_team, commentary,
                 t1p1:team1_p1(username),
                 t1p2:team1_p2(username),
                 t2p1:team2_p1(username),
@@ -221,24 +222,31 @@ const Home = () => {
                         </div>
                     ) : (
                         recentMatches.map((match) => (
-                            <div key={match.id} className="group flex items-center justify-between rounded-xl bg-slate-800/60 p-4 border border-slate-800 hover:border-slate-600 transition-all">
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-                                        <span className={cn(match.winner_team === 1 ? "text-green-400" : "text-slate-400")}>
-                                            {match.t1p1?.username} & {match.t1p2?.username}
-                                        </span>
-                                        <span className="text-slate-600 text-[10px]">VS</span>
-                                        <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
-                                            {match.t2p1?.username} & {match.t2p2?.username}
+                            <div key={match.id} className="group flex flex-col gap-2 rounded-xl bg-slate-800/60 p-4 border border-slate-800 hover:border-slate-600 transition-all">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                                            <span className={cn(match.winner_team === 1 ? "text-green-400" : "text-slate-400")}>
+                                                {match.t1p1?.username} & {match.t1p2?.username}
+                                            </span>
+                                            <span className="text-slate-600 text-[10px]">VS</span>
+                                            <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
+                                                {match.t2p1?.username} & {match.t2p2?.username}
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] text-slate-500">
+                                            {new Date(match.created_at).toLocaleDateString()}
                                         </span>
                                     </div>
-                                    <span className="text-[10px] text-slate-500">
-                                        {new Date(match.created_at).toLocaleDateString()}
-                                    </span>
+                                    <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center group-hover:bg-slate-600 transition-colors">
+                                        <HistoryIcon size={14} className="text-slate-400" />
+                                    </div>
                                 </div>
-                                <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center group-hover:bg-slate-600 transition-colors">
-                                    <HistoryIcon size={14} className="text-slate-400" />
-                                </div>
+                                {match.commentary && (
+                                    <div className="mt-1 flex gap-2 pl-2 border-l-2 border-slate-700">
+                                        <p className="text-xs text-slate-400 italic leading-relaxed line-clamp-2">"{match.commentary}"</p>
+                                    </div>
+                                )}
                             </div>
                         ))
                     )}
