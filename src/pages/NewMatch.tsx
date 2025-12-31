@@ -142,7 +142,15 @@ const NewMatch = () => {
             };
             // --- ELO CALCULATION END ---
 
-            // 1. Insert Match
+            // 1. Prepare Match Data
+            const { data: { user } } = await supabase.auth.getUser();
+            const eloSnapshot = {
+                t1p1: newRatings.t1p1,
+                t1p2: newRatings.t1p2,
+                t2p1: newRatings.t2p1,
+                t2p2: newRatings.t2p2
+            };
+
             const { error: matchError } = await supabase.from('matches').insert({
                 team1_p1: selectedPlayers.t1p1.id,
                 team1_p2: selectedPlayers.t1p2.id,
@@ -150,28 +158,19 @@ const NewMatch = () => {
                 team2_p2: selectedPlayers.t2p2.id,
                 score: sets,
                 winner_team: winnerTeam,
-                commentary: commentary.trim() || null
+                commentary: commentary.trim() || null,
+                status: 'pending', // Explicitly pending
+                elo_snapshot: eloSnapshot,
+                created_by: user?.id
             });
 
             if (matchError) throw matchError;
 
-            // 2. Update Player Profiles
-            await Promise.all([
-                supabase.from('profiles').update({ elo: newRatings.t1p1 }).eq('id', selectedPlayers.t1p1.id),
-                supabase.from('profiles').update({ elo: newRatings.t1p2 }).eq('id', selectedPlayers.t1p2.id),
-                supabase.from('profiles').update({ elo: newRatings.t2p1 }).eq('id', selectedPlayers.t2p1.id),
-                supabase.from('profiles').update({ elo: newRatings.t2p2 }).eq('id', selectedPlayers.t2p2.id),
-            ]);
+            // Note: We do NOT update profiles or achievements here anymore.
+            // This happens on confirmation.
 
-            // 3. Check Achievements for all players
-            await Promise.all([
-                checkAchievements(selectedPlayers.t1p1.id),
-                checkAchievements(selectedPlayers.t1p2.id),
-                checkAchievements(selectedPlayers.t2p1.id),
-                checkAchievements(selectedPlayers.t2p2.id),
-            ]);
-
-            navigate('/history');
+            alert("Match submitted! Opponents have 24h to confirm the result.");
+            navigate('/history'); // Or Home
         } catch (error: any) {
             console.error('Error saving match:', error);
             alert('Failed to save match: ' + error.message);
@@ -360,7 +359,7 @@ const NewMatch = () => {
                     Finish Match
                 </Button>
                 <p className="text-center text-xs text-slate-500">
-                    This will update player ratings and rankings immediately.
+                    This will submit the match for verification (24h auto-accept).
                 </p>
             </div>
         </div>

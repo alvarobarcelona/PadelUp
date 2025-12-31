@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from 'react';
-import { Plus, Trophy, History as HistoryIcon, User } from 'lucide-react';
+import { Plus, Trophy, History as HistoryIcon, User, Check, X, Clock, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
@@ -19,21 +18,32 @@ interface MatchPreview {
     created_at: string;
     winner_team: number;
     commentary?: string | null;
+    status: 'pending' | 'confirmed' | 'rejected';
+    created_by?: string | null;
     // We only need basic info for the feed
     t1p1: { username: string };
     t1p2: { username: string };
     t2p1: { username: string };
     t2p2: { username: string };
+    team1_p1: string;
+    team1_p2: string;
+    team2_p1: string;
+    team2_p2: string;
 }
 
 const Home = () => {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [recentMatches, setRecentMatches] = useState<MatchPreview[]>([]);
+    const [pendingMatches, setPendingMatches] = useState<MatchPreview[]>([]);
     const [recentForm, setRecentForm] = useState<boolean[]>([]);
     const [, setLoading] = useState(true);
 
     useEffect(() => {
         loadDashboardData();
+        // Auto-process expired matches on mount (Lazy Cron)
+        supabase.rpc('process_expired_matches').then(({ error }) => {
+            if (error) console.error('Error auto-processing matches:', error);
+        });
     }, []);
 
     const loadDashboardData = async () => {
@@ -52,11 +62,12 @@ const Home = () => {
                 if (profileData) {
                     setProfile(profileData);
 
-                    // Fetch user's last 5 matches for form
+                    // Fetch user's last 5 matches for form (only confirmed)
                     const { data: userMatches } = await supabase
                         .from('matches')
                         .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2')
                         .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
+                        .eq('status', 'confirmed')
                         .order('created_at', { ascending: false })
                         .limit(5);
 
@@ -66,21 +77,39 @@ const Home = () => {
                             const isTeam2 = m.team2_p1 === profileData.id || m.team2_p2 === profileData.id;
                             return (isTeam1 && m.winner_team === 1) || (isTeam2 && m.winner_team === 2);
                         });
-                        setRecentForm(form.reverse()); // Show oldest to newest left to right? Or newest left? usually newest right. Let's keep newest right.
+                        setRecentForm(form.reverse());
                     }
+
+                    // Fetch Pending Matches for User
+                    const { data: pending } = await supabase
+                        .from('matches')
+                        .select(`
+                            id, created_at, winner_team, commentary, status, created_by,
+                            team1_p1, team1_p2, team2_p1, team2_p2,
+                            t1p1:team1_p1(username),
+                            t1p2:team1_p2(username),
+                            t2p1:team2_p1(username),
+                            t2p2:team2_p2(username)
+                        `)
+                        .eq('status', 'pending')
+                        .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
+                        .order('created_at', { ascending: false });
+
+                    if (pending) setPendingMatches(pending as any);
                 }
             }
 
-            // 2. Fetch Recent Matches (Global Feed)
+            // 2. Fetch Recent Matches (Global Feed - OK only CONFIRMED)
             const { data: matchesData } = await supabase
                 .from('matches')
                 .select(`
-                id, created_at, winner_team, commentary,
+                id, created_at, winner_team, commentary, status,
                 t1p1:team1_p1(username),
                 t1p2:team1_p2(username),
                 t2p1:team2_p1(username),
                 t2p2:team2_p2(username)
             `)
+                .eq('status', 'confirmed')
                 .order('created_at', { ascending: false })
                 .limit(5);
 
@@ -92,6 +121,28 @@ const Home = () => {
             console.error('Error loading dashboard:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleConfirm = async (matchId: number) => {
+        if (!confirm('Confirm this match result? This will update ELO ratings.')) return;
+        try {
+            const { error } = await supabase.rpc('confirm_match', { match_id: matchId });
+            if (error) throw error;
+            loadDashboardData(); // Refresh UI
+        } catch (error: any) {
+            alert('Error confirming match: ' + error.message);
+        }
+    };
+
+    const handleReject = async (matchId: number) => {
+        if (!confirm('Reject this match? It will be deleted. You can always create a new one.')) return;
+        try {
+            const { error } = await supabase.rpc('reject_match', { match_id: matchId });
+            if (error) throw error;
+            loadDashboardData();
+        } catch (error: any) {
+            alert('Error rejecting match: ' + error.message);
         }
     };
 
@@ -176,6 +227,73 @@ const Home = () => {
 
             )}
 
+            {/* PENDING VERIFICATION SECTION */}
+            {pendingMatches.length > 0 && (
+                <div className="animate-pulse-slow">
+                    <div className="flex items-center justify-between mb-2">
+                        <h2 className="text-sm font-bold text-yellow-500 flex items-center gap-2">
+                            <Clock size={16} />
+                            Pending Verification
+                        </h2>
+                    </div>
+                    <div className="space-y-3">
+                        {pendingMatches.map((match) => {
+                            const isUserTeam1 = match.team1_p1 === profile?.id || match.team1_p2 === profile?.id;
+                            const isCreatorTeam1 = match.created_by && (match.team1_p1 === match.created_by || match.team1_p2 === match.created_by);
+                            const isCreatorTeam2 = match.created_by && (match.team2_p1 === match.created_by || match.team2_p2 === match.created_by);
+
+                            // User can verify ONLY if they are NOT on the creating team
+                            // If created_by is null (legacy), allow everyone to verify (or no one? Let's allow for now to unblock)
+                            const canVerify = match.created_by
+                                ? (isUserTeam1 && !isCreatorTeam1) || (!isUserTeam1 && !isCreatorTeam2)
+                                : true;
+
+                            return (
+                                <div key={match.id} className="relative flex flex-col gap-3 rounded-xl bg-yellow-500/10 p-4 border border-yellow-500/30">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                                                <span className={cn(match.winner_team === 1 ? "text-green-400" : "text-slate-400")}>
+                                                    {match.t1p1?.username} & {match.t1p2?.username}
+                                                </span>
+                                                <span className="text-slate-600 text-[10px]">VS</span>
+                                                <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
+                                                    {match.t2p1?.username} & {match.t2p2?.username}
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-yellow-500 flex items-center gap-1">
+                                                <Clock size={10} /> Auto-accepts in 24h
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {canVerify ? (
+                                        <div className="flex gap-2 mt-1">
+                                            <button
+                                                onClick={() => handleConfirm(match.id)}
+                                                className="flex-1 bg-green-500/20 hover:bg-green-500 text-green-500 hover:text-white py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
+                                                <Check size={14} /> Confirm
+                                            </button>
+                                            <button
+                                                onClick={() => handleReject(match.id)}
+                                                className="flex-1 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
+                                                <X size={14} /> Reject
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-1 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-center">
+                                            <p className="text-xs text-slate-400 italic flex items-center justify-center gap-2">
+                                                <Clock size={12} /> Waiting for opponent confirmation...
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+
             {/* Main Action - Floating/Prominent */}
             <Link
                 to="/new-match"
@@ -218,7 +336,7 @@ const Home = () => {
                 <div className="space-y-3">
                     {recentMatches.length === 0 ? (
                         <div className="text-center py-8 text-slate-500 text-sm bg-slate-800/30 rounded-xl border border-dashed border-slate-800">
-                            No recent matches found.
+                            No recent confirmed matches found.
                         </div>
                     ) : (
                         recentMatches.map((match) => (

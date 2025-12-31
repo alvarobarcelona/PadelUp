@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { checkAchievements } from '../lib/achievements';
 import { useNavigate } from 'react-router-dom';
+import { AchievementModal } from '../components/AchievementModal';
 
 const iconMap: Record<string, any> = {
     'Trophy': Trophy,
@@ -22,6 +23,7 @@ const Profile = () => {
     const [uploading, setUploading] = useState(false);
     const [allAchievements, setAllAchievements] = useState<any[]>([]);
     const [userAchievementIds, setUserAchievementIds] = useState<Set<string>>(new Set());
+    const [selectedAchievement, setSelectedAchievement] = useState<any | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [user, setUser] = useState<{
         id: string; // Added ID for storage path
@@ -87,6 +89,7 @@ const Profile = () => {
                 .from('matches')
                 .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2, created_at, score')
                 .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
+                .eq('status', 'confirmed')
                 .order('created_at', { ascending: false }); // Newest first
 
             let wins = 0;
@@ -367,14 +370,18 @@ const Profile = () => {
                                 const Icon = iconMap[badge.icon] || Trophy;
 
                                 return (
-                                    <div key={badge.id} className={`flex flex-col items-center flex-shrink-0 space-y-2 w-20 transition-all ${isUnlocked ? '' : 'opacity-40 grayscale'}`}>
+                                    <button
+                                        key={badge.id}
+                                        onClick={() => setSelectedAchievement(badge)}
+                                        className={`flex flex-col items-center flex-shrink-0 space-y-2 w-20 transition-all hover:scale-105 active:scale-95 ${isUnlocked ? '' : 'opacity-40 grayscale'}`}
+                                    >
                                         <div className={`h-14 w-14 rounded-full p-[2px] shadow-lg ${isUnlocked ? 'bg-gradient-to-br from-yellow-400/20 to-orange-500/20 shadow-orange-500/10' : 'bg-slate-700/50 shadow-none'}`}>
                                             <div className={`flex h-full w-full items-center justify-center rounded-full border-2 ${isUnlocked ? 'bg-slate-800 border-slate-700' : 'bg-slate-800/50 border-slate-700/50'}`}>
                                                 <Icon size={24} className={isUnlocked ? "text-yellow-500" : "text-slate-500"} />
                                             </div>
                                         </div>
                                         <span className="text-[10px] font-bold text-slate-300 text-center leading-tight line-clamp-2 min-h-[2.5em] flex items-center justify-center">{badge.name}</span>
-                                    </div>
+                                    </button>
                                 );
                             })}
                     </div>
@@ -391,6 +398,13 @@ const Profile = () => {
             <div className="text-center text-xs text-slate-600">
                 PadelUp Version 1.2.0 {user?.is_admin ? " (Admin Mode)" : ""}
             </div>
+
+            <AchievementModal
+                isOpen={!!selectedAchievement}
+                onClose={() => setSelectedAchievement(null)}
+                achievement={selectedAchievement}
+                isUnlocked={selectedAchievement ? userAchievementIds.has(selectedAchievement.id) : false}
+            />
         </div>
     );
 };

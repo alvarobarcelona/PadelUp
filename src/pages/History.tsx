@@ -46,6 +46,7 @@ const History = () => {
           team2_p1(username, avatar_url),
           team2_p2(username, avatar_url)
         `)
+                .eq('status', 'confirmed')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;

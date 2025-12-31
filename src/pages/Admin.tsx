@@ -236,13 +236,13 @@ const Admin = () => {
                     onClick={() => setActiveTab('players')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'players' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                 >
-                    Members
+                    Members ({activeUsers.length})
                 </button>
                 <button
                     onClick={() => setActiveTab('matches')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'matches' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                 >
-                    Matches
+                    Matches ({filteredMatches.length})
                 </button>
             </div>
 
