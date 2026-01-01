@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trophy, History as HistoryIcon, User, Check, X, Clock } from 'lucide-react';
+import { Plus, Trophy, History as HistoryIcon, User, Check, X, Clock, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
+import { WelcomeModal } from '../components/WelcomeModal';
 
 interface Profile {
     id: string;
@@ -20,6 +21,7 @@ interface MatchPreview {
     commentary?: string | null;
     status: 'pending' | 'confirmed' | 'rejected';
     created_by?: string | null;
+    score?: any[];
     // We only need basic info for the feed
     t1p1: { username: string };
     t1p2: { username: string };
@@ -37,6 +39,7 @@ const Home = () => {
     const [pendingMatches, setPendingMatches] = useState<MatchPreview[]>([]);
     const [recentForm, setRecentForm] = useState<boolean[]>([]);
     const [, setLoading] = useState(true);
+    const [showWelcome, setShowWelcome] = useState(false);
 
     useEffect(() => {
         loadDashboardData();
@@ -44,7 +47,18 @@ const Home = () => {
         supabase.rpc('process_expired_matches').then(({ error }) => {
             if (error) console.error('Error auto-processing matches:', error);
         });
+
+        // Check if user has seen welcome modal this session
+        const hasSeenWelcome = sessionStorage.getItem('padelup_welcome_seen_session');
+        if (!hasSeenWelcome) {
+            setShowWelcome(true);
+        }
     }, []);
+
+    const handleCloseWelcome = () => {
+        setShowWelcome(false);
+        sessionStorage.setItem('padelup_welcome_seen_session', 'true');
+    };
 
     const loadDashboardData = async () => {
         try {
@@ -84,7 +98,7 @@ const Home = () => {
                     const { data: pending } = await supabase
                         .from('matches')
                         .select(`
-                            id, created_at, winner_team, commentary, status, created_by,
+                            id, created_at, winner_team, commentary, status, created_by, score,
                             team1_p1, team1_p2, team2_p1, team2_p2,
                             t1p1:team1_p1(username),
                             t1p2:team1_p2(username),
@@ -136,7 +150,7 @@ const Home = () => {
     };
 
     const handleReject = async (matchId: number) => {
-        if (!confirm('Reject this match? It will be deleted. You can always create a new one.')) return;
+        if (!confirm('Reject this game? It will be deleted. You can always create a new one. But remember that rejecting it to avoid a drop in your ELO rating may result in a temporary suspension.')) return;
         try {
             const { error } = await supabase.rpc('reject_match', { match_id: matchId });
             if (error) throw error;
@@ -148,6 +162,7 @@ const Home = () => {
 
     return (
         <div className="space-y-6 animate-fade-in relative z-10">
+            <WelcomeModal isOpen={showWelcome} onClose={handleCloseWelcome} />
             <header className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-white tracking-tight">PadelUp</h1>
@@ -161,7 +176,7 @@ const Home = () => {
             </header>
 
             {/* Hero Stats Card (Only if logged in with a profile) */}
-            {profile ? (
+            {profile && (
                 <div className="grid grid-cols-2 gap-4">
                     <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">
                         <div className="flex justify-between items-start mb-2">
@@ -214,16 +229,6 @@ const Home = () => {
                         <p className="text-[10px] text-slate-500 mt-2 font-medium">Last 5 matches</p>
                     </div>
                 </div>
-            ) : (
-                <div className="rounded-2xl bg-slate-800 p-6 text-center border border-slate-700">
-                    <p className="text-slate-300 mb-4">Join the club to track your stats!</p>
-                    <Link to="/auth" className="inline-block rounded-xl bg-green-500 px-6 py-2 font-bold text-slate-900 shadow-lg hover:bg-green-400 transition-colors">
-                        Login / Register
-                    </Link>
-                    <div className="mt-4 text-xs text-slate-500">
-                        Or just record matches as guest below
-                    </div>
-                </div>
 
             )}
 
@@ -248,22 +253,36 @@ const Home = () => {
                                 ? (isUserTeam1 && !isCreatorTeam1) || (!isUserTeam1 && !isCreatorTeam2)
                                 : true;
 
+
+                            const scoreList = Array.isArray(match.score) ? match.score : [];
+                            const scoreStr = scoreList.map((s: any) => `${s.t1}-${s.t2}`).join('  ');
+
                             return (
                                 <div key={match.id} className="relative flex flex-col gap-3 rounded-xl bg-yellow-500/10 p-4 border border-yellow-500/30">
                                     <div className="flex items-center justify-between">
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-                                                <span className={cn(match.winner_team === 1 ? "text-green-400" : "text-slate-400")}>
-                                                    {match.t1p1?.username} & {match.t1p2?.username}
-                                                </span>
-                                                <span className="text-slate-600 text-[10px]">VS</span>
-                                                <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
-                                                    {match.t2p1?.username} & {match.t2p2?.username}
-                                                </span>
+                                        <div className="flex flex-col gap-1 w-full">
+                                            <div className="flex items-center justify-between text-sm font-semibold text-slate-200">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={cn(match.winner_team === 1 ? "text-green-400" : "text-slate-400")}>
+                                                        {match.t1p1?.username} & {match.t1p2?.username}
+                                                    </span>
+                                                    <span className="text-slate-600 text-[10px]">VS</span>
+                                                    <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
+                                                        {match.t2p1?.username} & {match.t2p2?.username}
+                                                    </span>
+                                                </div>
+                                                <div className="font-mono text-white text-xs bg-slate-900/50 px-2 py-0.5 rounded">
+                                                    {scoreStr}
+                                                </div>
                                             </div>
-                                            <p className="text-[10px] text-yellow-500 flex items-center gap-1">
-                                                <Clock size={10} /> Auto-accepts in 24h
-                                            </p>
+                                            <div className="flex justify-between items-center mt-1">
+                                                <p className="text-[10px] text-yellow-500 flex items-center gap-1">
+                                                    <Clock size={10} /> Auto-accepts in 24h
+                                                </p>
+                                                <p className="text-[10px] text-slate-400">
+                                                    {new Date(match.created_at).toLocaleString()}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                     {canVerify ? (
