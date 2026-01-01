@@ -1,4 +1,4 @@
-import { Handshake, ShieldCheck, TrendingUp, X, Heart } from 'lucide-react';
+import { Handshake, ShieldCheck, TrendingUp, Heart } from 'lucide-react';
 
 interface WelcomeModalProps {
     isOpen: boolean;

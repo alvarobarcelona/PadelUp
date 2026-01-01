@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trophy, History as HistoryIcon, User, Check, X, Clock, TrendingUp } from 'lucide-react';
+import { Plus, Trophy, History as HistoryIcon, User, Check, X, Clock} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
