@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trophy, History as HistoryIcon, User, Check, X, Clock} from 'lucide-react';
+import { Plus, Trophy, History as HistoryIcon, User, Check, X, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
@@ -255,36 +255,50 @@ const Home = () => {
 
 
                             const scoreList = Array.isArray(match.score) ? match.score : [];
-                            const scoreStr = scoreList.map((s: any) => `${s.t1}-${s.t2}`).join('  ');
+
 
                             return (
-                                <div key={match.id} className="relative flex flex-col gap-3 rounded-xl bg-yellow-500/10 p-4 border border-yellow-500/30">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex flex-col gap-1 w-full">
-                                            <div className="flex items-center justify-between text-sm font-semibold text-slate-200">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={cn(match.winner_team === 1 ? "text-green-400" : "text-slate-400")}>
-                                                        {match.t1p1?.username} & {match.t1p2?.username}
-                                                    </span>
-                                                    <span className="text-slate-600 text-[10px]">VS</span>
-                                                    <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
-                                                        {match.t2p1?.username} & {match.t2p2?.username}
-                                                    </span>
-                                                </div>
-                                                <div className="font-mono text-white text-xs bg-slate-900/50 px-2 py-0.5 rounded">
-                                                    {scoreStr}
-                                                </div>
+                                <div key={match.id} className="relative flex flex-col gap-1 rounded-xl bg-yellow-500/10 p-4 border border-yellow-500/30">
+                                    {/* Header: Time and Auto-Accept */}
+                                    <div className="flex justify-between items-center pb-2 border-b border-yellow-500/10">
+                                        <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
+                                            <Clock size={12} /> Auto-accepts in 24h
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 font-medium">
+                                            {new Date(match.created_at).toLocaleString()}
+                                        </p>
+                                    </div>
+
+                                    {/* Main Content: Teams vs Score */}
+                                    <div className="flex items-center justify-between gap-3">
+                                        {/* Teams Column */}
+                                        <div className="flex flex-col gap-2 overflow-hidden flex-1">
+                                            {/* Team 1 */}
+                                            <div className={cn("flex items-center gap-2 text-sm font-semibold px-2 py-1.5 rounded-lg bg-slate-900/40", match.winner_team === 1 ? "text-green-400 ring-1 ring-green-500/30 bg-green-500/10" : "text-slate-300")}>
+                                                <div className={match.winner_team === 1 ? "bg-green-500" : "bg-slate-500"} />
+                                                <span className="truncate">{match.t1p1?.username} & {match.t1p2?.username}</span>
                                             </div>
-                                            <div className="flex justify-between items-center mt-1">
-                                                <p className="text-[10px] text-yellow-500 flex items-center gap-1">
-                                                    <Clock size={10} /> Auto-accepts in 24h
-                                                </p>
-                                                <p className="text-[10px] text-slate-400">
-                                                    {new Date(match.created_at).toLocaleString()}
-                                                </p>
+                                            <span className="flex justify-center items-center text-slate-600 text-[10px]">VS</span>
+                                            {/* Team 2 */}
+                                            <div className={cn("flex items-center gap-2 text-sm font-semibold px-2 py-1.5 rounded-lg bg-slate-900/40", match.winner_team === 2 ? "text-green-400 ring-1 ring-green-500/30 bg-green-500/10" : "text-slate-300")}>
+                                                <div className={match.winner_team === 2 ? "bg-green-500" : "bg-slate-500"} />
+                                                <span className="truncate">{match.t2p1?.username} & {match.t2p2?.username}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Score Column */}
+                                        <div className="flex flex-col items-center justify-center bg-slate-900/60 p-2 rounded-lg border border-slate-700/50 min-w-[80px]">
+                                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Score</span>
+                                            <div className="flex flex-col gap-0.5">
+                                                {scoreList.map((s: any, i: number) => (
+                                                    <span key={i} className="font-mono text-white font-bold text-sm text-center">
+                                                        {s.t1} - {s.t2}
+                                                    </span>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
+
                                     {canVerify ? (
                                         <div className="flex gap-2 mt-1">
                                             <button

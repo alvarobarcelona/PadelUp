@@ -9,7 +9,7 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex justify-center p-5 animate-fade-in">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity"
@@ -23,7 +23,7 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
                     <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
                     <Handshake size={64} className="text-white mx-auto mb-2 relative z-10" />
                     <h2 className="text-3xl font-black text-white relative z-10 tracking-tight">Welcome to PadelUp</h2>
-                    <p className="text-green-100 font-medium relative z-10">More than just a game.</p>
+                    <p className="text-green-100 font-medium relative z-10">More than just a padel community.</p>
                 </div>
 
                 <div className="p-6 space-y-6">
@@ -67,7 +67,7 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
                         <div>
                             <h3 className="font-bold text-white text-lg">Support the Community</h3>
                             <p className="text-slate-400 text-sm leading-relaxed">
-                                Your monthly subscription keeps PadelUp alive and evolving. It directly supports new features and community events.
+                                After the test period, your monthly subscription keeps PadelUp alive and evolving. It directly supports new features and new functions.
                             </p>
                         </div>
                     </div>

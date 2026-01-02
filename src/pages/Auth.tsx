@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 
 const Auth = () => {
     const navigate = useNavigate();
@@ -13,6 +13,14 @@ const Auth = () => {
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+
+    const getFriendlyErrorMessage = (msg: string) => {
+        if (msg.includes('Invalid login credentials')) return 'Incorrect email or password.';
+        if (msg.includes('Password should be at least')) return 'Password is too short (min 6 chars).';
+        if (msg.includes('User already registered')) return 'This email is already registered.';
+        return msg;
+    };
 
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,15 +31,15 @@ const Auth = () => {
             const { data: profileCheck, error: profileCheckError } = await supabase
                 .from('profiles')
                 .select('id')
-                .eq('email', email) 
+                .eq('email', email)
                 .single();
 
             if (profileCheckError || !profileCheck) {
-                
+
                 if (profileCheckError?.code === 'PGRST116' || !profileCheck) {
                     throw new Error('Email not found in our records.');
                 }
-                
+
             }
 
 
@@ -43,7 +51,7 @@ const Auth = () => {
             setIsForgotPassword(false);
             setIsLogin(true);
         } catch (err: any) {
-            setError(err.message);
+            setError(getFriendlyErrorMessage(err.message));
         } finally {
             setLoading(false);
         }
@@ -61,28 +69,47 @@ const Auth = () => {
 
         try {
             if (isLogin) {
+                // Pre-check for email existence to provide specific error message
+                const { data: userExists } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                if (!userExists) {
+                    throw new Error('Email not found. Please sign up first.');
+                }
+
                 const { error } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
-                if (error) throw error;
+
+                if (error) {
+                    // Since email exists, this is likely a password error
+                    if (error.message.includes('Invalid login credentials')) {
+                        throw new Error('Incorrect password.');
+                    }
+                    throw error;
+                }
                 navigate('/');
             } else {
                 const { error } = await supabase.auth.signUp({
                     email,
                     password,
-                    options: {
-                        data: {
-                            username,
-                            email, // Ensure email is saved in metadata if needed, though usually automatic
-                        },
-                    },
                 });
                 if (error) throw error;
-                alert('Check your email for the confirmation link!');
+
+                const { error: updateError } = await supabase.auth.updateUser({
+                    data: { username }
+                });
+                if (updateError) console.error("Error saving username meta", updateError);
+
+
+                alert('Success! Check your email for the confirmation link!');
             }
         } catch (err: any) {
-            setError(err.message);
+            setError(getFriendlyErrorMessage(err.message));
         } finally {
             setLoading(false);
         }
@@ -138,13 +165,22 @@ const Auth = () => {
                                     </button>
                                 )}
                             </div>
-                            <input
-                                type="password"
-                                required={!isForgotPassword}
-                                className="mt-1 block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 transition-colors"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
+                            <div className="relative mt-1">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    required={!isForgotPassword}
+                                    className="block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 pr-10 transition-colors"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
                         </div>
                     )}
 
