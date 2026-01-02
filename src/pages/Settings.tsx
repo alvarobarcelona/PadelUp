@@ -391,6 +391,38 @@ const Settings = () => {
                     </p>
                 </div>
 
+                {/* ELO Info */}
+                <div className="space-y-2">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">How it works</h2>
+                    <div className="rounded-xl bg-slate-800 border border-slate-700/50 p-4 space-y-3">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 rounded-full bg-blue-500/10 text-blue-400">
+                                <Shield size={20} />
+                            </div>
+                            <span className="font-medium text-white">Dynamic ELO System</span>
+                        </div>
+                        <div className="text-xs text-slate-400 space-y-2 leading-relaxed">
+                            <p>
+                                PadelUp uses a **Dynamic K-Factor** system that adapts to your experience level. This allows new players to reach their real level faster while providing stability for veterans.
+                            </p>
+                            <ul className="list-disc pl-4 space-y-1">
+                                <li>
+                                    <strong className="text-slate-300">Placement (0-10 matches):</strong> K=48. High adjustments to quickly find your skill level.
+                                </li>
+                                <li>
+                                    <strong className="text-slate-300">Standard (10-30 matches):</strong> K=32. Standard volatility.
+                                </li>
+                                <li>
+                                    <strong className="text-slate-300">Stable (30+ matches):</strong> K=24. Lower adjustments to reward consistency.
+                                </li>
+                            </ul>
+                            <p className="mt-2 text-[10px] text-slate-500 italic">
+                                Note: Points exchanged are calculated individually. A new player might gain +40 points for a win, while their veteran partner gains +20.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Logout */}
                 <Button
                     variant="danger"

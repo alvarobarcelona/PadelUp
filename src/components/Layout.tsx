@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Home, Trophy, PlusCircle, Users, Loader2 } from 'lucide-react';
+import { Home, Trophy, Users, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
 
@@ -91,11 +91,6 @@ const Layout = () => {
                         </NavLink>
                     </li>
                     <li>
-                        <NavLink to="/new-match" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
-                            <PlusCircle size={36} className="-mt-8 text-green-500 bg-slate-900 rounded-full p-1 shadow-lg shadow-green-500/20 transition-colors duration-300" />
-                        </NavLink>
-                    </li>
-                    <li>
                         <NavLink to="/rankings" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
                             <Trophy size={22} />
                             <span className="text-[10px] font-medium">Rank</span>
@@ -103,7 +98,7 @@ const Layout = () => {
                     </li>
                 </ul>
             </nav>
-        </div>
+        </div >
     );
 };
 

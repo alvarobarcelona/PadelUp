@@ -9,7 +9,7 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-center p-5 animate-fade-in">
+        <div className="fixed  z-50 flex justify-center p-5 animate-fade-in">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity"

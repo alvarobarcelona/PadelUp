@@ -274,13 +274,13 @@ const Home = () => {
                                         {/* Teams Column */}
                                         <div className="flex flex-col gap-2 overflow-hidden flex-1">
                                             {/* Team 1 */}
-                                            <div className={cn("flex items-center gap-2 text-sm font-semibold px-2 py-1.5 rounded-lg bg-slate-900/40", match.winner_team === 1 ? "text-green-400 ring-1 ring-green-500/30 bg-green-500/10" : "text-slate-300")}>
+                                            <div className={cn("flex items-center justify-center gap-2 text-sm font-semibold px-2 py-1.5 rounded-lg bg-slate-900/40", match.winner_team === 1 ? "text-green-400 ring-1 ring-green-500/30 bg-green-500/10" : "text-slate-300")}>
                                                 <div className={match.winner_team === 1 ? "bg-green-500" : "bg-slate-500"} />
                                                 <span className="truncate">{match.t1p1?.username} & {match.t1p2?.username}</span>
                                             </div>
                                             <span className="flex justify-center items-center text-slate-600 text-[10px]">VS</span>
                                             {/* Team 2 */}
-                                            <div className={cn("flex items-center gap-2 text-sm font-semibold px-2 py-1.5 rounded-lg bg-slate-900/40", match.winner_team === 2 ? "text-green-400 ring-1 ring-green-500/30 bg-green-500/10" : "text-slate-300")}>
+                                            <div className={cn("flex items-center justify-center gap-2 text-sm font-semibold px-2 py-1.5 rounded-lg bg-slate-900/40", match.winner_team === 2 ? "text-green-400 ring-1 ring-green-500/30 bg-green-500/10" : "text-slate-300")}>
                                                 <div className={match.winner_team === 2 ? "bg-green-500" : "bg-slate-500"} />
                                                 <span className="truncate">{match.t2p1?.username} & {match.t2p2?.username}</span>
                                             </div>

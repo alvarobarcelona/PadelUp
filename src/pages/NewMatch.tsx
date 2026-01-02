@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { calculateTeamAverage, calculateExpectedScore, calculateNewRating } from '../lib/elo';
+import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor } from '../lib/elo';
 
 
 interface Player {
@@ -124,6 +124,34 @@ const NewMatch = () => {
             const winnerTeam = t1Sets > t2Sets ? 1 : 2;
 
             // --- ELO CALCULATION START ---
+
+            // 1. Fetch match counts for K-Factor determination
+
+            // We need to count matches for each player. 
+            // Optimal way without new RPC: Parallel count queries.
+            const fetchMatchCount = async (pid: string) => {
+                const { count } = await supabase
+                    .from('matches')
+                    .select('id', { count: 'exact', head: true })
+                    .or(`team1_p1.eq.${pid},team1_p2.eq.${pid},team2_p1.eq.${pid},team2_p2.eq.${pid}`);
+                return count || 0;
+            };
+
+            const [count1, count2, count3, count4] = await Promise.all([
+                fetchMatchCount(selectedPlayers.t1p1.id),
+                fetchMatchCount(selectedPlayers.t1p2.id),
+                fetchMatchCount(selectedPlayers.t2p1.id),
+                fetchMatchCount(selectedPlayers.t2p2.id)
+            ]);
+
+            const k1 = getKFactor(count1);
+            const k2 = getKFactor(count2);
+            const k3 = getKFactor(count3);
+            const k4 = getKFactor(count4);
+
+            console.log('Match Counts:', { count1, count2, count3, count4 });
+            console.log('K-Factors:', { k1, k2, k3, k4 });
+
             const t1Avg = calculateTeamAverage(selectedPlayers.t1p1.elo, selectedPlayers.t1p2.elo);
             const t2Avg = calculateTeamAverage(selectedPlayers.t2p1.elo, selectedPlayers.t2p2.elo);
 
@@ -133,12 +161,12 @@ const NewMatch = () => {
             const t1Expected = calculateExpectedScore(t1Avg, t2Avg);
             const t2Expected = calculateExpectedScore(t2Avg, t1Avg);
 
-            // Calculate new individual ratings
+            // Calculate new individual ratings with Dynamic K
             const newRatings = {
-                t1p1: calculateNewRating(selectedPlayers.t1p1.elo, t1Score, t1Expected),
-                t1p2: calculateNewRating(selectedPlayers.t1p2.elo, t1Score, t1Expected),
-                t2p1: calculateNewRating(selectedPlayers.t2p1.elo, t2Score, t2Expected),
-                t2p2: calculateNewRating(selectedPlayers.t2p2.elo, t2Score, t2Expected),
+                t1p1: calculateNewRating(selectedPlayers.t1p1.elo, t1Score, t1Expected, k1),
+                t1p2: calculateNewRating(selectedPlayers.t1p2.elo, t1Score, t1Expected, k2),
+                t2p1: calculateNewRating(selectedPlayers.t2p1.elo, t2Score, t2Expected, k3),
+                t2p2: calculateNewRating(selectedPlayers.t2p2.elo, t2Score, t2Expected, k4),
             };
             // --- ELO CALCULATION END ---
 

@@ -1,11 +1,24 @@
 // Simple Elo Rating Implementation
 
-export const K_FACTOR = 32;
-export const DEFAULT_ELO = 1150; // Level 3 Start
+export const K_FACTOR = 32; // Default Standard
+export const STARTING_ELO = 1150;
+export const DEFAULT_ELO = STARTING_ELO; // Alias for backward compatibility
+
+// Dynamic K-Factors
+export const K_PLACEMENT = 48; // 0-10 matches
+export const K_STANDARD = 32; // 10-30 matches
+export const K_STABLE = 24; // 30+ matches
+
+export const getKFactor = (matchesPlayed: number) => {
+  if (matchesPlayed < 10) return K_PLACEMENT;
+  if (matchesPlayed < 30) return K_STANDARD;
+  return K_STABLE;
+};
 
 export const LEVELS = [
-  { level: 1, min: 0, max: 900, label: "Beginner" },
-  { level: 2, min: 900, max: 1050, label: "Basic" },
+  { level: 1, min: 0, max: 800, label: "Beginner" },
+  { level: 2, min: 800, max: 900, label: "Basic" },
+  { level: 2.5, min: 900, max: 1050, label: "Basic+" },
   { level: 3, min: 1050, max: 1200, label: "Lower Intermediate" },
   { level: 3.5, min: 1200, max: 1350, label: "Intermediate" },
   { level: 4, min: 1350, max: 1500, label: "Upper Intermediate" },
@@ -24,15 +37,18 @@ export const calculateExpectedScore = (ratingA: number, ratingB: number) => {
 export const calculateNewRating = (
   currentRating: number,
   actualScore: number,
-  expectedScore: number
+  expectedScore: number,
+  kFactor: number = K_FACTOR
 ) => {
-  return Math.round(currentRating + K_FACTOR * (actualScore - expectedScore));
+  return Math.round(currentRating + kFactor * (actualScore - expectedScore));
 };
 
 export const calculateTeamAverage = (p1Elo: number, p2Elo: number) => {
   return Math.round((p1Elo + p2Elo) / 2);
 };
 
+// Deprecated in favor of individual calculations in NewMatch.tsx
+// But kept for backward compatibility if needed, using standard K
 export const calculateMatchPoints = (
   p1Elo: number,
   p2Elo: number,
