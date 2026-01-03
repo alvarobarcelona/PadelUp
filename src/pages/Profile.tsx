@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
-import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck, Flame, Swords, X, Calendar } from 'lucide-react';
+import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck, Flame, Swords, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { checkAchievements } from '../lib/achievements';
@@ -163,7 +163,6 @@ const Profile = () => {
         // 3. Compute Stats for Filtered Selection
         let wins = 0;
         let losses = 0;
-        let currentStreak = 0; // In the context of the filtered view? Or global? stick to global logic applied to filtered set
         let bestStreak = 0;
         let tempStreak = 0;
         let totalSetsWon = 0;
