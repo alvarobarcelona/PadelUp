@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
-import { Crown, TrendingUp, Loader2 } from 'lucide-react';
+import { Crown, TrendingUp, Loader2, Search } from 'lucide-react';
 
 interface Player {
     id: string;
@@ -16,6 +16,7 @@ const Rankings = () => {
     const [players, setPlayers] = useState<Player[]>([]);
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState<'global' | 'friends'>('global');
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchRankings();
@@ -72,6 +73,10 @@ const Rankings = () => {
         }
     };
 
+    const filteredPlayers = players.filter(player =>
+        player.username.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <div className="space-y-6 animate-fade-in">
             <header className="flex flex-col gap-4">
@@ -95,19 +100,33 @@ const Rankings = () => {
                         Friends Only
                     </button>
                 </div>
+
+                {/* Search Bar */}
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Search players..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                    />
+                </div>
             </header>
 
             <div className="space-y-3">
                 {loading ? (
                     <div className="text-center py-10 text-slate-500"><Loader2 className="animate-spin inline mr-2" /> Loading... </div>
-                ) : players.length === 0 ? (
+                ) : filteredPlayers.length === 0 ? (
                     <div className="text-center py-10 text-slate-500">
-                        {view === 'friends'
-                            ? "No friends found. Go to 'Community' to add some!"
-                            : "No players found."}
+                        {searchQuery
+                            ? "No players found matching your search."
+                            : view === 'friends'
+                                ? "No friends found. Go to 'Community' to add some!"
+                                : "No players found."}
                     </div>
                 ) : (
-                    players.map((player, index) => {
+                    filteredPlayers.map((player, index) => {
                         const rank = index + 1;
                         const isTop = rank <= 3;
 

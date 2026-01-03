@@ -214,9 +214,10 @@ const Admin = () => {
         <div className="space-y-6 animate-fade-in pb-20 relative">
             {/* ... Existing Reader ... */}
             <header className="flex items-center justify-between text-red-400">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 justify-between w-full">
                     <ShieldAlert />
-                    <h1 className="text-2xl font-bold">Admin Console</h1>
+                    <h1 className="text-2xl font-bold"> Admin Console</h1>
+                    <button onClick={() => navigate('/profile')} className="text-slate-500 hover:text-slate-300 transition-colors"><X className="w-6 h-6" /></button>
                 </div>
                 {pendingUsers.length > 0 && (
                     <span className="bg-yellow-500 text-slate-900 text-xs font-bold px-2 py-1 rounded-full animate-pulse">

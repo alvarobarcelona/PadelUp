@@ -4,10 +4,24 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { Home, Trophy, Users, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
+import ChatButton from './Chat/ChatButton';
+import ChatDrawer from './Chat/ChatDrawer';
 
 const Layout = () => {
     const navigate = useNavigate();
     const [verifying, setVerifying] = useState(true);
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
+
+    useEffect(() => {
+        const handleOpenChat = (e: CustomEvent<string>) => {
+            setChatActiveUser(e.detail);
+            setIsChatOpen(true);
+        };
+
+        window.addEventListener('openChat' as any, handleOpenChat);
+        return () => window.removeEventListener('openChat' as any, handleOpenChat);
+    }, []);
 
     useEffect(() => {
         const checkAccess = async () => {
@@ -70,13 +84,22 @@ const Layout = () => {
     }
 
     return (
-        <div className="mx-auto min-h-screen max-w-md bg-slate-900 text-slate-100 shadow-2xl transition-colors duration-300">
+        <div className="mx-auto min-h-screen max-w-md bg-slate-900 text-slate-100 shadow-2xl transition-colors duration-300 relative">
             <main className="min-h-[calc(100vh-80px)] p-4 pb-24">
                 <Outlet />
             </main>
 
+            {/* Chat Components */}
+            <ChatButton onClick={() => setIsChatOpen(true)} />
+            <ChatDrawer
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+                activeUserId={chatActiveUser}
+                onActiveUserChange={setChatActiveUser}
+            />
+
             {/* Bottom Navigation */}
-            <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm px-2 py-4 z-50 transition-colors duration-300">
+            <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm px-2 py-4 z-40 transition-colors duration-300">
                 <ul className="flex items-center justify-around">
                     <li>
                         <NavLink to="/" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>

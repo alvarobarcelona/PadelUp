@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
-import { Loader2, UserPlus } from 'lucide-react';
+import { Loader2, UserPlus, MessageCircle } from 'lucide-react';
 import { getLevelFromElo } from '../lib/elo';
 
 interface Player {
@@ -197,7 +197,7 @@ const Players = () => {
                                     </div>
                                 </div>
 
-                                <div>
+                                <div className="flex items-center gap-2">
                                     {/* Action Logic based on Status and Tab */}
                                     {status === 'friend' && (
                                         activeTab === 'friends' ? (
@@ -241,21 +241,37 @@ const Players = () => {
                                             </button>
                                         </div>
                                     )}
+                                    <div className="flex items-center gap-2"    >
 
-                                    {status === 'none' && (
-                                        player.id === currentUserId ? (
-                                            <span className="text-xs font-bold text-slate-500 px-3 py-1 bg-slate-800 rounded-full border border-slate-700">
-                                                You
-                                            </span>
-                                        ) : (
+                                        {status === 'none' && (
+                                            player.id === currentUserId ? (
+                                                <span className="text-xs font-bold text-slate-500 px-3 py-1 bg-slate-800 rounded-full border border-slate-700">
+                                                    You
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleSendRequest(player.id)}
+                                                    className="text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-1"
+                                                >
+                                                    <UserPlus size={14} /> Add
+                                                </button>
+                                            )
+                                        )}
+
+                                        {/* Message Button for everyone except self */}
+                                        {player.id !== currentUserId && (
                                             <button
-                                                onClick={() => handleSendRequest(player.id)}
-                                                className="text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-1"
+                                                onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: player.id }))}
+                                                className="ml-2 text-xs font-bold text-slate-400 p-1.5 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                                                title="Send Message"
                                             >
-                                                <UserPlus size={14} /> Add Friend
+                                                <MessageCircle size={18} />
                                             </button>
-                                        )
-                                    )}
+                                        )}
+
+                                    </div>
+
+
                                 </div>
                             </div>
                         );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trophy, History as HistoryIcon, User, Check, X, Clock } from 'lucide-react';
+import { Plus, History as HistoryIcon, User, Check, X, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
@@ -35,6 +35,7 @@ interface MatchPreview {
 
 const Home = () => {
     const [profile, setProfile] = useState<Profile | null>(null);
+    const [suggestions, setSuggestions] = useState<Profile[]>([]);
     const [recentMatches, setRecentMatches] = useState<MatchPreview[]>([]);
     const [pendingMatches, setPendingMatches] = useState<MatchPreview[]>([]);
     const [recentForm, setRecentForm] = useState<boolean[]>([]);
@@ -93,6 +94,25 @@ const Home = () => {
                         });
                         setRecentForm(form.reverse());
                     }
+
+                    // Fetch Matchmaking Suggestions
+                    // Strategy: Get all approved profiles, filter client side for ELO range.
+                    // For a large app, this should be an RPC or filtered query, but for < 1000 users this is fine.
+                    const { data: candidates } = await supabase
+                        .from('profiles')
+                        .select('id, username, elo, avatar_url')
+                        .neq('id', user.id)
+                        .eq('approved', true);
+
+                    if (candidates) {
+                        const minElo = profileData.elo - 100;
+                        const maxElo = profileData.elo + 100;
+                        const filtered = candidates.filter(p => p.elo >= minElo && p.elo <= maxElo);
+                        // Sort by closeness to user's ELO
+                        filtered.sort((a, b) => Math.abs(a.elo - profileData.elo) - Math.abs(b.elo - profileData.elo));
+                        setSuggestions(filtered.slice(0, 5)); // Top 5
+                    }
+
 
                     // Fetch Pending Matches for User
                     const { data: pending } = await supabase
@@ -161,7 +181,7 @@ const Home = () => {
     };
 
     return (
-        <div className="space-y-6 animate-fade-in relative z-10">
+        <div className="space-y-6 animate-fade-in relative z-10 pb-20">
             <WelcomeModal isOpen={showWelcome} onClose={handleCloseWelcome} />
             <header className="flex items-center justify-between">
                 <div>
@@ -340,24 +360,49 @@ const Home = () => {
                 <span className="text-lg tracking-tight">Record New Match</span>
             </Link>
 
-            {/* Quick Nav Grid */}
-            <div className="grid grid-cols-2 gap-4">
-                <Link to="/rankings" className="flex items-center gap-3 rounded-xl bg-slate-800/80 p-4 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 transition-all group">
-                    <div className="p-2 rounded-lg bg-yellow-500/10 text-yellow-500 group-hover:bg-yellow-500 group-hover:text-slate-900 transition-colors">
-                        <Trophy size={20} />
+            {/* Matchmaking Suggestions */}
+            {suggestions.length > 0 && (
+                <div>
+                    <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                        <User size={18} className="text-blue-400" />
+                        Match Suggestions
+                        <span className="text-xs font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">ELO +/- 100</span>
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {suggestions.map(s => {
+                            const diff = s.elo - (profile?.elo || 0);
+                            const diffColor = diff > 0 ? "text-green-400" : diff < 0 ? "text-red-400" : "text-slate-400";
+                            const diffText = diff > 0 ? `+${diff}` : diff;
+
+                            
+                            return (
+                                <div key={s.id} className="relative flex items-center p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 hover:bg-slate-800 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <Link to={`/profile/${s.id}`}>
+                                            <Avatar src={s.avatar_url} fallback={s.username} size="md" />
+                                        </Link>
+                                        <div>
+                                            <Link to={`/profile/${s.id}`} className="font-semibold text-slate-200 block hover:text-white transition-colors text-sm">
+                                                {s.username}
+                                            </Link>
+                                            <div className="flex items-center gap-2 text-xs">
+                                                <span className="text-slate-400 font-bold">{s.elo} ELO</span>
+                                                <span className={cn("font-medium", diffColor)}>({diffText})</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: s.id }))}
+                                        className="absolute top-2 right-2 px-2 py-0.5 bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded transition-colors font-bold text-[9px] uppercase tracking-wider border border-blue-500/20"
+                                    >
+                                        Challenge
+                                    </button>
+                                </div>
+                            )
+                        })}
                     </div>
-                    <span className="font-semibold text-slate-200">Rankings</span>
-                </Link>
-                <Link to="/players" className="flex items-center gap-3 rounded-xl bg-slate-800/80 p-4 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 transition-all group">
-                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                        <User size={20} />
-                    </div>
-                    <div>
-                        <span className="font-semibold text-slate-200 block">Community</span>
-                        <span className="text-[10px] text-slate-500">View Players</span>
-                    </div>
-                </Link>
-            </div>
+                </div>
+            )}
 
             {/* Recent Activity Feed */}
             <div>
