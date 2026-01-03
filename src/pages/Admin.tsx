@@ -214,9 +214,10 @@ const Admin = () => {
         <div className="space-y-6 animate-fade-in pb-20 relative">
             {/* ... Existing Reader ... */}
             <header className="flex items-center justify-between text-red-400">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 justify-between w-full">
                     <ShieldAlert />
-                    <h1 className="text-2xl font-bold">Admin Console</h1>
+                    <h1 className="text-2xl font-bold"> Admin Console</h1>
+                    <button onClick={() => navigate('/profile')} className="text-slate-500 hover:text-slate-300 transition-colors"><X className="w-6 h-6" /></button>
                 </div>
                 {pendingUsers.length > 0 && (
                     <span className="bg-yellow-500 text-slate-900 text-xs font-bold px-2 py-1 rounded-full animate-pulse">
@@ -236,13 +237,13 @@ const Admin = () => {
                     onClick={() => setActiveTab('players')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'players' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                 >
-                    Members
+                    Members ({activeUsers.length})
                 </button>
                 <button
                     onClick={() => setActiveTab('matches')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'matches' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                 >
-                    Matches
+                    Matches ({filteredMatches.length})
                 </button>
             </div>
 
@@ -348,26 +349,64 @@ const Admin = () => {
                     </div>
 
                     <div className="space-y-2">
-                        {filteredMatches.map(m => (
-                            <div key={m.id} className="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700">
-                                <div>
-                                    <p className="font-bold text-white">Match #{m.id}</p>
-                                    <p className="text-xs text-slate-500">
-                                        {new Date(m.created_at).toLocaleDateString()} | Winner: Team {m.winner_team}
-                                        {m.winner_team === 1 ?
-                                            ` (${players.find(p => p.id === m.team1_p1)?.username || 'Unknown'} & ${players.find(p => p.id === m.team1_p2)?.username || 'Unknown'})` :
-                                            ` (${players.find(p => p.id === m.team2_p1)?.username || 'Unknown'} & ${players.find(p => p.id === m.team2_p2)?.username || 'Unknown'})`
-                                        }
-                                    </p>
-                                </div>
-                                <div className="flex gap-2">
+                        {filteredMatches.map(m => {
+                            const p1 = players.find(p => p.id === m.team1_p1)?.username || 'Unknown';
+                            const p2 = players.find(p => p.id === m.team1_p2)?.username || 'Unknown';
+                            const p3 = players.find(p => p.id === m.team2_p1)?.username || 'Unknown';
+                            const p4 = players.find(p => p.id === m.team2_p2)?.username || 'Unknown';
 
-                                    <Button size="sm" variant="danger" onClick={() => handleDeleteMatch(m.id)}>
-                                        <Trash2 size={16} />
-                                    </Button>
+                            const scoreList = Array.isArray(m.score) ? m.score : [];
+
+                            return (
+                                <div key={m.id} className="relative bg-slate-800 p-3 rounded-lg border border-slate-700 overflow-hidden group">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <p className="font-bold text-white flex items-center gap-2 text-sm">
+                                                Match #{m.id}
+                                                <span className="text-[10px] font-normal text-slate-500 bg-slate-900/50 px-2 py-0.5 rounded-full">
+                                                    {new Date(m.created_at).toLocaleString()}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <Button size="sm" variant="danger" className='h-6 w-6 px-0' onClick={() => handleDeleteMatch(m.id)}>
+                                            <Trash2 size={14} />
+                                        </Button>
+                                    </div>
+
+                                    <div className="flex items-center justify-between gap-2 mt-1 text-xs bg-slate-900/40 p-2 rounded-lg">
+                                        {/* Team 1 */}
+                                        <div className={`flex-1 min-w-0 ${m.winner_team === 1 ? 'font-bold text-green-400' : 'text-slate-400'}`}>
+                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Team 1 {m.winner_team === 1 && '👑'}</p>
+                                            <p className="truncate">{p1}</p>
+                                            <p className="truncate">{p2}</p>
+                                        </div>
+
+                                        {/* Score */}
+                                        <div className="flex flex-col items-center justify-center px-2 py-1 font-mono font-bold text-white text-sm bg-slate-800/50 rounded min-w-[60px] shrink-0 mx-1">
+                                            {scoreList.length > 0 ? (
+                                                scoreList.map((s: any, i: number) => (
+                                                    <div key={i} className="whitespace-nowrap">
+                                                        {s.t1}-{s.t2}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span className="text-slate-600">-</span>
+                                            )}
+                                        </div>
+
+                                        {/* Team 2 */}
+                                        <div className={`flex-1 min-w-0 text-right ${m.winner_team === 2 ? 'font-bold text-blue-400' : 'text-slate-400'}`}>
+                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Team 2 {m.winner_team === 2 && '👑'}</p>
+                                            <p className="truncate">{p3}</p>
+                                            <p className="truncate">{p4}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Winner Strip */}
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.winner_team === 1 ? 'bg-green-500' : 'bg-blue-500'}`} />
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                         {filteredMatches.length === 0 && <p className="text-center text-slate-500 py-4">No matches found.</p>}
                     </div>
                 </div>

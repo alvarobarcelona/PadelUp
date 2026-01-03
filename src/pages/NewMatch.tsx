@@ -5,8 +5,8 @@ import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { calculateTeamAverage, calculateExpectedScore, calculateNewRating } from '../lib/elo';
-import { checkAchievements } from '../lib/achievements';
+import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor } from '../lib/elo';
+
 
 interface Player {
     id: string;
@@ -124,6 +124,34 @@ const NewMatch = () => {
             const winnerTeam = t1Sets > t2Sets ? 1 : 2;
 
             // --- ELO CALCULATION START ---
+
+            // 1. Fetch match counts for K-Factor determination
+
+            // We need to count matches for each player. 
+            // Optimal way without new RPC: Parallel count queries.
+            const fetchMatchCount = async (pid: string) => {
+                const { count } = await supabase
+                    .from('matches')
+                    .select('id', { count: 'exact', head: true })
+                    .or(`team1_p1.eq.${pid},team1_p2.eq.${pid},team2_p1.eq.${pid},team2_p2.eq.${pid}`);
+                return count || 0;
+            };
+
+            const [count1, count2, count3, count4] = await Promise.all([
+                fetchMatchCount(selectedPlayers.t1p1.id),
+                fetchMatchCount(selectedPlayers.t1p2.id),
+                fetchMatchCount(selectedPlayers.t2p1.id),
+                fetchMatchCount(selectedPlayers.t2p2.id)
+            ]);
+
+            const k1 = getKFactor(count1);
+            const k2 = getKFactor(count2);
+            const k3 = getKFactor(count3);
+            const k4 = getKFactor(count4);
+
+            console.log('Match Counts:', { count1, count2, count3, count4 });
+            console.log('K-Factors:', { k1, k2, k3, k4 });
+
             const t1Avg = calculateTeamAverage(selectedPlayers.t1p1.elo, selectedPlayers.t1p2.elo);
             const t2Avg = calculateTeamAverage(selectedPlayers.t2p1.elo, selectedPlayers.t2p2.elo);
 
@@ -133,16 +161,24 @@ const NewMatch = () => {
             const t1Expected = calculateExpectedScore(t1Avg, t2Avg);
             const t2Expected = calculateExpectedScore(t2Avg, t1Avg);
 
-            // Calculate new individual ratings
+            // Calculate new individual ratings with Dynamic K
             const newRatings = {
-                t1p1: calculateNewRating(selectedPlayers.t1p1.elo, t1Score, t1Expected),
-                t1p2: calculateNewRating(selectedPlayers.t1p2.elo, t1Score, t1Expected),
-                t2p1: calculateNewRating(selectedPlayers.t2p1.elo, t2Score, t2Expected),
-                t2p2: calculateNewRating(selectedPlayers.t2p2.elo, t2Score, t2Expected),
+                t1p1: calculateNewRating(selectedPlayers.t1p1.elo, t1Score, t1Expected, k1),
+                t1p2: calculateNewRating(selectedPlayers.t1p2.elo, t1Score, t1Expected, k2),
+                t2p1: calculateNewRating(selectedPlayers.t2p1.elo, t2Score, t2Expected, k3),
+                t2p2: calculateNewRating(selectedPlayers.t2p2.elo, t2Score, t2Expected, k4),
             };
             // --- ELO CALCULATION END ---
 
-            // 1. Insert Match
+            // 1. Prepare Match Data
+            const { data: { user } } = await supabase.auth.getUser();
+            const eloSnapshot = {
+                t1p1: newRatings.t1p1,
+                t1p2: newRatings.t1p2,
+                t2p1: newRatings.t2p1,
+                t2p2: newRatings.t2p2
+            };
+
             const { error: matchError } = await supabase.from('matches').insert({
                 team1_p1: selectedPlayers.t1p1.id,
                 team1_p2: selectedPlayers.t1p2.id,
@@ -150,28 +186,19 @@ const NewMatch = () => {
                 team2_p2: selectedPlayers.t2p2.id,
                 score: sets,
                 winner_team: winnerTeam,
-                commentary: commentary.trim() || null
+                commentary: commentary.trim() || null,
+                status: 'pending', // Explicitly pending
+                elo_snapshot: eloSnapshot,
+                created_by: user?.id
             });
 
             if (matchError) throw matchError;
 
-            // 2. Update Player Profiles
-            await Promise.all([
-                supabase.from('profiles').update({ elo: newRatings.t1p1 }).eq('id', selectedPlayers.t1p1.id),
-                supabase.from('profiles').update({ elo: newRatings.t1p2 }).eq('id', selectedPlayers.t1p2.id),
-                supabase.from('profiles').update({ elo: newRatings.t2p1 }).eq('id', selectedPlayers.t2p1.id),
-                supabase.from('profiles').update({ elo: newRatings.t2p2 }).eq('id', selectedPlayers.t2p2.id),
-            ]);
+            // Note: We do NOT update profiles or achievements here anymore.
+            // This happens on confirmation.
 
-            // 3. Check Achievements for all players
-            await Promise.all([
-                checkAchievements(selectedPlayers.t1p1.id),
-                checkAchievements(selectedPlayers.t1p2.id),
-                checkAchievements(selectedPlayers.t2p1.id),
-                checkAchievements(selectedPlayers.t2p2.id),
-            ]);
-
-            navigate('/history');
+            alert("Match submitted! Opponents have 24h to confirm the result.");
+            navigate('/home'); // Or Home
         } catch (error: any) {
             console.error('Error saving match:', error);
             alert('Failed to save match: ' + error.message);
@@ -360,7 +387,7 @@ const NewMatch = () => {
                     Finish Match
                 </Button>
                 <p className="text-center text-xs text-slate-500">
-                    This will update player ratings and rankings immediately.
+                    This will submit the match for verification (24h auto-accept).
                 </p>
             </div>
         </div>

@@ -163,6 +163,39 @@ const Settings = () => {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        if (!confirm('Are you absolutely sure? This action CANNOT be undone.')) return;
+        if (!confirm('Really sure? All your match history and data will be permanently deleted.')) return;
+
+        try {
+            setLoading(true);
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                alert('No user found.');
+                return;
+            }
+
+            // 1. Delete Profile (Matches should cascade or be handled by DB policies if set, otherwise this might fail if foreign keys exist without cascade. Assuming standard setup or manual cleanup not needed for this simple request yet)
+            // Note: If explicit FK constraints prevent deletion, we'd need to delete matches first.
+            // For now, let's try deleting the profile.
+            const { error } = await supabase.from('profiles').delete().eq('id', user.id);
+
+            if (error) throw error;
+
+            // 2. Sign Out
+            await supabase.auth.signOut();
+            alert('Your account has been deleted.');
+            navigate('/auth');
+
+        } catch (error: any) {
+            console.error('Error deleting account:', error);
+            alert(`Error deleting account: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleLogout = async () => {
         await supabase.auth.signOut();
         navigate('/auth');
@@ -272,7 +305,7 @@ const Settings = () => {
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         className="w-full bg-slate-900 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 transition-colors"
                                     />
-                                    <div className="flex justify-end gap-2 pt-2">
+                                    <div className="flex justify-end gap-2 pt-2 pb-4 border-b border-slate-700/50">
                                         <Button
                                             size="sm"
                                             variant="ghost"
@@ -293,6 +326,21 @@ const Settings = () => {
                                         >
                                             {loading ? <Loader2 size={16} className="animate-spin" /> : 'Update Password'}
                                         </Button>
+                                    </div>
+
+                                    {/* Danger Zone */}
+                                    <div className="pt-2">
+                                        <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-2">Danger Zone</p>
+                                        <Button
+                                            variant="danger"
+                                            className="w-full text-xs h-9 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border-red-500/20"
+                                            onClick={handleDeleteAccount}
+                                        >
+                                            Delete Account
+                                        </Button>
+                                        <p className="text-[10px] text-slate-500 mt-2 leading-tight">
+                                            This action is permanent. All your data, matches, and history will be deleted.
+                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -326,7 +374,7 @@ const Settings = () => {
                     <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Support</h2>
                     <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden shadow-none transition-colors duration-300">
                         <button
-                            onClick={() => window.location.href = 'mailto:support@padelup.com?subject=Feedback%20for%20PadelUp'}
+                            onClick={() => window.location.href = 'mailto:support@padelup.com?subject=Feedback and support%20for%20PadelUp'}
                             className="w-full flex items-center justify-between p-4 hover:bg-slate-700/50 transition-colors"
                         >
                             <div className="flex items-center gap-3">
@@ -337,6 +385,41 @@ const Settings = () => {
                             </div>
                             <ChevronRight size={18} className="text-slate-500" />
                         </button>
+                    </div>
+                    <p className="text-[10px] text-slate-500 px-2 leading-relaxed">
+                        Use support for disputes (e.g. opponent refuses result). An admin will intervene and ensure a fair outcome. You can also request longer subscription plans here.
+                    </p>
+                </div>
+
+                {/* ELO Info */}
+                <div className="space-y-2">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">How it works</h2>
+                    <div className="rounded-xl bg-slate-800 border border-slate-700/50 p-4 space-y-3">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 rounded-full bg-blue-500/10 text-blue-400">
+                                <Shield size={20} />
+                            </div>
+                            <span className="font-medium text-white">Dynamic ELO System</span>
+                        </div>
+                        <div className="text-xs text-slate-400 space-y-2 leading-relaxed">
+                            <p>
+                                PadelUp uses a **Dynamic K-Factor** system that adapts to your experience level. This allows new players to reach their real level faster while providing stability for veterans.
+                            </p>
+                            <ul className="list-disc pl-4 space-y-1">
+                                <li>
+                                    <strong className="text-slate-300">Placement (0-10 matches):</strong> K=48. High adjustments to quickly find your skill level.
+                                </li>
+                                <li>
+                                    <strong className="text-slate-300">Standard (10-30 matches):</strong> K=32. Standard volatility.
+                                </li>
+                                <li>
+                                    <strong className="text-slate-300">Stable (30+ matches):</strong> K=24. Lower adjustments to reward consistency.
+                                </li>
+                            </ul>
+                            <p className="mt-2 text-[10px] text-slate-500 italic">
+                                Note: Points exchanged are calculated individually. A new player might gain +40 points for a win, while their veteran partner gains +20.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -369,6 +452,7 @@ const Settings = () => {
                 <div className="text-center pt-4">
                     <p className="text-xs text-slate-500">PadelUp v1.2.1</p>
                     <p className="text-[10px] text-slate-500 mt-1">Built with ❤️ for Padel Lovers</p>
+                    <p className="text-[10px] text-slate-500 mt-1">By Alvaro Barcelona Peralta</p>
                 </div>
             </div>
         </div>

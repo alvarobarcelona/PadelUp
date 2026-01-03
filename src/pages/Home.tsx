@@ -1,11 +1,11 @@
-
 import { useEffect, useState } from 'react';
-import { Plus, Trophy, History as HistoryIcon, User } from 'lucide-react';
+import { Plus, History as HistoryIcon, User, Check, X, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
+import { WelcomeModal } from '../components/WelcomeModal';
 
 interface Profile {
     id: string;
@@ -19,22 +19,47 @@ interface MatchPreview {
     created_at: string;
     winner_team: number;
     commentary?: string | null;
+    status: 'pending' | 'confirmed' | 'rejected';
+    created_by?: string | null;
+    score?: any[];
     // We only need basic info for the feed
     t1p1: { username: string };
     t1p2: { username: string };
     t2p1: { username: string };
     t2p2: { username: string };
+    team1_p1: string;
+    team1_p2: string;
+    team2_p1: string;
+    team2_p2: string;
 }
 
 const Home = () => {
     const [profile, setProfile] = useState<Profile | null>(null);
+    const [suggestions, setSuggestions] = useState<Profile[]>([]);
     const [recentMatches, setRecentMatches] = useState<MatchPreview[]>([]);
+    const [pendingMatches, setPendingMatches] = useState<MatchPreview[]>([]);
     const [recentForm, setRecentForm] = useState<boolean[]>([]);
     const [, setLoading] = useState(true);
+    const [showWelcome, setShowWelcome] = useState(false);
 
     useEffect(() => {
         loadDashboardData();
+        // Auto-process expired matches on mount (Lazy Cron)
+        supabase.rpc('process_expired_matches').then(({ error }) => {
+            if (error) console.error('Error auto-processing matches:', error);
+        });
+
+        // Check if user has seen welcome modal this session
+        const hasSeenWelcome = sessionStorage.getItem('padelup_welcome_seen_session');
+        if (!hasSeenWelcome) {
+            setShowWelcome(true);
+        }
     }, []);
+
+    const handleCloseWelcome = () => {
+        setShowWelcome(false);
+        sessionStorage.setItem('padelup_welcome_seen_session', 'true');
+    };
 
     const loadDashboardData = async () => {
         try {
@@ -52,11 +77,12 @@ const Home = () => {
                 if (profileData) {
                     setProfile(profileData);
 
-                    // Fetch user's last 5 matches for form
+                    // Fetch user's last 5 matches for form (only confirmed)
                     const { data: userMatches } = await supabase
                         .from('matches')
                         .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2')
                         .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
+                        .eq('status', 'confirmed')
                         .order('created_at', { ascending: false })
                         .limit(5);
 
@@ -66,21 +92,58 @@ const Home = () => {
                             const isTeam2 = m.team2_p1 === profileData.id || m.team2_p2 === profileData.id;
                             return (isTeam1 && m.winner_team === 1) || (isTeam2 && m.winner_team === 2);
                         });
-                        setRecentForm(form.reverse()); // Show oldest to newest left to right? Or newest left? usually newest right. Let's keep newest right.
+                        setRecentForm(form.reverse());
                     }
+
+                    // Fetch Matchmaking Suggestions
+                    // Strategy: Get all approved profiles, filter client side for ELO range.
+                    // For a large app, this should be an RPC or filtered query, but for < 1000 users this is fine.
+                    const { data: candidates } = await supabase
+                        .from('profiles')
+                        .select('id, username, elo, avatar_url')
+                        .neq('id', user.id)
+                        .eq('approved', true);
+
+                    if (candidates) {
+                        const minElo = profileData.elo - 100;
+                        const maxElo = profileData.elo + 100;
+                        const filtered = candidates.filter(p => p.elo >= minElo && p.elo <= maxElo);
+                        // Sort by closeness to user's ELO
+                        filtered.sort((a, b) => Math.abs(a.elo - profileData.elo) - Math.abs(b.elo - profileData.elo));
+                        setSuggestions(filtered.slice(0, 5)); // Top 5
+                    }
+
+
+                    // Fetch Pending Matches for User
+                    const { data: pending } = await supabase
+                        .from('matches')
+                        .select(`
+                            id, created_at, winner_team, commentary, status, created_by, score,
+                            team1_p1, team1_p2, team2_p1, team2_p2,
+                            t1p1:team1_p1(username),
+                            t1p2:team1_p2(username),
+                            t2p1:team2_p1(username),
+                            t2p2:team2_p2(username)
+                        `)
+                        .eq('status', 'pending')
+                        .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
+                        .order('created_at', { ascending: false });
+
+                    if (pending) setPendingMatches(pending as any);
                 }
             }
 
-            // 2. Fetch Recent Matches (Global Feed)
+            // 2. Fetch Recent Matches (Global Feed - OK only CONFIRMED)
             const { data: matchesData } = await supabase
                 .from('matches')
                 .select(`
-                id, created_at, winner_team, commentary,
+                id, created_at, winner_team, commentary, status,
                 t1p1:team1_p1(username),
                 t1p2:team1_p2(username),
                 t2p1:team2_p1(username),
                 t2p2:team2_p2(username)
             `)
+                .eq('status', 'confirmed')
                 .order('created_at', { ascending: false })
                 .limit(5);
 
@@ -95,8 +158,31 @@ const Home = () => {
         }
     };
 
+    const handleConfirm = async (matchId: number) => {
+        if (!confirm('Confirm this match result? This will update ELO ratings.')) return;
+        try {
+            const { error } = await supabase.rpc('confirm_match', { match_id: matchId });
+            if (error) throw error;
+            loadDashboardData(); // Refresh UI
+        } catch (error: any) {
+            alert('Error confirming match: ' + error.message);
+        }
+    };
+
+    const handleReject = async (matchId: number) => {
+        if (!confirm('Reject this game? It will be deleted. You can always create a new one. But remember that rejecting it to avoid a drop in your ELO rating may result in a temporary suspension.')) return;
+        try {
+            const { error } = await supabase.rpc('reject_match', { match_id: matchId });
+            if (error) throw error;
+            loadDashboardData();
+        } catch (error: any) {
+            alert('Error rejecting match: ' + error.message);
+        }
+    };
+
     return (
-        <div className="space-y-6 animate-fade-in relative z-10">
+        <div className="space-y-6 animate-fade-in relative z-10 pb-20">
+            <WelcomeModal isOpen={showWelcome} onClose={handleCloseWelcome} />
             <header className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-white tracking-tight">PadelUp</h1>
@@ -110,7 +196,7 @@ const Home = () => {
             </header>
 
             {/* Hero Stats Card (Only if logged in with a profile) */}
-            {profile ? (
+            {profile && (
                 <div className="grid grid-cols-2 gap-4">
                     <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">
                         <div className="flex justify-between items-start mb-2">
@@ -163,18 +249,106 @@ const Home = () => {
                         <p className="text-[10px] text-slate-500 mt-2 font-medium">Last 5 matches</p>
                     </div>
                 </div>
-            ) : (
-                <div className="rounded-2xl bg-slate-800 p-6 text-center border border-slate-700">
-                    <p className="text-slate-300 mb-4">Join the club to track your stats!</p>
-                    <Link to="/auth" className="inline-block rounded-xl bg-green-500 px-6 py-2 font-bold text-slate-900 shadow-lg hover:bg-green-400 transition-colors">
-                        Login / Register
-                    </Link>
-                    <div className="mt-4 text-xs text-slate-500">
-                        Or just record matches as guest below
-                    </div>
-                </div>
 
             )}
+
+            {/* PENDING VERIFICATION SECTION */}
+            {pendingMatches.length > 0 && (
+                <div className="animate-pulse-slow">
+                    <div className="flex items-center justify-between mb-2">
+                        <h2 className="text-sm font-bold text-yellow-500 flex items-center gap-2">
+                            <Clock size={16} />
+                            Pending Verification
+                        </h2>
+                    </div>
+                    <div className="space-y-3">
+                        {pendingMatches.map((match) => {
+                            const isUserTeam1 = match.team1_p1 === profile?.id || match.team1_p2 === profile?.id;
+                            const isCreatorTeam1 = match.created_by && (match.team1_p1 === match.created_by || match.team1_p2 === match.created_by);
+                            const isCreatorTeam2 = match.created_by && (match.team2_p1 === match.created_by || match.team2_p2 === match.created_by);
+
+                            // User can verify ONLY if they are NOT on the creating team
+                            // If created_by is null (legacy), allow everyone to verify (or no one? Let's allow for now to unblock)
+                            const canVerify = match.created_by
+                                ? (isUserTeam1 && !isCreatorTeam1) || (!isUserTeam1 && !isCreatorTeam2)
+                                : true;
+
+
+                            const scoreList = Array.isArray(match.score) ? match.score : [];
+
+
+                            return (
+                                <div key={match.id} className="relative flex flex-col gap-1 rounded-xl bg-yellow-500/10 p-4 border border-yellow-500/30">
+                                    {/* Header: Time and Auto-Accept */}
+                                    <div className="flex justify-between items-center pb-2 border-b border-yellow-500/10">
+                                        <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
+                                            <Clock size={12} /> Auto-accepts in 24h
+                                        </p>
+                                        <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
+                                            Match number: {match.id}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 font-medium">
+                                            {new Date(match.created_at).toLocaleString()}
+                                        </p>
+                                    </div>
+
+                                    {/* Main Content: Teams vs Score */}
+                                    <div className="flex items-center justify-between gap-3">
+                                        {/* Teams Column */}
+                                        <div className="flex flex-col gap-2 overflow-hidden flex-1">
+                                            {/* Team 1 */}
+                                            <div className={cn("flex items-center justify-center gap-2 text-sm font-semibold px-2 py-1.5 rounded-lg bg-slate-900/40", match.winner_team === 1 ? "text-green-400 ring-1 ring-green-500/30 bg-green-500/10" : "text-slate-300")}>
+                                                <div className={match.winner_team === 1 ? "bg-green-500" : "bg-slate-500"} />
+                                                <span className="truncate">{match.t1p1?.username} & {match.t1p2?.username}</span>
+                                            </div>
+                                            <span className="flex justify-center items-center text-slate-600 text-[10px]">VS</span>
+                                            {/* Team 2 */}
+                                            <div className={cn("flex items-center justify-center gap-2 text-sm font-semibold px-2 py-1.5 rounded-lg bg-slate-900/40", match.winner_team === 2 ? "text-green-400 ring-1 ring-green-500/30 bg-green-500/10" : "text-slate-300")}>
+                                                <div className={match.winner_team === 2 ? "bg-green-500" : "bg-slate-500"} />
+                                                <span className="truncate">{match.t2p1?.username} & {match.t2p2?.username}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Score Column */}
+                                        <div className="flex flex-col items-center justify-center bg-slate-900/60 p-2 rounded-lg border border-slate-700/50 min-w-[80px]">
+                                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Score</span>
+                                            <div className="flex flex-col gap-0.5">
+                                                {scoreList.map((s: any, i: number) => (
+                                                    <span key={i} className="font-mono text-white font-bold text-sm text-center">
+                                                        {s.t1} - {s.t2}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {canVerify ? (
+                                        <div className="flex gap-2 mt-1">
+                                            <button
+                                                onClick={() => handleConfirm(match.id)}
+                                                className="flex-1 bg-green-500/20 hover:bg-green-500 text-green-500 hover:text-white py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
+                                                <Check size={14} /> Confirm
+                                            </button>
+                                            <button
+                                                onClick={() => handleReject(match.id)}
+                                                className="flex-1 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
+                                                <X size={14} /> Reject
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-1 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-center">
+                                            <p className="text-xs text-slate-400 italic flex items-center justify-center gap-2">
+                                                <Clock size={12} /> Waiting for opponent confirmation...
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
 
             {/* Main Action - Floating/Prominent */}
             <Link
@@ -186,24 +360,49 @@ const Home = () => {
                 <span className="text-lg tracking-tight">Record New Match</span>
             </Link>
 
-            {/* Quick Nav Grid */}
-            <div className="grid grid-cols-2 gap-4">
-                <Link to="/rankings" className="flex items-center gap-3 rounded-xl bg-slate-800/80 p-4 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 transition-all group">
-                    <div className="p-2 rounded-lg bg-yellow-500/10 text-yellow-500 group-hover:bg-yellow-500 group-hover:text-slate-900 transition-colors">
-                        <Trophy size={20} />
+            {/* Matchmaking Suggestions */}
+            {suggestions.length > 0 && (
+                <div>
+                    <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                        <User size={18} className="text-blue-400" />
+                        Match Suggestions
+                        <span className="text-xs font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">ELO +/- 100</span>
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {suggestions.map(s => {
+                            const diff = s.elo - (profile?.elo || 0);
+                            const diffColor = diff > 0 ? "text-green-400" : diff < 0 ? "text-red-400" : "text-slate-400";
+                            const diffText = diff > 0 ? `+${diff}` : diff;
+
+                            
+                            return (
+                                <div key={s.id} className="relative flex items-center p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 hover:bg-slate-800 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <Link to={`/profile/${s.id}`}>
+                                            <Avatar src={s.avatar_url} fallback={s.username} size="md" />
+                                        </Link>
+                                        <div>
+                                            <Link to={`/profile/${s.id}`} className="font-semibold text-slate-200 block hover:text-white transition-colors text-sm">
+                                                {s.username}
+                                            </Link>
+                                            <div className="flex items-center gap-2 text-xs">
+                                                <span className="text-slate-400 font-bold">{s.elo} ELO</span>
+                                                <span className={cn("font-medium", diffColor)}>({diffText})</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: s.id }))}
+                                        className="absolute top-2 right-2 px-2 py-0.5 bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded transition-colors font-bold text-[9px] uppercase tracking-wider border border-blue-500/20"
+                                    >
+                                        Challenge
+                                    </button>
+                                </div>
+                            )
+                        })}
                     </div>
-                    <span className="font-semibold text-slate-200">Rankings</span>
-                </Link>
-                <Link to="/players" className="flex items-center gap-3 rounded-xl bg-slate-800/80 p-4 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 transition-all group">
-                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                        <User size={20} />
-                    </div>
-                    <div>
-                        <span className="font-semibold text-slate-200 block">Community</span>
-                        <span className="text-[10px] text-slate-500">View Players</span>
-                    </div>
-                </Link>
-            </div>
+                </div>
+            )}
 
             {/* Recent Activity Feed */}
             <div>
@@ -218,7 +417,7 @@ const Home = () => {
                 <div className="space-y-3">
                     {recentMatches.length === 0 ? (
                         <div className="text-center py-8 text-slate-500 text-sm bg-slate-800/30 rounded-xl border border-dashed border-slate-800">
-                            No recent matches found.
+                            No recent confirmed matches found.
                         </div>
                     ) : (
                         recentMatches.map((match) => (

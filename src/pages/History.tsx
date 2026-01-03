@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
-import { Loader2, Calendar, AlertCircle } from 'lucide-react';
+import { Loader2, Calendar, AlertCircle, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Match {
@@ -21,6 +21,7 @@ const History = () => {
     const [matches, setMatches] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchMatches();
@@ -46,6 +47,7 @@ const History = () => {
           team2_p1(username, avatar_url),
           team2_p2(username, avatar_url)
         `)
+                .eq('status', 'confirmed')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -62,6 +64,19 @@ const History = () => {
         }
     };
 
+    const filteredMatches = matches.filter(match => {
+        const lowerQuery = searchQuery.toLowerCase();
+        const idMatch = match.id.toString().includes(lowerQuery);
+
+        const checkPlayer = (player: any) => player?.username?.toLowerCase().includes(lowerQuery);
+
+        return idMatch ||
+            checkPlayer(match.team1_p1) ||
+            checkPlayer(match.team1_p2) ||
+            checkPlayer(match.team2_p1) ||
+            checkPlayer(match.team2_p2);
+    });
+
     if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-green-500" /></div>;
 
     return (
@@ -69,6 +84,17 @@ const History = () => {
             <header>
                 <h1 className="text-3xl font-bold text-white">Match History</h1>
             </header>
+
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+                <input
+                    type="text"
+                    placeholder="Search by player or Match Id..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-xl bg-slate-800 border border-slate-700 py-3 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                />
+            </div>
 
             {errorMsg && (
                 <div className="rounded-xl bg-red-500/10 p-4 border border-red-500/50 text-red-500 flex items-center gap-2">
@@ -82,9 +108,13 @@ const History = () => {
                     <p className="text-slate-500">No matches recorded yet.</p>
                     <Link to="/new-match" className="mt-4 inline-block text-green-400 hover:underline">Record first match</Link>
                 </div>
+            ) : filteredMatches.length === 0 ? (
+                <div className="text-center py-10 text-slate-500">
+                    No matches found matching "{searchQuery}"
+                </div>
             ) : (
                 <div className="space-y-4">
-                    {matches.map((match) => (
+                    {filteredMatches.map((match) => (
                         <MatchCard key={match.id} match={match} />
                     ))}
                 </div>
