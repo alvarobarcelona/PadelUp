@@ -198,7 +198,7 @@ const NewMatch = () => {
             // This happens on confirmation.
 
             alert("Match submitted! Opponents have 24h to confirm the result.");
-            navigate('/history'); // Or Home
+            navigate('/home'); // Or Home
         } catch (error: any) {
             console.error('Error saving match:', error);
             alert('Failed to save match: ' + error.message);

@@ -264,6 +264,9 @@ const Home = () => {
                                         <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
                                             <Clock size={12} /> Auto-accepts in 24h
                                         </p>
+                                        <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
+                                            Match number: {match.id}
+                                        </p>
                                         <p className="text-[10px] text-slate-400 font-medium">
                                             {new Date(match.created_at).toLocaleString()}
                                         </p>
