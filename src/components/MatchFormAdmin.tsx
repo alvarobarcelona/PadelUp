@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
@@ -13,12 +12,17 @@ interface Player {
     elo: number;
 }
 
-const NewMatch = () => {
-    const navigate = useNavigate();
+interface MatchFormAdminProps {
+    onSuccess: () => void;
+    onCancel: () => void;
+}
+
+export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => {
     const [step, setStep] = useState<1 | 2>(1); // 1: Players, 2: Score
     const [loading, setLoading] = useState(false);
     const [fetchingPlayers, setFetchingPlayers] = useState(true);
     const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const [selectedPlayers, setSelectedPlayers] = useState<{ t1p1: Player | null, t1p2: Player | null, t2p1: Player | null, t2p2: Player | null }>({
         t1p1: null, t1p2: null,
@@ -41,7 +45,7 @@ const NewMatch = () => {
             const { data, error } = await supabase
                 .from('profiles')
                 .select('id, username, avatar_url, elo')
-                .eq('approved', true) // Only select approved players
+                .eq('approved', true)
                 .order('username');
             if (error) throw error;
             setAvailablePlayers(data || []);
@@ -90,27 +94,6 @@ const NewMatch = () => {
 
         setLoading(true);
         try {
-            // 0. Check for duplicates (last 2 hours)
-            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-            const { data: recentMatches } = await supabase
-                .from('matches')
-                .select('team1_p1, team1_p2, team2_p1, team2_p2')
-                .gte('created_at', twoHoursAgo);
-
-            if (recentMatches) {
-                const currentIds = new Set([selectedPlayers.t1p1.id, selectedPlayers.t1p2.id, selectedPlayers.t2p1.id, selectedPlayers.t2p2.id]);
-                const isDuplicate = recentMatches.some(m => {
-                    const matchIds = new Set([m.team1_p1, m.team1_p2, m.team2_p1, m.team2_p2]);
-                    return matchIds.size === currentIds.size && [...currentIds].every(id => matchIds.has(id));
-                });
-
-                if (isDuplicate) {
-                    alert("It looks like this match has already been recorded recently(range:2 hours ago) by another player. No need to duplicate it. Please be fair :) ");
-                    setLoading(false);
-                    return;
-                }
-            }
-
             // Calculate Winner
             let t1Sets = 0;
             let t2Sets = 0;
@@ -122,11 +105,6 @@ const NewMatch = () => {
             const winnerTeam = t1Sets > t2Sets ? 1 : 2;
 
             // --- ELO CALCULATION START ---
-
-            // 1. Fetch match counts for K-Factor determination
-
-            // We need to count matches for each player. 
-            // Optimal way without new RPC: Parallel count queries.
             const fetchMatchCount = async (pid: string) => {
                 const { count } = await supabase
                     .from('matches')
@@ -147,9 +125,6 @@ const NewMatch = () => {
             const k3 = getKFactor(count3);
             const k4 = getKFactor(count4);
 
-            console.log('Match Counts:', { count1, count2, count3, count4 });
-            console.log('K-Factors:', { k1, k2, k3, k4 });
-
             const t1Avg = calculateTeamAverage(selectedPlayers.t1p1.elo, selectedPlayers.t1p2.elo);
             const t2Avg = calculateTeamAverage(selectedPlayers.t2p1.elo, selectedPlayers.t2p2.elo);
 
@@ -159,7 +134,6 @@ const NewMatch = () => {
             const t1Expected = calculateExpectedScore(t1Avg, t2Avg);
             const t2Expected = calculateExpectedScore(t2Avg, t1Avg);
 
-            // Calculate new individual ratings with Dynamic K
             const newRatings = {
                 t1p1: calculateNewRating(selectedPlayers.t1p1.elo, t1Score, t1Expected, k1),
                 t1p2: calculateNewRating(selectedPlayers.t1p2.elo, t1Score, t1Expected, k2),
@@ -185,18 +159,24 @@ const NewMatch = () => {
                 score: sets,
                 winner_team: winnerTeam,
                 commentary: commentary.trim() || null,
-                status: 'pending', // Explicitly pending
+                status: 'confirmed', // DIRECT MATCH
                 elo_snapshot: eloSnapshot,
                 created_by: user?.id
             });
 
             if (matchError) throw matchError;
 
-            // Note: We do NOT update profiles or achievements here anymore.
-            // This happens on confirmation.
+            // UPDATE PROFILES IMMEDIATELY
+            await Promise.all([
+                supabase.from('profiles').update({ elo: newRatings.t1p1 }).eq('id', selectedPlayers.t1p1.id),
+                supabase.from('profiles').update({ elo: newRatings.t1p2 }).eq('id', selectedPlayers.t1p2.id),
+                supabase.from('profiles').update({ elo: newRatings.t2p1 }).eq('id', selectedPlayers.t2p1.id),
+                supabase.from('profiles').update({ elo: newRatings.t2p2 }).eq('id', selectedPlayers.t2p2.id),
+            ]);
+            alert("Match created and confirmed! ELOs updated.");
 
-            alert("Match submitted! Opponents have 24h to confirm the result.");
-            navigate('/home'); // Or Home
+            onSuccess();
+
         } catch (error: any) {
             console.error('Error saving match:', error);
             alert('Failed to save match: ' + error.message);
@@ -205,22 +185,36 @@ const NewMatch = () => {
         }
     };
 
-    // --- RENDER HELPERS ---
-
     if (fetchingPlayers) {
         return <div className="flex h-64 items-center justify-center text-slate-400"><Loader2 className="animate-spin" /></div>;
     }
 
-    // PLAYER SELECTION MODAL
     if (isSelectionModalOpen) {
+        const filteredPlayers = availablePlayers.filter(p =>
+            p.username.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
         return (
-            <div className="fixed inset-0 z-50 flex flex-col bg-slate-900 p-4">
+
+            <div className="space-y-6 animate-fade-in">
                 <header className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-white">Select Player</h2>
                     <Button variant="ghost" size="icon" onClick={() => setIsSelectionModalOpen(false)}><X /></Button>
                 </header>
-                <div className="grid grid-cols-2 gap-4 overflow-y-auto pb-10">
-                    {availablePlayers.map(player => (
+
+                <div className="mb-4">
+                    <input
+                        type="search"
+                        placeholder="Search player..."
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-slate-500"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        autoFocus
+                    />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 overflow-y-auto flex-1 min-h-0 pb-10">
+                    {filteredPlayers.map(player => (
                         <div
                             key={player.id}
                             onClick={() => selectPlayer(player)}
@@ -232,9 +226,9 @@ const NewMatch = () => {
                             <span className="text-[10px] text-slate-500">Level {getLevelFromElo(player.elo).level}</span>
                         </div>
                     ))}
-                    {availablePlayers.length === 0 && (
+                    {filteredPlayers.length === 0 && (
                         <div className="col-span-2 text-center text-slate-500 py-10">
-                            No players found. <br /> Invite friends to Sign Up!
+                            {searchQuery ? 'No players found matching your search.' : <>No players found. <br /> Invite friends to Sign Up!</>}
                         </div>
                     )}
                 </div>
@@ -242,44 +236,28 @@ const NewMatch = () => {
         );
     }
 
-    // STEP 1: SELECT PLAYERS
+    // STEP 1
     if (step === 1) {
         return (
             <div className="space-y-6 animate-fade-in">
                 <header className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-white">Select Players</h1>
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><X size={24} /></Button>
+                    <h1 className="text-2xl font-bold text-white">Record Match (without confirmation)</h1>
+                    <Button variant="ghost" size="icon" onClick={onCancel}><X size={24} /></Button>
                 </header>
 
                 <section className="space-y-3">
                     <h2 className="text-sm font-semibold uppercase text-green-400 tracking-wider">Team 1</h2>
                     <div className="grid grid-cols-2 gap-4">
-                        <PlayerSelector
-                            label="Player 1"
-                            player={selectedPlayers.t1p1}
-                            onClick={() => openSelection('t1p1')}
-                        />
-                        <PlayerSelector
-                            label="Player 2"
-                            player={selectedPlayers.t1p2}
-                            onClick={() => openSelection('t1p2')}
-                        />
+                        <PlayerSelector label="Player 1" player={selectedPlayers.t1p1} onClick={() => openSelection('t1p1')} />
+                        <PlayerSelector label="Player 2" player={selectedPlayers.t1p2} onClick={() => openSelection('t1p2')} />
                     </div>
                 </section>
 
                 <section className="space-y-3">
                     <h2 className="text-sm font-semibold uppercase text-blue-400 tracking-wider">Team 2</h2>
                     <div className="grid grid-cols-2 gap-4">
-                        <PlayerSelector
-                            label="Player 1"
-                            player={selectedPlayers.t2p1}
-                            onClick={() => openSelection('t2p1')}
-                        />
-                        <PlayerSelector
-                            label="Player 2"
-                            player={selectedPlayers.t2p2}
-                            onClick={() => openSelection('t2p2')}
-                        />
+                        <PlayerSelector label="Player 1" player={selectedPlayers.t2p1} onClick={() => openSelection('t2p1')} />
+                        <PlayerSelector label="Player 2" player={selectedPlayers.t2p2} onClick={() => openSelection('t2p2')} />
                     </div>
                 </section>
 
@@ -297,7 +275,7 @@ const NewMatch = () => {
         );
     }
 
-    // STEP 2: SCORE
+    // STEP 2
     return (
         <div className="space-y-8 animate-fade-in pb-10">
             <header className="flex items-center gap-4">
@@ -305,7 +283,6 @@ const NewMatch = () => {
                 <h1 className="text-2xl font-bold text-white">Match Result</h1>
             </header>
 
-            {/* Teams Summary */}
             <div className="flex justify-between items-center rounded-xl bg-slate-800 p-4 border border-slate-700">
                 <div className="text-center w-5/12">
                     <span className="block text-xs text-green-400 font-bold mb-1">TEAM 1</span>
@@ -330,15 +307,12 @@ const NewMatch = () => {
                 </div>
             </div>
 
-            {/* Fair Play Disclaimer */}
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-center">
-                <p className="text-xs text-yellow-500 font-medium leading-relaxed">
-                    Please ensure scores are recorded fairly.
-                    If an admin detects false records, the match will be deleted and ELO points reverted to maintain a fair and real community.
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center">
+                <p className="text-xs text-red-500 font-medium leading-relaxed">
+                    DIRECT ENTRY: This match will be confirmed IMMEDIATELY and ELOs updated.
                 </p>
             </div>
 
-            {/* Score Inputs */}
             <div className="space-y-4">
                 <h3 className="text-center text-slate-400 text-sm tracking-widest uppercase">Set Scores</h3>
                 {[0, 1, 2].map((i) => (
@@ -360,13 +334,8 @@ const NewMatch = () => {
                         />
                     </div>
                 ))}
-                <p className="text-center text-xs text-slate-500 italic px-4">
-                    Enter the result in games (e.g., 6-3, 6-4). <br />
-                    Use the third set if there is a tie. If it is decided by a tiebreak, record it as 7-6.
-                </p>
             </div>
 
-            {/* Commentary Input */}
             <div className="space-y-2 px-1">
                 <label className="text-xs font-semibold uppercase text-slate-500 tracking-wider">
                     Match Notes (Optional)
@@ -374,7 +343,7 @@ const NewMatch = () => {
                 <textarea
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
                     rows={3}
-                    placeholder="Describe the match... (e.g., 'Epic comeback!', 'Windy day', 'Great rally')"
+                    placeholder="Describe the match..."
                     value={commentary}
                     onChange={(e) => setCommentary(e.target.value)}
                 />
@@ -383,10 +352,10 @@ const NewMatch = () => {
             <div className="pt-8 space-y-3">
                 <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm="Are you sure?">
                     <Trophy size={20} />
-                    Finish Match
+                    Confirm & Update ELOs
                 </Button>
                 <p className="text-center text-xs text-slate-500">
-                    This will submit the match for verification (24h auto-accept).
+                    Instant Action - No verification required.
                 </p>
             </div>
         </div>
@@ -395,10 +364,7 @@ const NewMatch = () => {
 
 const PlayerSelector = ({ label, player, onClick }: { label: string, player: Player | null, onClick: () => void }) => {
     return (
-        <div
-            onClick={onClick}
-            className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/30 p-4 transition-all hover:bg-slate-800 hover:border-slate-500 cursor-pointer active:scale-95 h-32"
-        >
+        <div onClick={onClick} className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/30 p-4 transition-all hover:bg-slate-800 hover:border-slate-500 cursor-pointer active:scale-95 h-32">
             {player ? (
                 <>
                     <Avatar fallback={player.username} src={player.avatar_url} className="bg-green-500/20 text-green-400" />
@@ -417,5 +383,3 @@ const PlayerSelector = ({ label, player, onClick }: { label: string, player: Pla
         </div>
     );
 };
-
-export default NewMatch;

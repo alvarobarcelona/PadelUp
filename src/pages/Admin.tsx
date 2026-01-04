@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getMatchPointsFromHistory } from '../lib/elo';
+import { MatchFormAdmin as MatchForm } from '../components/MatchFormAdmin';
 
 // Helper for ELO
 // const getExpected = (a: number, b: number) => 1 / (1 + Math.pow(10, (b - a) / 400));
@@ -16,7 +17,7 @@ const Admin = () => {
     const [loading, setLoading] = useState(true);
     const [players, setPlayers] = useState<any[]>([]);
     const [matches, setMatches] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches'>('pending');
+    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'direct_match'>('pending');
 
     // Search State
     const [memberSearch, setMemberSearch] = useState('');
@@ -226,7 +227,7 @@ const Admin = () => {
                 )}
             </header>
 
-            <div className="flex gap-2 border-b border-slate-700 pb-2 overflow-x-auto">
+            <div className="flex gap-2 border-b border-slate-700 pb-2 overflow-x-auto no-scrollbar">
                 <button
                     onClick={() => setActiveTab('pending')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'pending' ? 'text-white border-b-2 border-yellow-500' : 'text-slate-500'}`}
@@ -245,7 +246,27 @@ const Admin = () => {
                 >
                     Matches ({filteredMatches.length})
                 </button>
+                <button
+                    onClick={() => setActiveTab('direct_match')}
+                    className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'direct_match' ? 'text-white border-b-2 border-red-500' : 'text-slate-500'}`}
+                >
+                    Add new Match
+                </button>
             </div>
+
+            {/* DIRECT MATCH TAB */}
+            {activeTab === 'direct_match' && (
+                <div className="pt-4">
+                    <MatchForm
+                        onSuccess={() => {
+                            setActiveTab('matches');
+                            fetchData();
+                        }}
+                        onCancel={() => setActiveTab('players')}
+                    />
+                </div>
+            )}
+
 
             {/* PENDING TAB */}
             {activeTab === 'pending' && (

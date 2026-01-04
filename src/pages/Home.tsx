@@ -38,7 +38,7 @@ const Home = () => {
     const [suggestions, setSuggestions] = useState<Profile[]>([]);
     const [recentMatches, setRecentMatches] = useState<MatchPreview[]>([]);
     const [pendingMatches, setPendingMatches] = useState<MatchPreview[]>([]);
-    const [recentForm, setRecentForm] = useState<boolean[]>([]);
+    const [recentForm, setRecentForm] = useState<{ won: boolean, points: number | null }[]>([]);
     const [, setLoading] = useState(true);
     const [showWelcome, setShowWelcome] = useState(false);
 
@@ -77,22 +77,69 @@ const Home = () => {
                 if (profileData) {
                     setProfile(profileData);
 
-                    // Fetch user's last 5 matches for form (only confirmed)
+                    // Fetch user's last 6 matches (to calc diff for 5)
                     const { data: userMatches } = await supabase
                         .from('matches')
-                        .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2')
+                        .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2, elo_snapshot')
                         .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
                         .eq('status', 'confirmed')
                         .order('created_at', { ascending: false })
-                        .limit(5);
+                        .limit(6);
 
                     if (userMatches) {
-                        const form = userMatches.map(m => {
+                        const form = [];
+                        // We iterate up to 5 (or less if fewer matches)
+                        const count = Math.min(5, userMatches.length);
+
+                        for (let i = 0; i < count; i++) {
+                            const m = userMatches[i];
                             const isTeam1 = m.team1_p1 === profileData.id || m.team1_p2 === profileData.id;
                             const isTeam2 = m.team2_p1 === profileData.id || m.team2_p2 === profileData.id;
-                            return (isTeam1 && m.winner_team === 1) || (isTeam2 && m.winner_team === 2);
-                        });
-                        setRecentForm(form.reverse());
+                            const won = (isTeam1 && m.winner_team === 1) || (isTeam2 && m.winner_team === 2);
+
+                            // Calculate points
+                            let points = null;
+                            if (m.elo_snapshot) {
+                                // Determine user's position key (t1p1, t1p2, etc.)
+                                let posKey = '';
+                                if (m.team1_p1 === profileData.id) posKey = 't1p1';
+                                else if (m.team1_p2 === profileData.id) posKey = 't1p2';
+                                else if (m.team2_p1 === profileData.id) posKey = 't2p1';
+                                else if (m.team2_p2 === profileData.id) posKey = 't2p2';
+
+                                const currentElo = (m.elo_snapshot as any)[posKey];
+
+                                // Get previous ELO
+                                let prevElo = 1150; // DEFAULT
+                                // If there is a "next" match (which is older in time), get its snapshot
+                                if (i + 1 < userMatches.length) {
+                                    const olderMatch = userMatches[i + 1];
+                                    if (olderMatch.elo_snapshot) {
+                                        // Find pos in older match
+                                        let olderPosKey = '';
+                                        if (olderMatch.team1_p1 === profileData.id) olderPosKey = 't1p1';
+                                        else if (olderMatch.team1_p2 === profileData.id) olderPosKey = 't1p2';
+                                        else if (olderMatch.team2_p1 === profileData.id) olderPosKey = 't2p1';
+                                        else if (olderMatch.team2_p2 === profileData.id) olderPosKey = 't2p2';
+
+                                        prevElo = (olderMatch.elo_snapshot as any)[olderPosKey] || prevElo;
+                                    }
+                                } else if (i === userMatches.length - 1 && userMatches.length < 6) {
+                                    // This is the absolute first match found, and no older match exists.
+                                    // Use default start rating 1150.
+                                    prevElo = 1150;
+                                }
+
+                                if (currentElo !== undefined && prevElo !== undefined) {
+                                    points = currentElo - prevElo;
+                                }
+                            }
+                            form.push({ won, points });
+                        }
+                        setRecentForm(form.reverse()); // Show old -> new, or new -> old? Usually L -> R is Old -> New in a graph. But dots...
+                        // Reversing makes index 0 the oldest.
+                        // The UI "Recent Form" usually shows Left=Oldest, Right=Newest.
+                        // So reversing is correct if userMatches is Newest First.
                     }
 
                     // Fetch Matchmaking Suggestions
@@ -196,9 +243,10 @@ const Home = () => {
             </header>
 
             {/* Hero Stats Card (Only if logged in with a profile) */}
+            {/* Profile */}
             {profile && (
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">
+                    <Link to="/levels" className="block rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg hover:border-slate-500 transition-colors">
                         <div className="flex justify-between items-start mb-2">
                             <div>
                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Current Level</p>
@@ -229,20 +277,25 @@ const Home = () => {
                         <p className="text-[10px] text-green-500/80 mt-1.5 font-medium text-right">
                             {getLevelFromElo(profile.elo).max - profile.elo} pts to next level
                         </p>
-                    </div>
+                    </Link>
 
+                    {/* Recent Form */}
                     <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">
                         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Recent Form</p>
-                        <div className="flex gap-1.5 mt-1">
+                        <div className="flex gap-2 mt-1">
                             {recentForm.length === 0 ? (
                                 <span className="text-xs text-slate-500">No matches yet</span>
                             ) : (
-                                recentForm.map((won, i) => (
-                                    <div
-                                        key={i}
-                                        className={`h-3 w-3 rounded-full shadow-sm ${won ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500/50'}`}
-                                        title={won ? 'Win' : 'Loss'}
-                                    />
+                                recentForm.map((item, i) => (
+                                    <div key={i} className="flex flex-col items-center gap-1">
+                                        <div
+                                            className={`h-3 w-3 rounded-full shadow-sm ${item.won ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500/50'}`}
+                                            title={item.won ? 'Win' : 'Loss'}
+                                        />
+                                        <span className={`text-[10px] font-bold ${item.won ? 'text-green-500' : 'text-red-500'}`}>
+                                            {item.points !== null ? (item.points > 0 ? `+${item.points}` : item.points) : '-'}
+                                        </span>
+                                    </div>
                                 ))
                             )}
                         </div>
@@ -368,26 +421,22 @@ const Home = () => {
                         Match Suggestions
                         <span className="text-xs font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">ELO +/- 100</span>
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-3">
                         {suggestions.map(s => {
                             const diff = s.elo - (profile?.elo || 0);
                             const diffColor = diff > 0 ? "text-green-400" : diff < 0 ? "text-red-400" : "text-slate-400";
                             const diffText = diff > 0 ? `+${diff}` : diff;
 
-                            
+
                             return (
                                 <div key={s.id} className="relative flex items-center p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 hover:bg-slate-800 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <Link to={`/profile/${s.id}`}>
-                                            <Avatar src={s.avatar_url} fallback={s.username} size="md" />
-                                        </Link>
+                                        <Avatar src={s.avatar_url} fallback={s.username} size="md" />
                                         <div>
-                                            <Link to={`/profile/${s.id}`} className="font-semibold text-slate-200 block hover:text-white transition-colors text-sm">
-                                                {s.username}
-                                            </Link>
+                                            {s.username}
                                             <div className="flex items-center gap-2 text-xs">
                                                 <span className="text-slate-400 font-bold">{s.elo} ELO</span>
-                                                <span className={cn("font-medium", diffColor)}>({diffText})</span>
+                                                <span className={cn("font-medium", diffColor)}>diff of ({diffText})</span>
                                             </div>
                                         </div>
                                     </div>
@@ -395,8 +444,7 @@ const Home = () => {
                                         onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: s.id }))}
                                         className="absolute top-2 right-2 px-2 py-0.5 bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded transition-colors font-bold text-[9px] uppercase tracking-wider border border-blue-500/20"
                                     >
-                                        Challenge
-                                    </button>
+                                        Get <br />in <br />touch </button>
                                 </div>
                             )
                         })}

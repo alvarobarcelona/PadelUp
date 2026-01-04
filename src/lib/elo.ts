@@ -18,12 +18,14 @@ export const getKFactor = (matchesPlayed: number) => {
 export const LEVELS = [
   { level: 1, min: 0, max: 800, label: "Beginner" },
   { level: 2, min: 800, max: 900, label: "Basic" },
-  { level: 2.5, min: 900, max: 1050, label: "Basic+" },
+  { level: 2.5, min: 900, max: 1050, label: "Basic +" },
   { level: 3, min: 1050, max: 1200, label: "Lower Intermediate" },
   { level: 3.5, min: 1200, max: 1350, label: "Intermediate" },
   { level: 4, min: 1350, max: 1500, label: "Upper Intermediate" },
   { level: 4.5, min: 1500, max: 1700, label: "Advanced" },
-  { level: 5, min: 1700, max: 9999, label: "Pro / Competition" },
+  { level: 5, min: 1700, max: 1900, label: "Advanced +" },
+  { level: 6, min: 1900, max: 2100, label: "Pro / Competition" },
+  { level: 7, min: 2100, max: 2300, label: "World Padel Tour" },
 ];
 
 export const getLevelFromElo = (elo: number) => {

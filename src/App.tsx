@@ -11,6 +11,7 @@ import Auth from './pages/Auth';
 import Players from './pages/Players';
 import Admin from './pages/Admin';
 import Settings from './pages/Settings';
+import Levels from './pages/Levels';
 
 import PendingApproval from './pages/PendingApproval';
 import Subscription from './pages/Subscription';
@@ -52,6 +53,7 @@ function AppRoutes() {
         <Route path="profile" element={<Profile />} />
         <Route path="admin" element={<Admin />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="levels" element={<Levels />} />
       </Route>
     </Routes>
   );

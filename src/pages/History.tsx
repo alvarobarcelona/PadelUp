@@ -10,6 +10,7 @@ interface Match {
     created_at: string;
     score: any;
     winner_team: number;
+    commentary: string;
     // Raw foreign key objects (Supabase returns them nested under column name usually)
     team1_p1: { username: string, avatar_url: string | null } | null;
     team1_p2: { username: string, avatar_url: string | null } | null;
@@ -42,6 +43,7 @@ const History = () => {
           created_at,
           score,
           winner_team,
+          commentary,
           team1_p1(username, avatar_url),
           team1_p2(username, avatar_url),
           team2_p1(username, avatar_url),
@@ -173,6 +175,11 @@ const MatchCard = ({ match }: { match: Match }) => {
                         {getUsername(match.team2_p1)} & {getUsername(match.team2_p2)}
                     </span>
                 </div>
+            </div>
+            <div className="flex flex-col items-center justify-center">
+                {match.commentary && (
+                    <div className="text-xs mb-2 font-bold text-white whitespace-pre font-mono">Commentary: {match.commentary}</div>
+                )}
             </div>
 
             {/* Winner Indicator Stripe */}
