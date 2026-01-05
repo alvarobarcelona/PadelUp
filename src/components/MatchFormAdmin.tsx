@@ -10,6 +10,7 @@ interface Player {
     username: string;
     avatar_url: string | null;
     elo: number;
+    subscription_end_date?: string | null;
 }
 
 interface MatchFormAdminProps {
@@ -44,11 +45,18 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, username, avatar_url, elo')
+                .select('id, username, avatar_url, elo, subscription_end_date')
                 .eq('approved', true)
                 .order('username');
             if (error) throw error;
-            setAvailablePlayers(data || []);
+
+            // Filter Expired Subscriptions
+            const validPlayers = data?.filter(p => {
+                if (!p.subscription_end_date) return false;
+                return new Date(p.subscription_end_date) >= new Date();
+            }) || [];
+
+            setAvailablePlayers(validPlayers);
         } catch (error) {
             console.error('Error fetching players:', error);
         } finally {

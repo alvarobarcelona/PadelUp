@@ -16,14 +16,18 @@ const Subscription = () => {
             const nextMonth = new Date();
             nextMonth.setDate(nextMonth.getDate() + 30);
 
-            const { error } = await supabase
+            const { data, error } = await supabase
                 .from('profiles')
                 .update({
                     subscription_end_date: nextMonth.toISOString()
                 })
-                .eq('id', user.id);
+                .eq('id', user.id)
+                .select();
 
             if (error) throw error;
+            if (!data || data.length === 0) {
+                throw new Error('Update failed - possibly restricted by server policies.');
+            }
 
             alert('Subscription renewed! Thank you.');
             // Force reload to clear any cached states or re-run layout checks
@@ -51,13 +55,14 @@ const Subscription = () => {
                 <div className="bg-slate-900/50 rounded-xl p-6 mb-8 text-left border border-slate-700">
                     <div className="flex items-center gap-3 mb-4">
                         <CreditCard className="text-green-400" size={20} />
-                        <span className="text-white font-medium">Monthly Fee: <span className="text-green-400 font-bold">2.00€</span></span>
+                        <span className="text-white font-medium">Monthly Fee: <span className="text-green-400 font-bold">3.00€</span></span>
                     </div>
 
                     <div className="space-y-2 text-sm text-slate-400">
                         <p>Please send the payment via PayPal to:</p>
                         <p className="text-white font-mono bg-slate-800 p-2 rounded text-center border border-slate-600 select-all">
                             camase1990@gmail.com
+                            <p>Alvaro Barcelona Peralta</p>
                         </p>
                         <p className="text-xs text-center mt-1">please, “as a friend”</p>
                         <p className="text-xs text-center mt-1">This small contribution keeps the system running and improving.

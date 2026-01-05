@@ -38,7 +38,7 @@ const Home = () => {
     const [suggestions, setSuggestions] = useState<Profile[]>([]);
     const [recentMatches, setRecentMatches] = useState<MatchPreview[]>([]);
     const [pendingMatches, setPendingMatches] = useState<MatchPreview[]>([]);
-    const [recentForm, setRecentForm] = useState<{ won: boolean, points: number | null }[]>([]);
+    const [recentForm, setRecentForm] = useState<{ id: number, won: boolean, points: number | null }[]>([]);
     const [, setLoading] = useState(true);
     const [showWelcome, setShowWelcome] = useState(false);
 
@@ -80,7 +80,7 @@ const Home = () => {
                     // Fetch user's last 6 matches (to calc diff for 5)
                     const { data: userMatches } = await supabase
                         .from('matches')
-                        .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2, elo_snapshot')
+                        .select('id, winner_team, team1_p1, team1_p2, team2_p1, team2_p2, elo_snapshot')
                         .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
                         .eq('status', 'confirmed')
                         .order('created_at', { ascending: false })
@@ -134,7 +134,7 @@ const Home = () => {
                                     points = currentElo - prevElo;
                                 }
                             }
-                            form.push({ won, points });
+                            form.push({ id: m.id, won, points });
                         }
                         setRecentForm(form.reverse()); // Show old -> new, or new -> old? Usually L -> R is Old -> New in a graph. But dots...
                         // Reversing makes index 0 the oldest.
@@ -184,7 +184,7 @@ const Home = () => {
             const { data: matchesData } = await supabase
                 .from('matches')
                 .select(`
-                id, created_at, winner_team, commentary, status,
+                id, created_at, winner_team, commentary, status, score,
                 t1p1:team1_p1(username),
                 t1p2:team1_p2(username),
                 t2p1:team2_p1(username),
@@ -279,20 +279,25 @@ const Home = () => {
                         </p>
                     </Link>
 
-                    {/* Recent Form */}
+                    {/* Recent played */}
                     <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Recent Form</p>
-                        <div className="flex gap-2 mt-1">
+                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Recent Played</p>
+                        <div className="flex flex-col gap-2 mt-2">
                             {recentForm.length === 0 ? (
                                 <span className="text-xs text-slate-500">No matches yet</span>
                             ) : (
                                 recentForm.map((item, i) => (
-                                    <div key={i} className="flex flex-col items-center gap-1">
-                                        <div
-                                            className={`h-3 w-3 rounded-full shadow-sm ${item.won ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500/50'}`}
-                                            title={item.won ? 'Win' : 'Loss'}
-                                        />
-                                        <span className={`text-[10px] font-bold ${item.won ? 'text-green-500' : 'text-red-500'}`}>
+                                    <div key={i} className="flex items-center justify-between bg-white/5  rounded-lg">
+                                        <span className="text-[10px] text-slate-500 font-mono leading-none">Id: {item.id}</span>
+                                        <div className="flex items-center gap-2">
+                                            <div
+                                                className={`h-2 w-2 rounded-full shadow-sm ${item.won ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500/50'}`}
+                                            />
+                                            <span className={`text-[10px] font-bold leading-none ${item.won ? 'text-green-500' : 'text-red-500'}`}>
+                                                {item.won ? "WIN" : "LOSS"}
+                                            </span>
+                                        </div>
+                                        <span className={`text-xs font-bold leading-none ${item.won ? 'text-green-500' : 'text-red-500'}`}>
                                             {item.points !== null ? (item.points > 0 ? `+${item.points}` : item.points) : '-'}
                                         </span>
                                     </div>
@@ -418,7 +423,7 @@ const Home = () => {
                 <div>
                     <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                         <User size={18} className="text-blue-400" />
-                        Match Suggestions
+                        Player Suggestions
                         <span className="text-xs font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">ELO +/- 100</span>
                     </h2>
                     <div className="flex flex-col gap-3">
@@ -470,6 +475,12 @@ const Home = () => {
                     ) : (
                         recentMatches.map((match) => (
                             <div key={match.id} className="group flex flex-col gap-2 rounded-xl bg-slate-800/60 p-4 border border-slate-800 hover:border-slate-600 transition-all">
+                                <div className=" flex justify-between text-xs text-slate-500">
+                                    <span className="text-[10px] text-slate-500">
+                                        {new Date(match.created_at).toLocaleDateString()}
+                                    </span>
+                                    <span>Match: {match.id}</span>
+                                </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
@@ -480,10 +491,15 @@ const Home = () => {
                                             <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
                                                 {match.t2p1?.username} & {match.t2p2?.username}
                                             </span>
+
                                         </div>
-                                        <span className="text-[10px] text-slate-500">
-                                            {new Date(match.created_at).toLocaleDateString()}
-                                        </span>
+                                        <div className="flex gap-2">
+                                            {Array.isArray(match.score) && match.score.map((s: any, i: number) => (
+                                                <span key={i} className="text-slate-400 font-mono text-xs">
+                                                    {s.t1}-{s.t2}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center group-hover:bg-slate-600 transition-colors">
                                         <HistoryIcon size={14} className="text-slate-400" />

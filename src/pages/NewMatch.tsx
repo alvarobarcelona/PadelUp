@@ -11,6 +11,7 @@ interface Player {
     username: string;
     avatar_url: string | null;
     elo: number;
+    subscription_end_date?: string | null;
 }
 
 const NewMatch = () => {
@@ -40,11 +41,18 @@ const NewMatch = () => {
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, username, avatar_url, elo')
+                .select('id, username, avatar_url, elo, subscription_end_date')
                 .eq('approved', true) // Only select approved players
                 .order('username');
             if (error) throw error;
-            setAvailablePlayers(data || []);
+
+            // Filter Expired Subscriptions
+            const validPlayers = data?.filter(p => {
+                if (!p.subscription_end_date) return false;
+                return new Date(p.subscription_end_date) >= new Date();
+            }) || [];
+
+            setAvailablePlayers(validPlayers);
         } catch (error) {
             console.error('Error fetching players:', error);
         } finally {
@@ -335,6 +343,7 @@ const NewMatch = () => {
                 <p className="text-xs text-yellow-500 font-medium leading-relaxed">
                     Please ensure scores are recorded fairly.
                     If an admin detects false records, the match will be deleted and ELO points reverted to maintain a fair and real community.
+                    The user may be temporarily banned if necessary.
                 </p>
             </div>
 
