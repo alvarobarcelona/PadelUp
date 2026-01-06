@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
-import { Loader2, Calendar, AlertCircle, Search } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Loader2, Calendar, AlertCircle, Search, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/Button';
 
 interface Match {
     id: number;
@@ -19,10 +20,13 @@ interface Match {
 }
 
 const History = () => {
+
+    const navigate = useNavigate();
     const [matches, setMatches] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+   
 
     useEffect(() => {
         fetchMatches();
@@ -83,8 +87,9 @@ const History = () => {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            <header>
+            <header className='flex justify-between items-center'>
                 <h1 className="text-3xl font-bold text-white">Match History</h1>
+                <button onClick={() => navigate('/')} className="text-slate-500 hover:text-slate-300 transition-colors"><X className="w-6 h-6" /></button>
             </header>
 
             <div className="relative">

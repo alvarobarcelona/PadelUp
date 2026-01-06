@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to PadelUp</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        color: #e2e8f0;
+        background-color: #0f172a;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #1e293b;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 40px;
+        margin-bottom: 40px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      .header {
+        background-color: #0f172a;
+        padding: 32px 20px;
+        text-align: center;
+        border-bottom: 1px solid #334155;
+      }
+      .logo {
+        color: #4ade80;
+        font-size: 28px;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-block;
+      }
+      .content {
+        padding: 40px 32px;
+        text-align: center;
+      }
+      .h1 {
+        color: #f8fafc;
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 24px;
+        margin-top: 0;
+      }
+      .text {
+        color: #94a3b8;
+        font-size: 16px;
+        margin-bottom: 32px;
+      }
+      .button {
+        display: inline-block;
+        background-color: #4ade80;
+        color: #0f172a;
+        padding: 14px 32px;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: background-color 0.2s;
+      }
+      .button:hover {
+        background-color: #22c55e;
+      }
+      .note {
+        margin-top: 32px;
+        padding: 16px;
+        background-color: #0f172a;
+        border-radius: 8px;
+        border: 1px solid #334155;
+      }
+      .note-text {
+        font-size: 14px;
+        color: #94a3b8;
+        margin: 0;
+      }
+      .footer {
+        padding: 24px;
+        text-align: center;
+        color: #64748b;
+        font-size: 12px;
+        border-top: 1px solid #334155;
+      }
+    </style>
+  </head>
+  <body style="background-color: #0f172a; padding: 20px">
+    <div class="container">
+      <div class="header">
+        <a href="#" class="logo">PadelUp</a>
+      </div>
+
+      <div class="content">
+        <h1 class="h1">Welcome into the Arena! 🎾</h1>
+
+        <p class="text">
+          You are one step away from joining the PadelUp community. Please
+          confirm your email address to verify your identity.
+        </p>
+
+        <!-- Supabase Button -->
+        <a href="{{ .ConfirmationURL }}" class="button">Confirm Registration</a>
+
+        <div class="note">
+          <p class="note-text">
+            <strong>Important:</strong> After confirming your email, your
+            account will be in a
+            <span style="color: #fbbf24">Pending Approval</span> state. An
+            administrator must verify and activate your profile before you can
+            access the full application.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer">
+        &copy; 2026 PadelUp. All rights reserved.<br />
+        <a
+          href="{{ .ConfirmationURL }}"
+          style="color: #64748b; margin-top: 10px; display: inline-block"
+          >{{ .ConfirmationURL }}</a
+        >
+      </div>
+    </div>
+  </body>
+</html>

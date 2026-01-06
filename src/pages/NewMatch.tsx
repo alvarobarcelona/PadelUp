@@ -395,7 +395,7 @@ const NewMatch = () => {
                     Finish Match
                 </Button>
                 <p className="text-center text-xs text-slate-500">
-                    This will submit the match for verification (24h auto-accept).
+                    The match will be sent to the opponents to verify the result. (If ignored, it will be automatically accepted after 24 hours.)
                 </p>
             </div>
         </div>

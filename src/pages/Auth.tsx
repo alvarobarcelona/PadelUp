@@ -94,17 +94,34 @@ const Auth = () => {
                 }
                 navigate('/');
             } else {
+                // Check if user already exists in profiles
+                const { data: existingProfile } = await supabase
+                    .from('profiles')
+                    .select('email, username')
+                    .or(`email.eq.${email},username.eq.${username}`)
+                    .maybeSingle();
+
+                if (existingProfile) {
+                    if (existingProfile.email === email) {
+                        throw new Error('User already registered');
+                    }
+                    if (existingProfile.username === username) {
+                        throw new Error('Username already taken');
+                    }
+                }
+
                 const { error } = await supabase.auth.signUp({
                     email,
                     password,
+                    options: {
+                        emailRedirectTo: window.location.origin,
+                        data: {
+                            username: username,
+                            email: email
+                        }
+                    }
                 });
                 if (error) throw error;
-
-                const { error: updateError } = await supabase.auth.updateUser({
-                    data: { username }
-                });
-                if (updateError) console.error("Error saving username meta", updateError);
-
 
                 alert('Success! Check your email for the confirmation link!');
             }

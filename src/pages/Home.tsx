@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, History as HistoryIcon, User, Check, X, Clock } from 'lucide-react';
+import { Plus, History as HistoryIcon, User, Check, X, Clock} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
@@ -287,7 +287,7 @@ const Home = () => {
                                 <span className="text-xs text-slate-500">No matches yet</span>
                             ) : (
                                 recentForm.map((item, i) => (
-                                    <div key={i} className="flex items-center justify-between bg-white/5  rounded-lg">
+                                    <div key={i} className="flex items-center space-x-5 bg-white/5 p-0.5  rounded-lg">
                                         <span className="text-[10px] text-slate-500 font-mono leading-none">Id: {item.id}</span>
                                         <div className="flex items-center gap-2">
                                             <div
@@ -464,7 +464,7 @@ const Home = () => {
                         <HistoryIcon size={18} className="text-slate-400" />
                         Latest Activity
                     </h2>
-                    <Link to="/history" className="text-xs font-medium text-green-400 hover:text-green-300">View All</Link>
+                    <Link to="/history" className="text-xs font-medium text-green-400 hover:text-green-300">Match history</Link>
                 </div>
 
                 <div className="space-y-3">
