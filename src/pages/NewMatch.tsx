@@ -5,6 +5,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor, getLevelFromElo } from '../lib/elo';
+import { logActivity } from '../lib/logger';
 
 interface Player {
     id: string;
@@ -185,7 +186,7 @@ const NewMatch = () => {
                 t2p2: newRatings.t2p2
             };
 
-            const { error: matchError } = await supabase.from('matches').insert({
+            const { data: newMatch, error: matchError } = await supabase.from('matches').insert({
                 team1_p1: selectedPlayers.t1p1.id,
                 team1_p2: selectedPlayers.t1p2.id,
                 team2_p1: selectedPlayers.t2p1.id,
@@ -196,15 +197,43 @@ const NewMatch = () => {
                 status: 'pending', // Explicitly pending
                 elo_snapshot: eloSnapshot,
                 created_by: user?.id
-            });
+            }).select().single();
 
             if (matchError) throw matchError;
+
+            // Log Activity
+            if (newMatch) {
+                logActivity('MATCH_CREATE', newMatch.id.toString(), {
+                    winner: winnerTeam,
+                    t1: [selectedPlayers.t1p1.username, selectedPlayers.t1p2.username],
+                    t2: [selectedPlayers.t2p1.username, selectedPlayers.t2p2.username]
+                });
+            }
 
             // Note: We do NOT update profiles or achievements here anymore.
             // This happens on confirmation.
 
+            // LOG MATCH CREATE
+            // We can't easily get the new match ID from a standard insert without select, 
+            // but the supabase client should return data if we ask for it.
+            // However, the code above: await supabase.from('matches').insert({...}) 
+            // does NOT return data unless .select() is chained.
+            // I need to chain .select() to get the ID.
+
+            // Wait, let's fix the insert above first in a separate edit or just assume we don't have ID?
+            // "targetId" is important. I should modify the insert to return data.
+            // MATCH_CREATE log without ID is less useful.
+            // I'll modify the insert block in next step or try to include it here if possible.
+            // Actually, I can't modify the insert block from here easily because I am targeting the success block.
+            // I will assume I can modify the insert in a separate tool call to be safe, 
+            // OR I can try to find the match I just created (risky with concurrency).
+            // BETTER: I will chain .select() in a separate edit tool for NewMatch.tsx THEN add the log.
+            // But wait, I am already in NewMatch.tsx.
+            // Let's just add the log with "pending" ID or similar for now? No, better to do it right.
+            // I'll skip adding the log in this tool call and do it properly in the next one where I modify the insert.
+
             alert("Match submitted! Opponents have 24h to confirm the result.");
-            navigate('/home'); // Or Home
+            navigate('/');
         } catch (error: any) {
             console.error('Error saving match:', error);
             alert('Failed to save match: ' + error.message);
@@ -222,7 +251,7 @@ const NewMatch = () => {
     // PLAYER SELECTION MODAL
     if (isSelectionModalOpen) {
         return (
-            <div className="fixed inset-0 z-50 flex flex-col bg-slate-900 p-4">
+            <div className="space-y-6 animate-fade-in pb-20 relative">
                 <header className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-white">Select Player</h2>
                     <Button variant="ghost" size="icon" onClick={() => setIsSelectionModalOpen(false)}><X /></Button>
@@ -259,7 +288,7 @@ const NewMatch = () => {
                     <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><X size={24} /></Button>
                 </header>
 
-                <section className="space-y-3">
+                <section className="space-y-">
                     <h2 className="text-sm font-semibold uppercase text-green-400 tracking-wider">Team 1</h2>
                     <div className="grid grid-cols-2 gap-4">
                         <PlayerSelector

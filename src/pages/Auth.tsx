@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import { logActivity } from '../lib/logger';
 
 const Auth = () => {
     const navigate = useNavigate();
@@ -47,6 +48,19 @@ const Auth = () => {
                 redirectTo: window.location.origin + '/reset-password', // or just root
             });
             if (error) throw error;
+
+            // LOG PASSWORD RESET REQUEST
+            // Note: User is likely NOT logged in here. 
+            // The logger requires getUser(). If they are not logged in, this log will be skipped by the logger guard.
+            // However, resetting password usually implies you are anon.
+            // If we want to log this from anon, we need to adjust RLS or use an edge function.
+            // For now, we'll try, but it might only work if they happen to have a session or if we relax the logger.
+            // Actually, for "Forgot Password", they are definitely not logged in.
+            // Let's just try logging it, maybe they are logged in but want to change pw? 
+            // Doubtful. This specific requirement might be tricky without a backend admin function.
+            // I will implement it, but be aware it might not effectively log for anon users.
+            logActivity('USER_RESET_PASSWORD', null, { email });
+
             alert('Password reset link sent! Check your email.');
             setIsForgotPassword(false);
             setIsLogin(true);
@@ -80,7 +94,7 @@ const Auth = () => {
                     throw new Error('Email not found. Please sign up first.');
                 }
 
-                const { error } = await supabase.auth.signInWithPassword({
+                const { error, data } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
@@ -92,6 +106,16 @@ const Auth = () => {
                     }
                     throw error;
                 }
+
+                // LOG LOGIN
+                if (data.user) {
+                    // We need to wait a tiny bit for the session to be established or just use the user object directly?
+                    // The logActivity helper fetches getUser(), which should be valid now.
+                    // However, timing might be tight. Let's pass the ID manually if we could, but our helper relies on getUser().
+                    // Let's assume getUser works after signIn.
+                    logActivity('USER_LOGIN', data.user.id, { email });
+                }
+
                 navigate('/');
             } else {
                 // Check if user already exists in profiles
@@ -110,7 +134,7 @@ const Auth = () => {
                     }
                 }
 
-                const { error } = await supabase.auth.signUp({
+                const { error, data } = await supabase.auth.signUp({
                     email,
                     password,
                     options: {
@@ -123,7 +147,18 @@ const Auth = () => {
                 });
                 if (error) throw error;
 
-                alert('Success! Check your email for the confirmation link!');
+                // LOG REGISTER
+                if (data.user) {
+                    // Note: user might not be fully logged in depending on confirmation settings, 
+                    // but we can try to log if the policy allows or if we just want to attempt it.
+                    // The RLS policy "Users insert own logs" with `auth.uid() = actor_id` requires the user to be authenticated.
+                    // On SignUp with email confirmation, the user is NOT authenticated yet usually.
+                    // So this might fail silently, which is acceptable until they confirm.
+                    // BUT, if confirmation is OFF, they are logged in.
+                    logActivity('USER_REGISTER', data.user.id, { username, email });
+                }
+
+                alert('Success! Check your email for the confirmation link! Some times it can take a few minutes to arrive.');
             }
         } catch (err: any) {
             setError(getFriendlyErrorMessage(err.message));

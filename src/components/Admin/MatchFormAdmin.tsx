@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Button } from '../components/ui/Button';
-import { Avatar } from '../components/ui/Avatar';
+import { Button } from '../../components/ui/Button';
+import { Avatar } from '../../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor, getLevelFromElo } from '../lib/elo';
+import { supabase } from '../../lib/supabase';
+import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor, getLevelFromElo } from '../../lib/elo';
+import { logActivity } from '../../lib/logger';
 
 interface Player {
     id: string;
@@ -159,7 +160,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 t2p2: newRatings.t2p2
             };
 
-            const { error: matchError } = await supabase.from('matches').insert({
+            const { data: newMatch, error: matchError } = await supabase.from('matches').insert({
                 team1_p1: selectedPlayers.t1p1.id,
                 team1_p2: selectedPlayers.t1p2.id,
                 team2_p1: selectedPlayers.t2p1.id,
@@ -170,7 +171,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 status: 'confirmed', // DIRECT MATCH
                 elo_snapshot: eloSnapshot,
                 created_by: user?.id
-            });
+            }).select().single();
 
             if (matchError) throw matchError;
 
@@ -181,6 +182,16 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 supabase.from('profiles').update({ elo: newRatings.t2p1 }).eq('id', selectedPlayers.t2p1.id),
                 supabase.from('profiles').update({ elo: newRatings.t2p2 }).eq('id', selectedPlayers.t2p2.id),
             ]);
+
+            // LOG ADMIN MATCH CREATE
+            if (newMatch) {
+                logActivity('ADMIN_MATCH_CREATE', newMatch.id.toString(), {
+                    winner: winnerTeam,
+                    t1: [selectedPlayers.t1p1.username, selectedPlayers.t1p2.username],
+                    t2: [selectedPlayers.t2p1.username, selectedPlayers.t2p2.username]
+                });
+            }
+
             alert("Match created and confirmed! ELOs updated.");
 
             onSuccess();
@@ -217,7 +228,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                         className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-slate-500"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        autoFocus
+
                     />
                 </div>
 

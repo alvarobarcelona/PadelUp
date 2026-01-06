@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { checkAchievements } from '../lib/achievements';
 import { useNavigate } from 'react-router-dom';
-import { AchievementModal } from '../components/AchievementModal';
+import { AchievementModal } from '../components/Modals/AchievementModal';
 
 const iconMap: Record<string, any> = {
     'Trophy': Trophy,

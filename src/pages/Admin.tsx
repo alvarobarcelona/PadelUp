@@ -5,7 +5,8 @@ import { Button } from '../components/ui/Button';
 import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getMatchPointsFromHistory } from '../lib/elo';
-import { MatchFormAdmin as MatchForm } from '../components/MatchFormAdmin';
+import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
+import { logActivity } from '../lib/logger';
 
 // Helper for ELO
 // const getExpected = (a: number, b: number) => 1 / (1 + Math.pow(10, (b - a) / 400));
@@ -17,11 +18,13 @@ const Admin = () => {
     const [loading, setLoading] = useState(true);
     const [players, setPlayers] = useState<any[]>([]);
     const [matches, setMatches] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'direct_match'>('pending');
+    const [logs, setLogs] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'direct_match' | 'activity'>('pending');
 
     // Search State
     const [memberSearch, setMemberSearch] = useState('');
     const [matchSearch, setMatchSearch] = useState('');
+    const [logSearch, setLogSearch] = useState('');
 
     // Edit State
     const [editingPlayer, setEditingPlayer] = useState<any | null>(null);
@@ -51,8 +54,19 @@ const Admin = () => {
         const { data: p } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
         const { data: m } = await supabase.from('matches').select('*').order('created_at', { ascending: false });
 
+        // Fetch Logs (last 50)
+        const { data: l } = await supabase
+            .from('activity_logs')
+            .select(`
+                *,
+                actor:actor_id(username, avatar_url)
+            `)
+            .order('created_at', { ascending: false })
+            .limit(50);
+
         if (p) setPlayers(p);
         if (m) setMatches(m);
+        if (l) setLogs(l);
         setLoading(false);
     };
 
@@ -83,6 +97,11 @@ const Admin = () => {
             // 4. Delete the match path
             const { error: deleteError } = await supabase.from('matches').delete().eq('id', id);
             if (deleteError) throw deleteError;
+
+            // LOG ADMIN DELETE MATCH
+            logActivity('ADMIN_DELETE_MATCH', id.toString(), {
+                original_match: match
+            });
 
             alert(`Match deleted and ELO reverted.`);
             fetchData();
@@ -152,6 +171,9 @@ const Admin = () => {
 
         if (error) alert(`Error: ${error.message}`);
         else {
+            // LOG ADMIN APPROVE
+            logActivity('ADMIN_APPROVE_USER', id, { username });
+
             alert(`${username} Approved!`);
             fetchData();
         }
@@ -192,6 +214,18 @@ const Admin = () => {
                 .eq('id', editingPlayer.id);
 
             if (error) throw error;
+
+            // LOG ADMIN EDIT
+            logActivity('ADMIN_EDIT_USER', editingPlayer.id, {
+                changes: {
+                    username: editingPlayer.username,
+                    elo: editingPlayer.elo,
+                    is_admin: editingPlayer.is_admin,
+                    approved: editingPlayer.approved,
+                    banned: editingPlayer.banned
+                }
+            });
+
             alert('Player updated successfully!');
             setEditingPlayer(null);
             fetchData();
@@ -220,11 +254,7 @@ const Admin = () => {
                     <h1 className="text-2xl font-bold"> Admin Console</h1>
                     <button onClick={() => navigate('/profile')} className="text-slate-500 hover:text-slate-300 transition-colors"><X className="w-6 h-6" /></button>
                 </div>
-                {pendingUsers.length > 0 && (
-                    <span className="bg-yellow-500 text-slate-900 text-xs font-bold px-2 py-1 rounded-full animate-pulse">
-                        {pendingUsers.length} Pending
-                    </span>
-                )}
+
             </header>
 
             <div className="flex gap-2 border-b border-slate-700 pb-2 overflow-x-auto no-scrollbar">
@@ -251,6 +281,12 @@ const Admin = () => {
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'direct_match' ? 'text-white border-b-2 border-red-500' : 'text-slate-500'}`}
                 >
                     Add new Match
+                </button>
+                <button
+                    onClick={() => setActiveTab('activity')}
+                    className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'activity' ? 'text-white border-b-2 border-blue-500' : 'text-slate-500'}`}
+                >
+                    Activity Feed
                 </button>
             </div>
 
@@ -429,6 +465,62 @@ const Admin = () => {
                             );
                         })}
                         {filteredMatches.length === 0 && <p className="text-center text-slate-500 py-4">No matches found.</p>}
+                    </div>
+                </div>
+            )}
+
+            {/* ACTIVITY FEED TAB */}
+            {activeTab === 'activity' && (
+                <div className="space-y-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-3 text-slate-500" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search logs..."
+                            className="w-full bg-slate-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-slate-700"
+                            value={logSearch}
+                            onChange={(e) => setLogSearch(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        {logs
+                            .filter(l => JSON.stringify(l).toLowerCase().includes(logSearch.toLowerCase()))
+                            .map(log => {
+                                const isError = log.action.includes('REJECT') || log.action.includes('DELETE');
+                                const isCreate = log.action.includes('CREATE') || log.action.includes('REGISTER');
+                                const isUpdate = log.action.includes('UPDATE') || log.action.includes('EDIT');
+
+                                let badgeColor = 'bg-slate-700 text-slate-300';
+                                if (isError) badgeColor = 'bg-red-500/20 text-red-400';
+                                if (isCreate) badgeColor = 'bg-green-500/20 text-green-400';
+                                if (isUpdate) badgeColor = 'bg-blue-500/20 text-blue-400';
+
+                                return (
+                                    <div key={log.id} className="flex flex-col gap-1 bg-slate-800/80 p-3 rounded-lg border border-slate-700 text-sm">
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${badgeColor}`}>
+                                                    {log.action.replace(/_/g, ' ')}
+                                                </span>
+                                                <span className="text-slate-400 text-xs">{new Date(log.created_at).toLocaleString()}</span>
+                                            </div>
+                                            {log.actor && (
+                                                <span className="text-xs text-slate-500 font-mono">
+                                                    By: {log.actor?.username || 'Unknown'}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="pl-1">
+                                            {log.target_id && <p className="text-xs text-slate-500 font-mono mb-1">Target ID: {log.target_id}</p>}
+                                            <pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono bg-slate-900/50 p-2 rounded">
+                                                {JSON.stringify(log.details, null, 2)}
+                                            </pre>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        {logs.length === 0 && <p className="text-center text-slate-500 py-4">No activity recorded yet.</p>}
                     </div>
                 </div>
             )}

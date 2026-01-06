@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { X, Send, Loader2, ArrowLeft, MessageSquarePlus } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '../ui/Button';
+import { useChat } from '../../context/ChatContext';
 
 interface Message {
     id: string;
@@ -22,6 +23,7 @@ interface ConversationUser {
     avatar_url: string | null;
     last_message?: string;
     last_message_time?: string;
+    has_unread?: boolean;
 }
 
 interface ChatDrawerProps {
@@ -70,9 +72,14 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         }
     }, [isOpen, activeUserId]);
 
+    const { markAsRead } = useChat();
+
     const loadUserForChat = async (userId: string) => {
         setLoading(true);
         setView('chat');
+
+        // Mark as read immediately when opening chat
+        markAsRead(userId);
 
         // Fetch user details
         const { data } = await supabase
@@ -101,7 +108,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
             // 1. Get IDs of people who sent us messages
             const { data: incoming } = await supabase
                 .from('messages')
-                .select('sender_id, created_at, content')
+                .select('sender_id, created_at, content, is_read')
                 .eq('receiver_id', user.id)
                 .order('created_at', { ascending: false });
 
@@ -137,10 +144,13 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                     .in('id', userIds);
 
                 if (profiles) {
+                    const unreadSenders = new Set(incoming?.filter((m: any) => !m.is_read).map((m: any) => m.sender_id));
+
                     const convos = profiles.map(p => ({
                         ...p,
                         last_message: interactionMap.get(p.id)?.last_msg,
-                        last_message_time: interactionMap.get(p.id)?.time
+                        last_message_time: interactionMap.get(p.id)?.time,
+                        has_unread: unreadSenders.has(p.id)
                     })).sort((a, b) => new Date(b.last_message_time!).getTime() - new Date(a.last_message_time!).getTime());
 
                     setConversations(convos);
@@ -313,6 +323,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                             </div>
                         ) : (
                             conversations.map(conv => (
+
                                 <div
                                     key={conv.id}
                                     onClick={() => loadUserForChat(conv.id)}
@@ -322,11 +333,14 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-baseline mb-1">
                                             <h3 className="font-semibold text-white truncate">{conv.username}</h3>
-                                            <span className="text-[10px] text-slate-500">
-                                                {conv.last_message_time && new Date(conv.last_message_time).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                            {conv.has_unread && conv.last_message_time && <span className="text-[10px] text-green-400 font-medium">
+                                                new message
                                             </span>
+                                            }
+                                            {conv.last_message_time && <span className="ml-2 text-slate-500 text-[10px]">{new Date(conv.last_message_time).toLocaleString()}</span>}
                                         </div>
                                         <p className="text-sm text-slate-400 truncate">{conv.last_message}</p>
+
                                     </div>
                                 </div>
                             ))

@@ -6,9 +6,11 @@ import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
 import ChatButton from './Chat/ChatButton';
 import ChatDrawer from './Chat/ChatDrawer';
+import { useChat } from '../context/ChatContext';
 
 const Layout = () => {
     const navigate = useNavigate();
+    const { unreadCount } = useChat();
     const [verifying, setVerifying] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
@@ -90,7 +92,7 @@ const Layout = () => {
             </main>
 
             {/* Chat Components */}
-            <ChatButton onClick={() => setIsChatOpen(true)} />
+            <ChatButton onClick={() => setIsChatOpen(true)} unreadCount={unreadCount} />
             <ChatDrawer
                 isOpen={isChatOpen}
                 onClose={() => setIsChatOpen(false)}

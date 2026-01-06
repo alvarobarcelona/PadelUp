@@ -25,7 +25,7 @@ const History = () => {
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-   
+
 
     useEffect(() => {
         fetchMatches();
@@ -179,10 +179,13 @@ const MatchCard = ({ match }: { match: Match }) => {
                         {getUsername(match.team2_p1)} & {getUsername(match.team2_p2)}
                     </span>
                 </div>
+
             </div>
-            <div className="flex flex-col items-center justify-center">
+            <div className="flex w-full justify-center px-4">
                 {match.commentary && (
-                    <div className="text-xs mb-2 font-bold text-white whitespace-pre font-mono">Commentary: {match.commentary}</div>
+                    <div className="text-xs mb-2 font-bold text-white whitespace-pre-wrap font-mono text-center break-words">
+                        Note: {match.commentary}
+                    </div>
                 )}
             </div>
 

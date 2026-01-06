@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Plus, History as HistoryIcon, User, Check, X, Clock} from 'lucide-react';
+import { Plus, History as HistoryIcon, User, Check, X, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
-import { WelcomeModal } from '../components/WelcomeModal';
+import { WelcomeModal } from '../components/Modals/WelcomeModal';
+import { logActivity } from '../lib/logger';
 
 interface Profile {
     id: string;
@@ -210,6 +211,10 @@ const Home = () => {
         try {
             const { error } = await supabase.rpc('confirm_match', { match_id: matchId });
             if (error) throw error;
+
+            // LOG MATCH CONFIRM
+            logActivity('MATCH_CONFIRM', matchId.toString(), {});
+
             loadDashboardData(); // Refresh UI
         } catch (error: any) {
             alert('Error confirming match: ' + error.message);
@@ -221,6 +226,10 @@ const Home = () => {
         try {
             const { error } = await supabase.rpc('reject_match', { match_id: matchId });
             if (error) throw error;
+
+            // LOG MATCH REJECT
+            logActivity('MATCH_REJECT', matchId.toString(), {});
+
             loadDashboardData();
         } catch (error: any) {
             alert('Error rejecting match: ' + error.message);

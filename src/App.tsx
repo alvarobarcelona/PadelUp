@@ -21,6 +21,8 @@ import ResetPassword from './pages/ResetPassword';
 import { useEffect } from 'react';
 import { supabase } from './lib/supabase';
 
+import { ChatProvider } from './context/ChatContext';
+
 function AppRoutes() {
   const navigate = useNavigate();
 
@@ -38,13 +40,14 @@ function AppRoutes() {
   }, [navigate]);
 
   return (
-    <Routes>
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/pending" element={<PendingApproval />} />
-      <Route path="/subscription" element={<Subscription />} />
-      <Route path="/banned" element={<Banned />} />
-      <Route path="/" element={<Layout />}>
+    <ChatProvider>
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/pending" element={<PendingApproval />} />
+        <Route path="/subscription" element={<Subscription />} />
+        <Route path="/banned" element={<Banned />} />
+        <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="rankings" element={<Rankings />} />
         <Route path="new-match" element={<NewMatch />} />
@@ -54,8 +57,9 @@ function AppRoutes() {
         <Route path="admin" element={<Admin />} />
         <Route path="settings" element={<Settings />} />
         <Route path="levels" element={<Levels />} />
-      </Route>
-    </Routes>
+        </Route>
+      </Routes>
+    </ChatProvider>
   );
 }
 

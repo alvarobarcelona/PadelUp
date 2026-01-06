@@ -14,6 +14,7 @@ import {
     X,
     Loader2
 } from 'lucide-react';
+import { logActivity } from '../lib/logger';
 
 const Settings = () => {
     const navigate = useNavigate();
@@ -121,6 +122,10 @@ const Settings = () => {
 
             setProfile({ ...profile, username: newUsername });
             setIsEditing(false);
+
+            // LOG PROFILE UPDATE
+            logActivity('PROFILE_UPDATE', user.id, { username: newUsername });
+
         } catch (error: any) {
             console.error('Error updating profile:', error);
 
