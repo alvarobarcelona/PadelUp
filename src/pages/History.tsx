@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, Calendar, AlertCircle, Search, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '../components/ui/Button';
 
 interface Match {
     id: number;
