@@ -150,7 +150,8 @@ const Home = () => {
                         .from('profiles')
                         .select('id, username, elo, avatar_url')
                         .neq('id', user.id)
-                        .eq('approved', true);
+                        .eq('approved', true)
+                        .eq('is_admin', false);
 
                     if (candidates) {
                         const minElo = profileData.elo - 100;
@@ -222,13 +223,28 @@ const Home = () => {
     };
 
     const handleReject = async (matchId: number) => {
+        // 1. Prompt for Reason
+        const reason = prompt('Please provide a reason for rejecting this match (Required):');
+        if (reason === null) return; // Cancelled
+        if (reason.trim() === '') {
+            alert('Rejection reason is required.');
+            return;
+        }
+
         if (!confirm('Reject this game? It will be deleted. You can always create a new one. But remember that rejecting it to avoid a drop in your ELO rating may result in a temporary suspension.')) return;
+
         try {
+            // 2. Find Match Details for Logging (before it's deleted)
+            const match = pendingMatches.find(m => m.id === matchId);
+
             const { error } = await supabase.rpc('reject_match', { match_id: matchId });
             if (error) throw error;
 
-            // LOG MATCH REJECT
-            logActivity('MATCH_REJECT', matchId.toString(), {});
+            // LOG MATCH REJECT with Reason and Snapshot
+            logActivity('MATCH_REJECT', matchId.toString(), {
+                reason: reason.trim(),
+                match_snapshot: match || 'Match details not found'
+            });
 
             loadDashboardData();
         } catch (error: any) {

@@ -37,6 +37,7 @@ const Players = () => {
                 .from('profiles')
                 .select('*')
                 .eq('approved', true)
+                .eq('is_admin', false)
                 .order('username');
 
             if (allPlayers) setPlayers(allPlayers);

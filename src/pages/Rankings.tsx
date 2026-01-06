@@ -34,6 +34,7 @@ const Rankings = () => {
                     .from('profiles')
                     .select('*')
                     .eq('approved', true)
+                    .eq('is_admin', false)
                     .order('elo', { ascending: false });
 
                 if (error) throw error;

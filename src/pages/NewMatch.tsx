@@ -44,6 +44,7 @@ const NewMatch = () => {
                 .from('profiles')
                 .select('id, username, avatar_url, elo, subscription_end_date')
                 .eq('approved', true) // Only select approved players
+                .eq('is_admin', false)
                 .order('username');
             if (error) throw error;
 
