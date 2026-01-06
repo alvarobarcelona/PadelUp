@@ -312,7 +312,7 @@ const Home = () => {
                                 <span className="text-xs text-slate-500">No matches yet</span>
                             ) : (
                                 recentForm.map((item, i) => (
-                                    <div key={i} className="flex items-center space-x-5 bg-white/5 p-0.5  rounded-lg">
+                                    <div key={i} className="flex items-center space-x-3 bg-white/5 p-0.5  rounded-lg">
                                         <span className="text-[10px] text-slate-500 font-mono leading-none">Id: {item.id}</span>
                                         <div className="flex items-center gap-2">
                                             <div

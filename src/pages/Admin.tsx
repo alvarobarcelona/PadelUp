@@ -2,11 +2,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
-import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save } from 'lucide-react';
+import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getMatchPointsFromHistory } from '../lib/elo';
 import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
-import { logActivity } from '../lib/logger';
+import { logActivity, ACTIVITY_ACTIONS, type ActivityAction } from '../lib/logger';
 
 // Helper for ELO
 // const getExpected = (a: number, b: number) => 1 / (1 + Math.pow(10, (b - a) / 400));
@@ -28,6 +28,10 @@ const Admin = () => {
 
     // Edit State
     const [editingPlayer, setEditingPlayer] = useState<any | null>(null);
+
+    // Activity Filter State
+    const [selectedActions, setSelectedActions] = useState<ActivityAction[]>([...ACTIVITY_ACTIONS]);
+    const [showLogFilters, setShowLogFilters] = useState(false);
 
 
     useEffect(() => {
@@ -483,8 +487,66 @@ const Admin = () => {
                         />
                     </div>
 
+                    {/* Filters Toggle */}
+                    <div className="flex gap-2 items-center">
+                        <Button
+                            variant={showLogFilters ? "primary" : "ghost"}
+                            size="sm"
+                            className="flex items-center gap-2"
+                            onClick={() => setShowLogFilters(!showLogFilters)}
+                        >
+                            <Filter size={16} />
+                            Filters
+                        </Button>
+                        {selectedActions.length !== ACTIVITY_ACTIONS.length && (
+                            <span className="text-xs text-yellow-500">
+                                ({selectedActions.length} / {ACTIVITY_ACTIONS.length} active)
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Filter Checkboxes */}
+                    {showLogFilters && (
+                        <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 animate-fade-in grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            <div className="col-span-full flex gap-2 pb-2 border-b border-slate-700/50 mb-2">
+                                <button
+                                    onClick={() => setSelectedActions([...ACTIVITY_ACTIONS])}
+                                    className="text-xs text-blue-400 hover:text-blue-300 hover:underline"
+                                >
+                                    Select All
+                                </button>
+                                <button
+                                    onClick={() => setSelectedActions([])}
+                                    className="text-xs text-slate-500 hover:text-slate-300 hover:underline"
+                                >
+                                    Clear All
+                                </button>
+                            </div>
+                            {ACTIVITY_ACTIONS.map(action => (
+                                <label key={action} className="flex items-center gap-2 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-offset-0 focus:ring-blue-500"
+                                        checked={selectedActions.includes(action)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setSelectedActions([...selectedActions, action]);
+                                            } else {
+                                                setSelectedActions(selectedActions.filter(a => a !== action));
+                                            }
+                                        }}
+                                    />
+                                    <span className={`text-xs ${selectedActions.includes(action) ? 'text-white' : 'text-slate-500'} group-hover:text-blue-300 transition-colors`}>
+                                        {action.replace(/_/g, ' ')}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         {logs
+                            .filter(l => selectedActions.includes(l.action as ActivityAction))
                             .filter(l => JSON.stringify(l).toLowerCase().includes(logSearch.toLowerCase()))
                             .map(log => {
                                 const isError = log.action.includes('REJECT') || log.action.includes('DELETE');
