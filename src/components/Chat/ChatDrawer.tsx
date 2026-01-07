@@ -4,6 +4,7 @@ import { X, Send, Loader2, ArrowLeft, MessageSquarePlus } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '../ui/Button';
 import { useChat } from '../../context/ChatContext';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
     id: string;
@@ -34,6 +35,7 @@ interface ChatDrawerProps {
 }
 
 const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatDrawerProps) => {
+    const { t } = useTranslation();
     const [view, setView] = useState<'list' | 'chat'>('list');
     const [activeChatUser, setActiveChatUser] = useState<ConversationUser | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -131,7 +133,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                 const existing = interactionMap.get(msg.receiver_id);
                 // If no existing or this message is newer
                 if (!existing || new Date(msg.created_at) > new Date(existing.time)) {
-                    interactionMap.set(msg.receiver_id, { last_msg: "You: " + msg.content, time: msg.created_at });
+                    interactionMap.set(msg.receiver_id, { last_msg: t('chat.you') + msg.content, time: msg.created_at });
                 }
             });
 
@@ -299,7 +301,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                             </button>
                         )}
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            {view === 'list' ? 'Messages' : activeChatUser?.username}
+                            {view === 'list' ? t('chat.title') : activeChatUser?.username}
                         </h2>
                     </div>
                     <button
@@ -318,8 +320,8 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                         ) : conversations.length === 0 ? (
                             <div className="text-center py-10 text-slate-500 flex flex-col items-center gap-3">
                                 <MessageSquarePlus size={48} className="text-slate-700" />
-                                <p>No conversations yet.</p>
-                                <p className="text-sm">Find a player in the Community tab to start chatting!</p>
+                                <p>{t('chat.no_conversations')}</p>
+                                <p className="text-sm">{t('chat.start_chatting_hint')}</p>
                             </div>
                         ) : (
                             conversations.map(conv => (
@@ -334,7 +336,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                         <div className="flex justify-between items-baseline mb-1">
                                             <h3 className="font-semibold text-white truncate">{conv.username}</h3>
                                             {conv.has_unread && conv.last_message_time && <span className="text-[10px] text-green-400 font-medium">
-                                                new message
+                                                {t('chat.new_message')}
                                             </span>
                                             }
                                             {conv.last_message_time && <span className="ml-2 text-slate-500 text-[10px]">{new Date(conv.last_message_time).toLocaleString()}</span>}
@@ -354,12 +356,12 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             {loading ? (
                                 <div className="flex items-center justify-center h-full text-slate-500">
-                                    <Loader2 className="animate-spin mr-2" /> Loading chat...
+                                    <Loader2 className="animate-spin mr-2" /> {t('chat.loading_chat')}
                                 </div>
                             ) : messages.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-2">
                                     <Avatar src={activeChatUser?.avatar_url} fallback={activeChatUser?.username || '?'} size="lg" />
-                                    <p>Start a conversation with {activeChatUser?.username}!</p>
+                                    <p>{t('chat.start_conversation', { name: activeChatUser?.username })}</p>
                                 </div>
                             ) : (
                                 messages.map((msg) => {
@@ -408,7 +410,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                     type="text"
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder="Type a message..."
+                                    placeholder={t('chat.type_message')}
                                     className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-4 pr-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
                                 />
                                 <button

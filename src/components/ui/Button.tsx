@@ -3,6 +3,8 @@ import React from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Loader2 } from 'lucide-react';
+import { useModal } from '../../context/ModalContext';
+import { useTranslation } from 'react-i18next';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -17,9 +19,21 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = 'primary', size = 'md', isLoading, children, confirm, onClick, ...props }, ref) => {
-        const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        const { confirm: confirmModal } = useModal();
+        const { t } = useTranslation();
+
+        const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
             if (confirm) {
-                if (!window.confirm(confirm)) {
+                // Use custom modal
+                const isConfirmed = await confirmModal({
+                    title: t('common.confirm_title') || 'Confirm Action',
+                    message: confirm,
+                    type: 'confirm',
+                    confirmText: t('common.confirm') || 'Confirm',
+                    cancelText: t('common.cancel') || 'Cancel'
+                });
+
+                if (!isConfirmed) {
                     return;
                 }
             }

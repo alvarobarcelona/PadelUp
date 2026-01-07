@@ -4,6 +4,7 @@ import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
 import { Crown, TrendingUp, Loader2, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Player {
     id: string;
@@ -13,6 +14,7 @@ interface Player {
 }
 
 const Rankings = () => {
+    const { t } = useTranslation();
     const [players, setPlayers] = useState<Player[]>([]);
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState<'global' | 'friends'>('global');
@@ -82,8 +84,8 @@ const Rankings = () => {
         <div className="space-y-6 animate-fade-in">
             <header className="flex flex-col gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Leaderboard</h1>
-                    <p className="text-slate-400">Top players this season</p>
+                    <h1 className="text-3xl font-bold text-white">{t('rankings.title')}</h1>
+                    <p className="text-slate-400">{t('rankings.subtitle')}</p>
                 </div>
 
                 {/* Tabs */}
@@ -92,13 +94,13 @@ const Rankings = () => {
                         onClick={() => setView('global')}
                         className={cn("flex-1 py-2 text-sm font-bold rounded-lg transition-all", view === 'global' ? "bg-slate-700 text-white shadow-sm" : "text-slate-400 hover:text-slate-200")}
                     >
-                        Global
+                        {t('rankings.global')}
                     </button>
                     <button
                         onClick={() => setView('friends')}
                         className={cn("flex-1 py-2 text-sm font-bold rounded-lg transition-all", view === 'friends' ? "bg-slate-700 text-white shadow-sm" : "text-slate-400 hover:text-slate-200")}
                     >
-                        Friends Only
+                        {t('rankings.friends')}
                     </button>
                 </div>
 
@@ -107,7 +109,7 @@ const Rankings = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Search players..."
+                        placeholder={t('rankings.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
@@ -117,14 +119,14 @@ const Rankings = () => {
 
             <div className="space-y-3">
                 {loading ? (
-                    <div className="text-center py-10 text-slate-500"><Loader2 className="animate-spin inline mr-2" /> Loading... </div>
+                    <div className="text-center py-10 text-slate-500"><Loader2 className="animate-spin inline mr-2" /> {t('common.loading')} </div>
                 ) : filteredPlayers.length === 0 ? (
                     <div className="text-center py-10 text-slate-500">
                         {searchQuery
-                            ? "No players found matching your search."
+                            ? t('rankings.no_results')
                             : view === 'friends'
-                                ? "No friends found. Go to 'Community' to add some!"
-                                : "No players found."}
+                                ? t('rankings.no_friends')
+                                : t('rankings.no_players')}
                     </div>
                 ) : (
                     filteredPlayers.map((player, index) => {

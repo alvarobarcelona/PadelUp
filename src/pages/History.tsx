@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, Calendar, AlertCircle, Search, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface Match {
     id: number;
@@ -19,7 +20,7 @@ interface Match {
 }
 
 const History = () => {
-
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [matches, setMatches] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
@@ -87,7 +88,7 @@ const History = () => {
     return (
         <div className="space-y-6 animate-fade-in">
             <header className='flex justify-between items-center'>
-                <h1 className="text-3xl font-bold text-white">Match History</h1>
+                <h1 className="text-3xl font-bold text-white">{t('history.title')}</h1>
                 <button onClick={() => navigate('/')} className="text-slate-500 hover:text-slate-300 transition-colors"><X className="w-6 h-6" /></button>
             </header>
 
@@ -95,7 +96,7 @@ const History = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
                 <input
                     type="text"
-                    placeholder="Search by player or Match Id..."
+                    placeholder={t('history.search_placeholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full rounded-xl bg-slate-800 border border-slate-700 py-3 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
@@ -105,18 +106,18 @@ const History = () => {
             {errorMsg && (
                 <div className="rounded-xl bg-red-500/10 p-4 border border-red-500/50 text-red-500 flex items-center gap-2">
                     <AlertCircle size={20} />
-                    <span>Error loading matches: {errorMsg}</span>
+                    <span>{t('history.error_loading')}: {errorMsg}</span>
                 </div>
             )}
 
             {!loading && !errorMsg && matches.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-700 p-8 text-center">
-                    <p className="text-slate-500">No matches recorded yet.</p>
-                    <Link to="/new-match" className="mt-4 inline-block text-green-400 hover:underline">Record first match</Link>
+                    <p className="text-slate-500">{t('history.no_matches_recorded')}</p>
+                    <Link to="/new-match" className="mt-4 inline-block text-green-400 hover:underline">{t('history.record_first')}</Link>
                 </div>
             ) : filteredMatches.length === 0 ? (
                 <div className="text-center py-10 text-slate-500">
-                    No matches found matching "{searchQuery}"
+                    {t('history.no_matches_found', { query: searchQuery })}
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -130,6 +131,7 @@ const History = () => {
 };
 
 const MatchCard = ({ match }: { match: Match }) => {
+    const { t } = useTranslation();
     const date = new Date(match.created_at).toLocaleDateString();
 
     // Safety check for score
@@ -138,7 +140,7 @@ const MatchCard = ({ match }: { match: Match }) => {
 
     // Extract Usernames safely (in case join returned null)
     // Supabase returns object { username: '...' } or null
-    const getUsername = (obj: any) => obj?.username || 'Unknown';
+    const getUsername = (obj: any) => obj?.username || t('history.unknown');
     const getAvatar = (obj: any) => obj?.avatar_url || null;
 
     return (
@@ -149,7 +151,7 @@ const MatchCard = ({ match }: { match: Match }) => {
                     <Calendar size={12} />
                     {date}
                 </div>
-                <span>Match #{match.id}</span>
+                <span>{t('history.match_num', { id: match.id })}</span>
             </div>
 
             <div className="flex items-center justify-between p-4">
@@ -184,7 +186,7 @@ const MatchCard = ({ match }: { match: Match }) => {
             <div className="flex w-full justify-center px-4">
                 {match.commentary && (
                     <div className="text-xs mb-2 font-bold text-white whitespace-pre-wrap font-mono text-center break-words">
-                        Note: {match.commentary}
+                        {t('history.note')}: {match.commentary}
                     </div>
                 )}
             </div>

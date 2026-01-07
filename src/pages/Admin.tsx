@@ -7,12 +7,16 @@ import { useNavigate } from 'react-router-dom';
 import { getMatchPointsFromHistory } from '../lib/elo';
 import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
 import { logActivity, ACTIVITY_ACTIONS, type ActivityAction } from '../lib/logger';
+import { useTranslation } from 'react-i18next';
+import { useModal } from '../context/ModalContext';
 
 // Helper for ELO
 // const getExpected = (a: number, b: number) => 1 / (1 + Math.pow(10, (b - a) / 400));
 // const K_FACTOR = 32;
 
 const Admin = () => {
+    const { alert, confirm } = useModal();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -75,15 +79,30 @@ const Admin = () => {
     };
 
     const handleDeletePlayer = async (id: string) => {
-        if (!confirm('Are you sure? This might break matches linked to this player!')) return;
+        const confirmed = await confirm({
+            title: t('admin.delete_player_title') || 'Delete Player',
+            message: t('admin.confirm_delete_player'),
+            type: 'danger',
+            confirmText: 'Delete'
+        });
+        if (!confirmed) return;
 
         const { error } = await supabase.from('profiles').delete().eq('id', id);
-        if (error) alert(error.message);
-        else fetchData();
+        if (error) {
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } else {
+            fetchData();
+        }
     };
 
     const handleDeleteMatch = async (id: number) => {
-        if (!confirm('This will DELETE the match and REVERT ELO points for all players. Are you sure?')) return;
+        const confirmed = await confirm({
+            title: t('admin.delete_match_title') || 'Delete Match',
+            message: t('admin.confirm_delete_match'),
+            type: 'danger',
+            confirmText: 'Delete'
+        });
+        if (!confirmed) return;
 
         setLoading(true);
         try {
@@ -107,11 +126,19 @@ const Admin = () => {
                 original_match: match
             });
 
-            alert(`Match deleted and ELO reverted.`);
+            await alert({
+                title: 'Match Deleted',
+                message: 'Match deleted and ELO reverted.',
+                type: 'success'
+            });
             fetchData();
         } catch (error: any) {
             console.error(error);
-            alert('Error: ' + error.message);
+            await alert({
+                title: 'Error',
+                message: 'Error: ' + error.message,
+                type: 'danger'
+            });
         } finally {
             setLoading(false);
         }
@@ -166,19 +193,26 @@ const Admin = () => {
     };
 
     const handleApprovePlayer = async (id: string, username: string) => {
-        if (!confirm(`Approve access for ${username}?`)) return;
+        const confirmed = await confirm({
+            title: 'Approve User',
+            message: `Approve access for ${username}?`,
+            type: 'confirm',
+            confirmText: 'Approve'
+        });
+        if (!confirmed) return;
 
         const { error } = await supabase
             .from('profiles')
             .update({ approved: true })
             .eq('id', id);
 
-        if (error) alert(`Error: ${error.message}`);
-        else {
+        if (error) {
+            await alert({ title: 'Error', message: `Error: ${error.message}`, type: 'danger' });
+        } else {
             // LOG ADMIN APPROVE
             logActivity('ADMIN_APPROVE_USER', id, { username });
 
-            alert(`${username} Approved!`);
+            await alert({ title: 'Success', message: `${username} Approved!`, type: 'success' });
             fetchData();
         }
     };
@@ -213,7 +247,8 @@ const Admin = () => {
                     is_admin: editingPlayer.is_admin,
                     subscription_end_date: editingPlayer.subscription_end_date || null,
                     approved: editingPlayer.approved,
-                    banned: editingPlayer.banned // Update Banned Status
+                    banned: editingPlayer.banned, // Update Banned Status
+                    banned_until: editingPlayer.banned_until // Update Temporary Ban
                 })
                 .eq('id', editingPlayer.id);
 
@@ -230,12 +265,12 @@ const Admin = () => {
                 }
             });
 
-            alert('Player updated successfully!');
+            await alert({ title: 'Success', message: 'Player updated successfully!', type: 'success' });
             setEditingPlayer(null);
             fetchData();
         } catch (error: any) {
             console.error(error);
-            alert('Error updating player: ' + error.message);
+            await alert({ title: 'Error', message: 'Error updating player: ' + error.message, type: 'danger' });
         } finally {
             setLoading(false);
         }
@@ -247,7 +282,7 @@ const Admin = () => {
 
     if (!isAdmin) return <div className="p-10 text-center flex flex-col items-center justify-center gap-2 text-slate-500"><Loader2 className="animate-spin text-green-500" /> Verifying privileges...</div>;
 
-    if (loading) return <div className="p-10 text-center flex flex-col items-center justify-center gap-2 text-slate-500"><Loader2 className="animate-spin text-green-500" /> Loading Admin Data...</div>;
+    if (loading) return <div className="p-10 text-center flex flex-col items-center justify-center gap-2 text-slate-500"><Loader2 className="animate-spin text-green-500" /> {t('common.loading')}</div>;
 
     return (
         <div className="space-y-6 animate-fade-in pb-20 relative">
@@ -255,7 +290,7 @@ const Admin = () => {
             <header className="flex items-center justify-between text-red-400">
                 <div className="flex items-center gap-2 justify-between w-full">
                     <ShieldAlert />
-                    <h1 className="text-2xl font-bold"> Admin Console</h1>
+                    <h1 className="text-2xl font-bold"> {t('admin.title')}</h1>
                     <button onClick={() => navigate('/profile')} className="text-slate-500 hover:text-slate-300 transition-colors"><X className="w-6 h-6" /></button>
                 </div>
 
@@ -266,31 +301,31 @@ const Admin = () => {
                     onClick={() => setActiveTab('pending')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'pending' ? 'text-white border-b-2 border-yellow-500' : 'text-slate-500'}`}
                 >
-                    Requests ({pendingUsers.length})
+                    {t('admin.tab_requests')} ({pendingUsers.length})
                 </button>
                 <button
                     onClick={() => setActiveTab('players')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'players' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                 >
-                    Members ({activeUsers.length})
+                    {t('admin.tab_members')} ({activeUsers.length})
                 </button>
                 <button
                     onClick={() => setActiveTab('matches')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'matches' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                 >
-                    Matches ({filteredMatches.length})
+                    {t('admin.tab_matches')} ({filteredMatches.length})
                 </button>
                 <button
                     onClick={() => setActiveTab('direct_match')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'direct_match' ? 'text-white border-b-2 border-red-500' : 'text-slate-500'}`}
                 >
-                    Add new Match
+                    {t('admin.tab_add_match')}
                 </button>
                 <button
                     onClick={() => setActiveTab('activity')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'activity' ? 'text-white border-b-2 border-blue-500' : 'text-slate-500'}`}
                 >
-                    Activity Feed
+                    {t('admin.tab_activity')}
                 </button>
             </div>
 
@@ -312,7 +347,7 @@ const Admin = () => {
             {activeTab === 'pending' && (
                 <div className="space-y-4">
                     {pendingUsers.length === 0 ? (
-                        <p className="text-slate-500 text-center py-10">No pending requests.</p>
+                        <p className="text-slate-500 text-center py-10">{t('admin.no_pending')}</p>
                     ) : (
                         pendingUsers.map(p => (
                             <div key={p.id} className="flex flex-col sm:flex-row justify-between items-center bg-slate-800/50 border border-yellow-500/20 p-4 rounded-lg gap-4">
@@ -327,10 +362,10 @@ const Admin = () => {
                                 </div>
                                 <div className="flex gap-2 w-full sm:w-auto">
                                     <Button size="sm" className="flex-1 sm:flex-none bg-green-600 hover:bg-green-500" onClick={() => handleApprovePlayer(p.id, p.username)}>
-                                        Approve
+                                        {t('admin.approve')}
                                     </Button>
                                     <Button size="sm" variant="danger" className="flex-1 sm:flex-none" onClick={() => handleDeletePlayer(p.id)}>
-                                        Reject
+                                        {t('admin.reject')}
                                     </Button>
                                 </div>
                             </div>
@@ -347,7 +382,7 @@ const Admin = () => {
                         <Search className="absolute left-3 top-3 text-slate-500" size={18} />
                         <input
                             type="text"
-                            placeholder="Search by username or ID..."
+                            placeholder={t('admin.search_placeholder')}
                             className="w-full bg-slate-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-green-500 border border-slate-700"
                             value={memberSearch}
                             onChange={(e) => setMemberSearch(e.target.value)}
@@ -366,7 +401,8 @@ const Admin = () => {
                                             <p className="font-bold text-white">{p.username}</p>
                                             {p.is_admin && <ShieldAlert size={14} className="text-red-400" />}
                                             {p.is_admin && <span className='text-[10px] text-red-400 uppercase'>Admin</span>}
-                                            {p.banned && <span className='text-[10px] bg-red-500 text-white px-1 rounded uppercase font-bold'>BANNED</span>}
+                                            {(p.banned) && <span className='text-[10px] bg-red-500 text-white px-1 rounded uppercase font-bold'>BANNED</span>}
+                                            {(p.banned_until) && <span className='text-[10px] bg-red-500 text-white px-1 rounded uppercase font-bold'>BANNED UNTIL {p.banned_until ? (new Date(p.banned_until).toLocaleString()) : 'No Date'}</span>}
                                         </div>
                                         <div className="flex flex-col gap-1 mt-1">
                                             <p className="text-xs text-slate-500">ELO: {p.elo} | ID: {p.id}</p>
@@ -389,7 +425,7 @@ const Admin = () => {
                                 </div>
                             );
                         })}
-                        {activeUsers.length === 0 && <p className="text-center text-slate-500 py-4">No members found.</p>}
+                        {activeUsers.length === 0 && <p className="text-center text-slate-500 py-4">{t('admin.no_members')}</p>}
                     </div>
                 </div>
             )}
@@ -402,7 +438,7 @@ const Admin = () => {
                         <Search className="absolute left-3 top-3 text-slate-500" size={18} />
                         <input
                             type="number"
-                            placeholder="Filter by Match ID..."
+                            placeholder={t('admin.search_match_placeholder')}
                             className="w-full bg-slate-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-green-500 border border-slate-700"
                             value={matchSearch}
                             onChange={(e) => setMatchSearch(e.target.value)}
@@ -468,7 +504,7 @@ const Admin = () => {
                                 </div>
                             );
                         })}
-                        {filteredMatches.length === 0 && <p className="text-center text-slate-500 py-4">No matches found.</p>}
+                        {filteredMatches.length === 0 && <p className="text-center text-slate-500 py-4">{t('admin.no_matches')}</p>}
                     </div>
                 </div>
             )}
@@ -480,7 +516,7 @@ const Admin = () => {
                         <Search className="absolute left-3 top-3 text-slate-500" size={18} />
                         <input
                             type="text"
-                            placeholder="Search logs..."
+                            placeholder={t('admin.search_log_placeholder')}
                             className="w-full bg-slate-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-slate-700"
                             value={logSearch}
                             onChange={(e) => setLogSearch(e.target.value)}
@@ -496,7 +532,7 @@ const Admin = () => {
                             onClick={() => setShowLogFilters(!showLogFilters)}
                         >
                             <Filter size={16} />
-                            Filters
+                            {t('admin.filters')}
                         </Button>
                         {selectedActions.length !== ACTIVITY_ACTIONS.length && (
                             <span className="text-xs text-yellow-500">
@@ -513,13 +549,13 @@ const Admin = () => {
                                     onClick={() => setSelectedActions([...ACTIVITY_ACTIONS])}
                                     className="text-xs text-blue-400 hover:text-blue-300 hover:underline"
                                 >
-                                    Select All
+                                    {t('admin.select_all')}
                                 </button>
                                 <button
                                     onClick={() => setSelectedActions([])}
                                     className="text-xs text-slate-500 hover:text-slate-300 hover:underline"
                                 >
-                                    Clear All
+                                    {t('admin.clear_all')}
                                 </button>
                             </div>
                             {ACTIVITY_ACTIONS.map(action => (
@@ -582,7 +618,7 @@ const Admin = () => {
                                     </div>
                                 );
                             })}
-                        {logs.length === 0 && <p className="text-center text-slate-500 py-4">No activity recorded yet.</p>}
+                        {logs.length === 0 && <p className="text-center text-slate-500 py-4">{t('admin.no_activity')}</p>}
                     </div>
                 </div>
             )}
@@ -594,10 +630,10 @@ const Admin = () => {
                         <button onClick={() => setEditingPlayer(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
                             <X size={24} />
                         </button>
-                        <h2 className="text-xl font-bold text-white mb-6">Edit Player</h2>
+                        <h2 className="text-xl font-bold text-white mb-6">{t('admin.edit_player')}</h2>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs text-slate-400 block mb-1">Username</label>
+                                <label className="text-xs text-slate-400 block mb-1">{t('auth.username')}</label>
                                 <input
                                     type="text"
                                     className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
@@ -615,7 +651,7 @@ const Admin = () => {
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-slate-400 block mb-1">Subscription End Date</label>
+                                <label className="text-xs text-slate-400 block mb-1">{t('admin.subscription_end')}</label>
                                 <input
                                     type="date"
                                     className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
@@ -624,7 +660,7 @@ const Admin = () => {
                                 />
                             </div>
                             <div className="flex items-center gap-3 py-2">
-                                <label className="text-sm text-slate-300">Is Admin?</label>
+                                <label className="text-sm text-slate-300">{t('admin.is_admin')}</label>
                                 <input
                                     type="checkbox"
                                     className="h-5 w-5 rounded border-slate-700 bg-slate-800 text-green-500 focus:ring-green-500"
@@ -633,7 +669,7 @@ const Admin = () => {
                                 />
                             </div>
                             <div className="flex items-center gap-3 py-2 border-t border-slate-800">
-                                <label className="text-sm text-slate-300">Approved User?</label>
+                                <label className="text-sm text-slate-300">{t('admin.approved_user')}</label>
                                 <input
                                     type="checkbox"
                                     className="h-5 w-5 rounded border-slate-700 bg-slate-800 text-green-500 focus:ring-green-500"
@@ -641,19 +677,64 @@ const Admin = () => {
                                     onChange={(e) => setEditingPlayer({ ...editingPlayer, approved: e.target.checked })}
                                 />
                             </div>
-                            <div className="flex items-center gap-3 py-2 border-t border-slate-800 bg-red-500/10 p-2 rounded">
-                                <label className="text-sm text-red-400 font-bold">Ban User?</label>
-                                <input
-                                    type="checkbox"
-                                    className="h-5 w-5 rounded border-red-500 bg-slate-800 text-red-500 focus:ring-red-500"
-                                    checked={editingPlayer.banned || false}
-                                    onChange={(e) => setEditingPlayer({ ...editingPlayer, banned: e.target.checked })}
-                                />
+                            <div className="flex flex-col gap-3 py-2 border-t border-slate-800 bg-red-500/5 p-3 rounded">
+                                <label className="text-sm text-red-400 font-bold">Ban Status</label>
+                                <div className="flex gap-2">
+                                    <button
+                                        className={`flex-1 py-1.5 px-2 rounded text-xs font-bold transition-colors ${!editingPlayer.banned && !editingPlayer.banned_until ? 'bg-green-500 text-slate-900' : 'bg-slate-800 text-slate-400'}`}
+                                        onClick={() => setEditingPlayer({ ...editingPlayer, banned: false, banned_until: null })}
+                                    >
+                                        Active
+                                    </button>
+                                    <button
+                                        className={`flex-1 py-1.5 px-2 rounded text-xs font-bold transition-colors ${editingPlayer.banned ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400'}`}
+                                        onClick={() => setEditingPlayer({ ...editingPlayer, banned: true, banned_until: null })}
+                                    >
+                                        Permanent
+                                    </button>
+                                    <button
+                                        className={`flex-1 py-1.5 px-2 rounded text-xs font-bold transition-colors ${!editingPlayer.banned && editingPlayer.banned_until ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-400'}`}
+                                        onClick={() => {
+                                            const tomorrow = new Date();
+                                            tomorrow.setDate(tomorrow.getDate() + 1);
+                                            setEditingPlayer({ ...editingPlayer, banned: false, banned_until: tomorrow.toISOString() });
+                                        }}
+                                    >
+                                        Temporary
+                                    </button>
+                                </div>
+
+                                {!editingPlayer.banned && editingPlayer.banned_until && (
+                                    <div className="animate-fade-in space-y-2 mt-2">
+                                        <label className="text-xs text-slate-400">Ban Until</label>
+                                        <div className="flex gap-2">
+                                            {[1, 3, 7, 30].map(days => (
+                                                <button
+                                                    key={days}
+                                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 rounded text-[10px]"
+                                                    onClick={() => {
+                                                        const date = new Date();
+                                                        date.setDate(date.getDate() + days);
+                                                        setEditingPlayer({ ...editingPlayer, banned_until: date.toISOString() });
+                                                    }}
+                                                >
+                                                    {days}d
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <input
+                                            type="datetime-local"
+                                            className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white text-xs"
+                                            value={editingPlayer.banned_until ? new Date(editingPlayer.banned_until).toISOString().slice(0, 16) : ''}
+                                            onChange={(e) => setEditingPlayer({ ...editingPlayer, banned_until: new Date(e.target.value).toISOString() })}
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <Button onClick={handleSavePlayer} className="w-full mt-4 flex items-center justify-center gap-2">
                                 <Save size={18} />
-                                Save Changes
+                                {t('admin.save_changes')}
                             </Button>
                         </div>
                     </div>

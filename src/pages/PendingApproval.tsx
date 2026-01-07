@@ -2,8 +2,10 @@ import { LogOut, Clock, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { useTranslation } from 'react-i18next';
 
 const PendingApproval = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -17,27 +19,25 @@ const PendingApproval = () => {
                 <Clock size={48} className="text-yellow-500" />
             </div>
 
-            <h1 className="mb-2 text-2xl font-bold text-white">Account Pending Approval</h1>
+            <h1 className="mb-2 text-2xl font-bold text-white">{t('pending.title')}</h1>
 
             <p className="mb-8 max-w-sm text-slate-400">
-                Thanks for joining PadelUp! To maintain the quality of our community,
-                all new accounts must be approved by an administrator.
+                {t('pending.message')}
             </p>
 
             <div className="mb-8 rounded-lg bg-slate-800 p-4 border border-slate-700 max-w-sm w-full">
                 <div className="flex items-center gap-3 mb-2">
                     <Shield size={20} className="text-green-400" />
-                    <span className="font-semibold text-white">What happens now?</span>
+                    <span className="font-semibold text-white">{t('pending.what_happens')}</span>
                 </div>
                 <p className="text-sm text-slate-400 text-left">
-                    Your request has been sent to the admin. You will receive an email
-                    or can check back here once your account is active.
+                    {t('pending.what_happens_desc')}
                 </p>
             </div>
 
             <Button variant="outline" onClick={handleLogout} className="gap-2 border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800">
                 <LogOut size={18} />
-                Sign Out
+                {t('pending.sign_out')}
             </Button>
         </div>
     );

@@ -5,6 +5,8 @@ import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor, getLevelFromElo } from '../../lib/elo';
 import { logActivity } from '../../lib/logger';
+import { useTranslation } from 'react-i18next';
+import { useModal } from '../../context/ModalContext';
 
 interface Player {
     id: string;
@@ -20,6 +22,8 @@ interface MatchFormAdminProps {
 }
 
 export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => {
+    const { t } = useTranslation();
+    const { alert } = useModal();
     const [step, setStep] = useState<1 | 2>(1); // 1: Players, 2: Score
     const [loading, setLoading] = useState(false);
     const [fetchingPlayers, setFetchingPlayers] = useState(true);
@@ -70,12 +74,12 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
         setIsSelectionModalOpen(true);
     };
 
-    const selectPlayer = (player: Player) => {
+    const selectPlayer = async (player: Player) => {
         if (activePosition) {
             // Prevent selecting same player twice
             const isAlreadySelected = Object.values(selectedPlayers).some(p => p?.id === player.id);
             if (isAlreadySelected) {
-                alert('Player already selected!');
+                await alert({ title: 'Warning', message: t('new_match.player_already_selected'), type: 'warning' });
                 return;
             }
 
@@ -97,7 +101,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
         // Validation: Check if at least one game has been played
         const totalGames = sets.reduce((acc, s) => acc + s.t1 + s.t2, 0);
         if (totalGames === 0) {
-            alert('Please enter a valid result (at least one game played).');
+            await alert({ title: 'Error', message: t('new_match.enter_valid_result'), type: 'danger' });
             return;
         }
 
@@ -192,13 +196,13 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 });
             }
 
-            alert("Match created and confirmed! ELOs updated.");
+            await alert({ title: 'Success', message: t('new_match.success_alert'), type: 'success' }); // Using existing key for success
 
             onSuccess();
 
         } catch (error: any) {
             console.error('Error saving match:', error);
-            alert('Failed to save match: ' + error.message);
+            await alert({ title: 'Error', message: t('common.error') + ': ' + error.message, type: 'danger' });
         } finally {
             setLoading(false);
         }
@@ -217,14 +221,14 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
             <div className="space-y-6 animate-fade-in">
                 <header className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-white">Select Player</h2>
+                    <h2 className="text-xl font-bold text-white">{t('new_match.select_player')}</h2>
                     <Button variant="ghost" size="icon" onClick={() => setIsSelectionModalOpen(false)}><X /></Button>
                 </header>
 
                 <div className="mb-4">
                     <input
                         type="search"
-                        placeholder="Search player..."
+                        placeholder={t('admin.search_placeholder')}
                         className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-slate-500"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -247,7 +251,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                     ))}
                     {filteredPlayers.length === 0 && (
                         <div className="col-span-2 text-center text-slate-500 py-10">
-                            {searchQuery ? 'No players found matching your search.' : <>No players found. <br /> Invite friends to Sign Up!</>}
+                            {searchQuery ? t('rankings.no_results') : t('new_match.invite_friends')}
                         </div>
                     )}
                 </div>
@@ -260,23 +264,23 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
         return (
             <div className="space-y-6 animate-fade-in">
                 <header className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-white">Record Match (without confirmation)</h1>
+                    <h1 className="text-2xl font-bold text-white">{t('admin.record_match_title')}</h1>
                     <Button variant="ghost" size="icon" onClick={onCancel}><X size={24} /></Button>
                 </header>
 
                 <section className="space-y-3">
-                    <h2 className="text-sm font-semibold uppercase text-green-400 tracking-wider">Team 1</h2>
+                    <h2 className="text-sm font-semibold uppercase text-green-400 tracking-wider">{t('new_match.team_1')}</h2>
                     <div className="grid grid-cols-2 gap-4">
-                        <PlayerSelector label="Player 1" player={selectedPlayers.t1p1} onClick={() => openSelection('t1p1')} />
-                        <PlayerSelector label="Player 2" player={selectedPlayers.t1p2} onClick={() => openSelection('t1p2')} />
+                        <PlayerSelector label={t('new_match.player_1')} player={selectedPlayers.t1p1} onClick={() => openSelection('t1p1')} />
+                        <PlayerSelector label={t('new_match.player_2')} player={selectedPlayers.t1p2} onClick={() => openSelection('t1p2')} />
                     </div>
                 </section>
 
                 <section className="space-y-3">
-                    <h2 className="text-sm font-semibold uppercase text-blue-400 tracking-wider">Team 2</h2>
+                    <h2 className="text-sm font-semibold uppercase text-blue-400 tracking-wider">{t('new_match.team_2')}</h2>
                     <div className="grid grid-cols-2 gap-4">
-                        <PlayerSelector label="Player 1" player={selectedPlayers.t2p1} onClick={() => openSelection('t2p1')} />
-                        <PlayerSelector label="Player 2" player={selectedPlayers.t2p2} onClick={() => openSelection('t2p2')} />
+                        <PlayerSelector label={t('new_match.player_1')} player={selectedPlayers.t2p1} onClick={() => openSelection('t2p1')} />
+                        <PlayerSelector label={t('new_match.player_2')} player={selectedPlayers.t2p2} onClick={() => openSelection('t2p2')} />
                     </div>
                 </section>
 
@@ -287,7 +291,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                         disabled={!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2}
                         onClick={() => setStep(2)}
                     >
-                        Next: Enter Score
+                        {t('new_match.next_step')}
                     </Button>
                 </div>
             </div>
@@ -299,12 +303,12 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
         <div className="space-y-8 animate-fade-in pb-10">
             <header className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => setStep(1)}><X size={24} /></Button>
-                <h1 className="text-2xl font-bold text-white">Match Result</h1>
+                <h1 className="text-2xl font-bold text-white">{t('new_match.match_result')}</h1>
             </header>
 
             <div className="flex justify-between items-center rounded-xl bg-slate-800 p-4 border border-slate-700">
                 <div className="text-center w-5/12">
-                    <span className="block text-xs text-green-400 font-bold mb-1">TEAM 1</span>
+                    <span className="block text-xs text-green-400 font-bold mb-1">{t('new_match.team_1').toUpperCase()}</span>
                     <div className="flex justify-center -space-x-2 mb-1">
                         <Avatar fallback={selectedPlayers.t1p1?.username || ''} src={selectedPlayers.t1p1?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
                         <Avatar fallback={selectedPlayers.t1p2?.username || ''} src={selectedPlayers.t1p2?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
@@ -315,7 +319,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 </div>
                 <div className="text-slate-500 font-bold text-lg">VS</div>
                 <div className="text-center w-5/12">
-                    <span className="block text-xs text-blue-400 font-bold mb-1">TEAM 2</span>
+                    <span className="block text-xs text-blue-400 font-bold mb-1">{t('new_match.team_2').toUpperCase()}</span>
                     <div className="flex justify-center -space-x-2 mb-1">
                         <Avatar fallback={selectedPlayers.t2p1?.username || ''} src={selectedPlayers.t2p1?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
                         <Avatar fallback={selectedPlayers.t2p2?.username || ''} src={selectedPlayers.t2p2?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
@@ -328,12 +332,12 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center">
                 <p className="text-xs text-red-500 font-medium leading-relaxed">
-                    DIRECT ENTRY: This match will be confirmed IMMEDIATELY and ELOs updated.
+                    {t('admin.direct_entry_warning')}
                 </p>
             </div>
 
             <div className="space-y-4">
-                <h3 className="text-center text-slate-400 text-sm tracking-widest uppercase">Set Scores</h3>
+                <h3 className="text-center text-slate-400 text-sm tracking-widest uppercase">{t('new_match.set_scores')}</h3>
                 {[0, 1, 2].map((i) => (
                     <div key={i} className="flex items-center justify-center gap-6">
                         <input
@@ -357,24 +361,24 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
             <div className="space-y-2 px-1">
                 <label className="text-xs font-semibold uppercase text-slate-500 tracking-wider">
-                    Match Notes (Optional)
+                    {t('new_match.match_notes')}
                 </label>
                 <textarea
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
                     rows={3}
-                    placeholder="Describe the match..."
+                    placeholder={t('new_match.match_notes_placeholder')}
                     value={commentary}
                     onChange={(e) => setCommentary(e.target.value)}
                 />
             </div>
 
             <div className="pt-8 space-y-3">
-                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm="Are you sure?">
+                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm={t('common.confirm_prompt') || "Are you sure?"}>
                     <Trophy size={20} />
-                    Confirm & Update ELOs
+                    {t('admin.save_changes')}
                 </Button>
                 <p className="text-center text-xs text-slate-500">
-                    Instant Action - No verification required.
+                    {t('admin.instant_action_note')}
                 </p>
             </div>
         </div>

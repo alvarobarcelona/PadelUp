@@ -1,4 +1,5 @@
 import { MessageCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ChatButtonProps {
     onClick: () => void;
@@ -6,11 +7,12 @@ interface ChatButtonProps {
 }
 
 const ChatButton = ({ onClick, unreadCount = 0 }: ChatButtonProps) => {
+    const { t } = useTranslation();
     return (
         <button
             onClick={onClick}
             className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-slate-900 shadow-lg transition-transform hover:scale-110 active:scale-95 animate-bounce-in"
-            aria-label="Open Chat"
+            aria-label={t('chat.open_chat')}
         >
             <MessageCircle size={28} />
             {unreadCount > 0 && (

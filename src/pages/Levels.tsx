@@ -1,8 +1,10 @@
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LEVELS } from '../lib/elo';
+import { useTranslation } from 'react-i18next';
 
 const Levels = () => {
+    const { t } = useTranslation();
     return (
         <div className="space-y-6 animate-fade-in relative z-10 pb-20">
             {/* Header */}
@@ -11,8 +13,8 @@ const Levels = () => {
                     <ArrowLeft size={20} />
                 </Link>
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">ELO Levels</h1>
-                    <p className="text-slate-400 text-sm">Understand the ranking system</p>
+                    <h1 className="text-2xl font-bold text-white tracking-tight">{t('levels.title')}</h1>
+                    <p className="text-slate-400 text-sm">{t('levels.subtitle')}</p>
                 </div>
             </div>
 
@@ -28,9 +30,9 @@ const Levels = () => {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className={`h-12 w-12 rounded-xl flex items-center justify-center font-bold text-xl shadow-inner ${isTopLevel ? 'bg-yellow-500/20 text-yellow-500 ring-1 ring-yellow-500/50' :
-                                            isAdvanced ? 'bg-purple-500/20 text-purple-500 ring-1 ring-purple-500/50' :
-                                                isIntermediate ? 'bg-blue-500/20 text-blue-500 ring-1 ring-blue-500/50' :
-                                                    'bg-slate-700/50 text-slate-400 ring-1 ring-slate-600/50'
+                                        isAdvanced ? 'bg-purple-500/20 text-purple-500 ring-1 ring-purple-500/50' :
+                                            isIntermediate ? 'bg-blue-500/20 text-blue-500 ring-1 ring-blue-500/50' :
+                                                'bg-slate-700/50 text-slate-400 ring-1 ring-slate-600/50'
                                         }`}>
                                         {level.level}
                                     </div>

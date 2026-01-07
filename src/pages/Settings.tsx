@@ -12,14 +12,22 @@ import {
     HelpCircle,
     Check,
     X,
-    Loader2
+    Loader2,
+    Globe
 } from 'lucide-react';
 import { logActivity } from '../lib/logger';
+import { APP_FULL_VERSION } from '../lib/constants';
+import { useTranslation } from 'react-i18next';
+import { useModal } from '../context/ModalContext';
 
 const Settings = () => {
+    const { alert, confirm } = useModal();
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
     const [profile, setProfile] = useState<{ username: string, email: string } | null>(null);
     const [loading, setLoading] = useState(false);
+
+    const currentYear = new Date().getFullYear();
 
     // Editing State
     const [isEditing, setIsEditing] = useState(false);
@@ -131,9 +139,17 @@ const Settings = () => {
 
             // Check for Postgres Unique Violation (code 23505)
             if (error?.code === '23505') {
-                alert('That username is already taken. Please choose another one.');
+                await alert({
+                    title: 'Username Taken',
+                    message: 'That username is already taken. Please choose another one.',
+                    type: 'warning'
+                });
             } else {
-                alert(`Error updating profile: ${error.message || 'Unknown error'}`);
+                await alert({
+                    title: 'Error',
+                    message: `Error updating profile: ${error.message || 'Unknown error'}`,
+                    type: 'danger'
+                });
             }
         } finally {
             setLoading(false);
@@ -142,11 +158,19 @@ const Settings = () => {
 
     const handleUpdatePassword = async () => {
         if (newPassword !== confirmPassword) {
-            alert('Passwords do not match');
+            await alert({
+                title: 'Password Mismatch',
+                message: 'Passwords do not match',
+                type: 'warning'
+            });
             return;
         }
         if (newPassword.length < 6) {
-            alert('Password must be at least 6 characters');
+            await alert({
+                title: 'Weak Password',
+                message: 'Password must be at least 6 characters',
+                type: 'warning'
+            });
             return;
         }
 
@@ -156,28 +180,51 @@ const Settings = () => {
 
             if (error) throw error;
 
-            alert('Password updated successfully!');
+            await alert({
+                title: 'Success',
+                message: 'Password updated successfully!',
+                type: 'success'
+            });
             setIsChangingPassword(false);
             setNewPassword('');
             setConfirmPassword('');
         } catch (error: any) {
             console.error('Error updating password:', error);
-            alert(`Error updating password: ${error.message}`);
+            await alert({
+                title: 'Error',
+                message: `Error updating password: ${error.message}`,
+                type: 'danger'
+            });
         } finally {
             setLoading(false);
         }
     };
 
     const handleDeleteAccount = async () => {
-        if (!confirm('Are you absolutely sure? This action CANNOT be undone.')) return;
-        if (!confirm('Really sure? All your match history and data will be permanently deleted.')) return;
+        const confirmed1 = await confirm({
+            title: t('settings.delete_account'),
+            message: 'Are you absolutely sure? This action CANNOT be undone.',
+            type: 'danger',
+            confirmText: 'Yes, Delete',
+            cancelText: 'Cancel'
+        });
+        if (!confirmed1) return;
+
+        const confirmed2 = await confirm({
+            title: 'Final Confirmation',
+            message: 'Really sure? All your match history and data will be permanently deleted.',
+            type: 'danger',
+            confirmText: 'Permanently Delete',
+            cancelText: 'Back'
+        });
+        if (!confirmed2) return;
 
         try {
             setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
 
             if (!user) {
-                alert('No user found.');
+                await alert({ title: 'Error', message: 'No user found.', type: 'danger' });
                 return;
             }
 
@@ -190,12 +237,20 @@ const Settings = () => {
 
             // 2. Sign Out
             await supabase.auth.signOut();
-            alert('Your account has been deleted.');
+            await alert({
+                title: 'Account Deleted',
+                message: 'Your account has been deleted.',
+                type: 'info'
+            });
             navigate('/auth');
 
         } catch (error: any) {
             console.error('Error deleting account:', error);
-            alert(`Error deleting account: ${error.message}`);
+            await alert({
+                title: 'Error',
+                message: `Error deleting account: ${error.message}`,
+                type: 'danger'
+            });
         } finally {
             setLoading(false);
         }
@@ -206,6 +261,10 @@ const Settings = () => {
         navigate('/auth');
     };
 
+    const changeLanguage = (lng: string) => {
+        i18n.changeLanguage(lng);
+    };
+
     return (
         <div className="min-h-screen bg-slate-900 pb-20 animate-fade-in">
             {/* Header */}
@@ -213,13 +272,13 @@ const Settings = () => {
                 <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
                     <ChevronLeft className="text-white" size={24} />
                 </Button>
-                <h1 className="text-xl font-bold text-white">Settings</h1>
+                <h1 className="text-xl font-bold text-white">{t('settings.title')}</h1>
             </div>
 
             <div className="p-4 space-y-6 max-w-lg mx-auto">
                 {/* Profile Section */}
                 <div className="space-y-2">
-                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Account</h2>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">{t('settings.account')}</h2>
                     <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden shadow-none transition-colors duration-300">
 
                         {/* Username Edit Row */}
@@ -239,7 +298,7 @@ const Settings = () => {
                                         />
                                     ) : (
                                         <>
-                                            <p className="font-medium text-white">{profile?.username || 'Loading...'}</p>
+                                            <p className="font-medium text-white">{profile?.username || t('common.loading')}</p>
                                             <p className="text-xs text-slate-400">{profile?.email}</p>
                                         </>
                                     )}
@@ -272,7 +331,7 @@ const Settings = () => {
                                         onClick={() => setIsEditing(true)}
                                         className="text-xs font-medium text-blue-400 hover:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-500/10 transition-colors"
                                     >
-                                        Edit
+                                        {t('settings.edit')}
                                     </button>
                                 )}
                             </div>
@@ -288,7 +347,7 @@ const Settings = () => {
                                     <div className="p-2 rounded-full bg-orange-500/10 text-orange-400">
                                         <Shield size={20} />
                                     </div>
-                                    <span className="font-medium text-white">Security & Password</span>
+                                    <span className="font-medium text-white">{t('settings.security')}</span>
                                 </div>
                                 {isChangingPassword ? <ChevronLeft size={18} className="text-slate-500 -rotate-90" /> : <ChevronRight size={18} className="text-slate-500" />}
                             </button>
@@ -298,14 +357,14 @@ const Settings = () => {
                                 <div className="p-4 pt-0 space-y-3 bg-slate-800/50">
                                     <input
                                         type="password"
-                                        placeholder="New Password"
+                                        placeholder={t('settings.new_password')}
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
                                         className="w-full bg-slate-900 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 transition-colors"
                                     />
                                     <input
                                         type="password"
-                                        placeholder="Confirm Password"
+                                        placeholder={t('settings.confirm_password')}
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         className="w-full bg-slate-900 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 transition-colors"
@@ -321,7 +380,7 @@ const Settings = () => {
                                             }}
                                             className="text-slate-400 hover:text-white"
                                         >
-                                            Cancel
+                                            {t('settings.cancel')}
                                         </Button>
                                         <Button
                                             size="sm"
@@ -329,22 +388,22 @@ const Settings = () => {
                                             disabled={loading || !newPassword || !confirmPassword}
                                             className="bg-orange-500 hover:bg-orange-600 text-white"
                                         >
-                                            {loading ? <Loader2 size={16} className="animate-spin" /> : 'Update Password'}
+                                            {loading ? <Loader2 size={16} className="animate-spin" /> : t('settings.update_password')}
                                         </Button>
                                     </div>
 
                                     {/* Danger Zone */}
                                     <div className="pt-2">
-                                        <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-2">Danger Zone</p>
+                                        <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-2">{t('settings.danger_zone')}</p>
                                         <Button
                                             variant="danger"
                                             className="w-full text-xs h-9 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border-red-500/20"
                                             onClick={handleDeleteAccount}
                                         >
-                                            Delete Account
+                                            {t('settings.delete_account')}
                                         </Button>
                                         <p className="text-[10px] text-slate-500 mt-2 leading-tight">
-                                            This action is permanent. All your data, matches, and history will be deleted.
+                                            {t('settings.delete_account_desc')}
                                         </p>
                                     </div>
                                 </div>
@@ -355,14 +414,45 @@ const Settings = () => {
 
                 {/* Preferences */}
                 <div className="space-y-2">
-                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Preferences</h2>
-                    <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">{t('settings.preferences')}</h2>
+                    <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden divide-y divide-slate-700/50">
+                        {/* Language */}
+                        <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-indigo-500/10 text-indigo-400">
+                                    <Globe size={20} />
+                                </div>
+                                <span className="font-medium text-white">{t('settings.language')}</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => changeLanguage('en')}
+                                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${i18n.language.startsWith('en') ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                                >
+                                    EN
+                                </button>
+                                <button
+                                    onClick={() => changeLanguage('es')}
+                                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${i18n.language.startsWith('es') ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                                >
+                                    ES
+                                </button>
+                                <button
+                                    onClick={() => changeLanguage('de')}
+                                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${i18n.language.startsWith('de') ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                                >
+                                    DE
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Notifications */}
                         <div className="flex items-center justify-between p-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-full bg-purple-500/10 text-purple-400">
                                     <Bell size={20} />
                                 </div>
-                                <span className="font-medium text-white">Notifications</span>
+                                <span className="font-medium text-white">{t('settings.notifications')}</span>
                             </div>
                             <div
                                 onClick={handleNotificationToggle}
@@ -376,7 +466,7 @@ const Settings = () => {
 
                 {/* Support */}
                 <div className="space-y-2">
-                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Support</h2>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">{t('settings.support')}</h2>
                     <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden shadow-none transition-colors duration-300">
                         <button
                             onClick={() => window.location.href = 'mailto:support@padelup.com?subject=Feedback and support%20for%20PadelUp'}
@@ -386,7 +476,7 @@ const Settings = () => {
                                 <div className="p-2 rounded-full bg-emerald-500/10 text-emerald-400">
                                     <HelpCircle size={20} />
                                 </div>
-                                <span className="font-medium text-white">Help & Feedback</span>
+                                <span className="font-medium text-white">{t('settings.help')}</span>
                             </div>
                             <ChevronRight size={18} className="text-slate-500" />
                         </button>
@@ -398,31 +488,29 @@ const Settings = () => {
 
                 {/* ELO Info */}
                 <div className="space-y-2">
-                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">How it works</h2>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">{t('settings.how_it_works')}</h2>
                     <div className="rounded-xl bg-slate-800 border border-slate-700/50 p-4 space-y-3">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 rounded-full bg-blue-500/10 text-blue-400">
                                 <Shield size={20} />
                             </div>
-                            <span className="font-medium text-white">Dynamic ELO System</span>
+                            <span className="font-medium text-white">{t('settings.dynamic_elo')}</span>
                         </div>
                         <div className="text-xs text-slate-400 space-y-2 leading-relaxed">
-                            <p>
-                                PadelUp uses a **Dynamic K-Factor** system that adapts to your experience level. This allows new players to reach their real level faster while providing stability for veterans.
-                            </p>
+                            <p dangerouslySetInnerHTML={{ __html: t('settings.elo_desc').replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-300">$1</strong>') }} />
                             <ul className="list-disc pl-4 space-y-1">
                                 <li>
-                                    <strong className="text-slate-300">Placement (0-10 matches):</strong> K=48. High adjustments to quickly find your skill level.
+                                    {t('settings.elo_placement')}
                                 </li>
                                 <li>
-                                    <strong className="text-slate-300">Standard (10-30 matches):</strong> K=32. Standard volatility.
+                                    {t('settings.elo_standard')}
                                 </li>
                                 <li>
-                                    <strong className="text-slate-300">Stable (30+ matches):</strong> K=24. Lower adjustments to reward consistency.
+                                    {t('settings.elo_stable')}
                                 </li>
                             </ul>
                             <p className="mt-2 text-[10px] text-slate-500 italic">
-                                Note: Points exchanged are calculated individually. A new player might gain +40 points for a win, while their veteran partner gains +20.
+                                <span dangerouslySetInnerHTML={{ __html: t('settings.elo_note').replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-300">$1</strong>') }} />
                             </p>
                         </div>
                     </div>
@@ -435,7 +523,7 @@ const Settings = () => {
                     onClick={handleLogout}
                 >
                     <LogOut size={18} />
-                    Log Out
+                    {t('settings.logout')}
                 </Button>
 
                 {/* PWA Install Button (Only visible if installable) */}
@@ -446,22 +534,23 @@ const Settings = () => {
                             className="w-full h-12 gap-2 bg-green-500 hover:bg-green-600 text-slate-900 font-bold"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2" /><line x1="8" x2="16" y1="21" y2="21" /><line x1="12" x2="12" y1="17" y2="21" /></svg>
-                            Install App
+                            {t('settings.install_app')}
                         </Button>
                         <p className="text-[10px] text-center text-slate-500 mt-2">
-                            Add PadelUp to your home screen for the best experience.
+                            {t('settings.install_app_desc')}
                         </p>
                     </div>
                 )}
 
                 <div className="text-center pt-4">
-                    <p className="text-xs text-slate-500">PadelUp v1.2.1</p>
+                    <p className="text-xs text-slate-500">{APP_FULL_VERSION}</p>
                     <p className="text-[10px] text-slate-500 mt-1">Built with ❤️ for Padel Lovers</p>
-                    <p className="text-[10px] text-slate-500 mt-1">By Alvaro Barcelona Peralta</p>
+                    <p className="text-[10px] text-slate-500 mt-1">{currentYear} By Alvaro Barcelona Peralta</p>
                 </div>
             </div>
         </div>
     );
 };
+
 
 export default Settings;

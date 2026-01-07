@@ -7,10 +7,12 @@ import clsx from 'clsx';
 import ChatButton from './Chat/ChatButton';
 import ChatDrawer from './Chat/ChatDrawer';
 import { useChat } from '../context/ChatContext';
+import { useTranslation } from 'react-i18next';
 
 const Layout = () => {
     const navigate = useNavigate();
     const { unreadCount } = useChat();
+    const { t } = useTranslation();
     const [verifying, setVerifying] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
@@ -35,7 +37,7 @@ const Layout = () => {
 
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('approved, subscription_end_date, is_admin, banned')
+                .select('approved, subscription_end_date, is_admin, banned, banned_until')
                 .eq('id', user.id)
                 .single();
 
@@ -45,7 +47,7 @@ const Layout = () => {
             // 3. If Profile exists but NOT approved -> /pending
 
             if (profile) {
-                if (profile.banned) {
+                if (profile.banned || (profile.banned_until && new Date(profile.banned_until) > new Date())) {
                     navigate('/banned');
                     return;
                 }
@@ -106,19 +108,19 @@ const Layout = () => {
                     <li>
                         <NavLink to="/" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
                             <Home size={22} />
-                            <span className="text-[10px] font-medium">Home</span>
+                            <span className="text-[10px] font-medium">{t('nav.home')}</span>
                         </NavLink>
                     </li>
                     <li>
                         <NavLink to="/players" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
                             <Users size={22} />
-                            <span className="text-[10px] font-medium">Community</span>
+                            <span className="text-[10px] font-medium">{t('nav.community')}</span>
                         </NavLink>
                     </li>
                     <li>
                         <NavLink to="/rankings" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
                             <Trophy size={22} />
-                            <span className="text-[10px] font-medium">Rank</span>
+                            <span className="text-[10px] font-medium">{t('nav.rank')}</span>
                         </NavLink>
                     </li>
                 </ul>

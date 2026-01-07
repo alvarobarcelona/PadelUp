@@ -4,9 +4,13 @@ import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { logActivity } from '../lib/logger';
+import { useTranslation } from 'react-i18next';
+import { useModal } from '../context/ModalContext';
 
 const Auth = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
+    const { alert } = useModal();
     const [loading, setLoading] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
     const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -17,9 +21,9 @@ const Auth = () => {
     const [showPassword, setShowPassword] = useState(false);
 
     const getFriendlyErrorMessage = (msg: string) => {
-        if (msg.includes('Invalid login credentials')) return 'Incorrect email or password.';
-        if (msg.includes('Password should be at least')) return 'Password is too short (min 6 chars).';
-        if (msg.includes('User already registered')) return 'This email is already registered.';
+        if (msg.includes('Invalid login credentials')) return t('auth.errors.incorrect_credentials');
+        if (msg.includes('Password should be at least')) return t('auth.errors.password_short');
+        if (msg.includes('User already registered')) return t('auth.errors.user_registered');
         return msg;
     };
 
@@ -38,7 +42,7 @@ const Auth = () => {
             if (profileCheckError || !profileCheck) {
 
                 if (profileCheckError?.code === 'PGRST116' || !profileCheck) {
-                    throw new Error('Email not found in our records.');
+                    throw new Error(t('auth.errors.email_not_found'));
                 }
 
             }
@@ -49,19 +53,13 @@ const Auth = () => {
             });
             if (error) throw error;
 
-            // LOG PASSWORD RESET REQUEST
-            // Note: User is likely NOT logged in here. 
-            // The logger requires getUser(). If they are not logged in, this log will be skipped by the logger guard.
-            // However, resetting password usually implies you are anon.
-            // If we want to log this from anon, we need to adjust RLS or use an edge function.
-            // For now, we'll try, but it might only work if they happen to have a session or if we relax the logger.
-            // Actually, for "Forgot Password", they are definitely not logged in.
-            // Let's just try logging it, maybe they are logged in but want to change pw? 
-            // Doubtful. This specific requirement might be tricky without a backend admin function.
-            // I will implement it, but be aware it might not effectively log for anon users.
             logActivity('USER_RESET_PASSWORD', null, { email });
 
-            alert('Password reset link sent! Check your email.');
+            await alert({
+                title: 'Success',
+                message: t('auth.success.reset_sent'),
+                type: 'success'
+            });
             setIsForgotPassword(false);
             setIsLogin(true);
         } catch (err: any) {
@@ -91,7 +89,7 @@ const Auth = () => {
                     .maybeSingle();
 
                 if (!userExists) {
-                    throw new Error('Email not found. Please sign up first.');
+                    throw new Error(t('auth.errors.email_not_found_signup'));
                 }
 
                 const { error, data } = await supabase.auth.signInWithPassword({
@@ -102,17 +100,13 @@ const Auth = () => {
                 if (error) {
                     // Since email exists, this is likely a password error
                     if (error.message.includes('Invalid login credentials')) {
-                        throw new Error('Incorrect password.');
+                        throw new Error(t('auth.errors.incorrect_password'));
                     }
                     throw error;
                 }
 
                 // LOG LOGIN
                 if (data.user) {
-                    // We need to wait a tiny bit for the session to be established or just use the user object directly?
-                    // The logActivity helper fetches getUser(), which should be valid now.
-                    // However, timing might be tight. Let's pass the ID manually if we could, but our helper relies on getUser().
-                    // Let's assume getUser works after signIn.
                     logActivity('USER_LOGIN', data.user.id, { email });
                 }
 
@@ -127,10 +121,10 @@ const Auth = () => {
 
                 if (existingProfile) {
                     if (existingProfile.email === email) {
-                        throw new Error('User already registered');
+                        throw new Error(t('auth.errors.email_registered'));
                     }
                     if (existingProfile.username === username) {
-                        throw new Error('Username already taken');
+                        throw new Error(t('auth.errors.username_taken'));
                     }
                 }
 
@@ -149,16 +143,14 @@ const Auth = () => {
 
                 // LOG REGISTER
                 if (data.user) {
-                    // Note: user might not be fully logged in depending on confirmation settings, 
-                    // but we can try to log if the policy allows or if we just want to attempt it.
-                    // The RLS policy "Users insert own logs" with `auth.uid() = actor_id` requires the user to be authenticated.
-                    // On SignUp with email confirmation, the user is NOT authenticated yet usually.
-                    // So this might fail silently, which is acceptable until they confirm.
-                    // BUT, if confirmation is OFF, they are logged in.
                     logActivity('USER_REGISTER', data.user.id, { username, email });
                 }
 
-                alert('Success! Check your email for the confirmation link! Some times it can take a few minutes to arrive.');
+                await alert({
+                    title: 'Success',
+                    message: t('auth.success.signup_confirm'),
+                    type: 'success'
+                });
             }
         } catch (err: any) {
             setError(getFriendlyErrorMessage(err.message));
@@ -173,14 +165,14 @@ const Auth = () => {
                 <div className="text-center">
                     <h1 className="text-4xl font-bold text-green-400">PadelUp</h1>
                     <p className="mt-2 text-slate-400">
-                        {isForgotPassword ? 'Reset Password' : (isLogin ? 'Welcome back, Champion' : 'Join the Club')}
+                        {isForgotPassword ? t('auth.reset_password_title') : (isLogin ? t('auth.welcome_back') : t('auth.join_club'))}
                     </p>
                 </div>
 
                 <form onSubmit={handleAuth} className="space-y-4">
                     {!isLogin && !isForgotPassword && (
                         <div>
-                            <label className="block text-sm font-medium text-slate-400">Username</label>
+                            <label className="block text-sm font-medium text-slate-400">{t('auth.username')}</label>
                             <input
                                 type="text"
                                 required
@@ -192,7 +184,7 @@ const Auth = () => {
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-400">Email</label>
+                        <label className="block text-sm font-medium text-slate-400">{t('auth.email')}</label>
                         <input
                             type="email"
                             required
@@ -206,14 +198,14 @@ const Auth = () => {
                     {!isForgotPassword && (
                         <div>
                             <div className="flex items-center justify-between">
-                                <label className="block text-sm font-medium text-slate-400">Password</label>
+                                <label className="block text-sm font-medium text-slate-400">{t('auth.password')}</label>
                                 {isLogin && (
                                     <button
                                         type="button"
                                         onClick={() => setIsForgotPassword(true)}
                                         className="text-xs text-green-400 hover:text-green-300"
                                     >
-                                        Forgot?
+                                        {t('auth.forgot_password')}
                                     </button>
                                 )}
                             </div>
@@ -243,7 +235,7 @@ const Auth = () => {
                     )}
 
                     <Button type="submit" className="w-full" isLoading={loading}>
-                        {isForgotPassword ? 'Send Reset Link' : (isLogin ? 'Sign In' : 'Create Account')}
+                        {isForgotPassword ? t('auth.send_reset_link') : (isLogin ? t('auth.sign_in') : t('auth.create_account'))}
                     </Button>
 
                     {isForgotPassword && (
@@ -253,7 +245,7 @@ const Auth = () => {
                                 onClick={() => setIsForgotPassword(false)}
                                 className="text-sm text-slate-500 hover:text-white transition-colors"
                             >
-                                Back to Login
+                                {t('auth.back_to_login')}
                             </button>
                         </div>
                     )}
@@ -267,7 +259,7 @@ const Auth = () => {
                             }}
                             className="text-sm text-slate-500 hover:text-green-400 transition-colors"
                         >
-                            {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
+                            {isLogin ? t('auth.no_account') : t('auth.has_account')}
                         </button>
                     </div>
                 </form>
@@ -275,5 +267,6 @@ const Auth = () => {
         </div>
     );
 };
+
 
 export default Auth;

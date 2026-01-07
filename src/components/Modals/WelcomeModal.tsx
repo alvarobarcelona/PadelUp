@@ -1,4 +1,5 @@
 import { Handshake, ShieldCheck, TrendingUp, Heart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface WelcomeModalProps {
     isOpen: boolean;
@@ -6,6 +7,8 @@ interface WelcomeModalProps {
 }
 
 export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
+    const { t } = useTranslation();
+
     if (!isOpen) return null;
 
     return (
@@ -22,8 +25,8 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
                 <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-center relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
                     <Handshake size={64} className="text-white mx-auto mb-2 relative z-10" />
-                    <h2 className="text-3xl font-black text-white relative z-10 tracking-tight">Welcome to PadelUp</h2>
-                    <p className="text-green-100 font-medium relative z-10">More than just a padel community.</p>
+                    <h2 className="text-3xl font-black text-white relative z-10 tracking-tight">{t('welcome_modal.title')}</h2>
+                    <p className="text-green-100 font-medium relative z-10">{t('welcome_modal.subtitle')}</p>
                 </div>
 
                 <div className="p-6 space-y-6">
@@ -35,9 +38,9 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
                             </div>
                         </div>
                         <div>
-                            <h3 className="font-bold text-white text-lg">Play Fair, Score True</h3>
+                            <h3 className="font-bold text-white text-lg">{t('welcome_modal.value_1_title')}</h3>
                             <p className="text-slate-400 text-sm leading-relaxed">
-                                Honest scoring is the heart of our ranking system. Accurate results ensure real statistics and fair matchmaking for everyone.
+                                {t('welcome_modal.value_1_desc')}
                             </p>
                         </div>
                     </div>
@@ -50,9 +53,9 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
                             </div>
                         </div>
                         <div>
-                            <h3 className="font-bold text-white text-lg">Grow Together</h3>
+                            <h3 className="font-bold text-white text-lg">{t('welcome_modal.value_2_title')}</h3>
                             <p className="text-slate-400 text-sm leading-relaxed">
-                                Use real data to improve your game. Challenge yourself, unlock achievements, and climb the leaderboard.
+                                {t('welcome_modal.value_2_desc')}
                             </p>
                         </div>
                     </div>
@@ -65,9 +68,9 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
                             </div>
                         </div>
                         <div>
-                            <h3 className="font-bold text-white text-lg">Support the Community</h3>
+                            <h3 className="font-bold text-white text-lg">{t('welcome_modal.value_3_title')}</h3>
                             <p className="text-slate-400 text-sm leading-relaxed">
-                                After the test period, your monthly subscription keeps PadelUp alive and evolving. It directly supports new features and new functions.
+                                {t('welcome_modal.value_3_desc')}
                             </p>
                         </div>
                     </div>
@@ -77,7 +80,7 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
                             onClick={onClose}
                             className="w-full py-4 rounded-xl bg-green-500 hover:bg-green-400 text-slate-900 font-bold text-lg transition-colors shadow-lg shadow-green-500/20 active:scale-95"
                         >
-                            I'm Ready to enjoy!
+                            {t('welcome_modal.button')}
                         </button>
                     </div>
                 </div>
