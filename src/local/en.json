@@ -4,6 +4,7 @@
     "account": "Account",
     "security": "Security & Password",
     "preferences": "Preferences",
+    "subscription": "Subscribed until",
     "notifications": "Notifications",
     "support": "Support",
     "help": "Help & Feedback",
@@ -95,6 +96,7 @@
   "profile": {
     "title": "My Profile",
     "admin_console": "Admin Console",
+    "level": "Level",
     "full_stats": "Full statistics",
     "win_rate": "Win Rate",
     "average": "Average",
@@ -226,7 +228,19 @@
   },
   "levels": {
     "title": "ELO Levels",
-    "subtitle": "Understand the ranking system"
+    "subtitle": "Understand the ranking system",
+    "names": {
+      "beginner": "Beginner",
+      "basic": "Basic",
+      "basic_plus": "Basic +",
+      "lower_intermediate": "Lower Intermediate",
+      "intermediate": "Intermediate",
+      "upper_intermediate": "Upper Intermediate",
+      "advanced": "Advanced",
+      "advanced_plus": "Advanced +",
+      "pro": "Pro / Competition",
+      "wpt": "World Padel Tour"
+    }
   },
   "pending": {
     "title": "Account Pending Approval",

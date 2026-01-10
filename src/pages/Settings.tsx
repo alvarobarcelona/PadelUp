@@ -5,7 +5,6 @@ import { Button } from '../components/ui/Button';
 import {
     ChevronLeft,
     User,
-    Bell,
     Shield,
     LogOut,
     ChevronRight,
@@ -13,7 +12,8 @@ import {
     Check,
     X,
     Loader2,
-    Globe
+    Globe,
+    ShoppingCart,
 } from 'lucide-react';
 import { logActivity } from '../lib/logger';
 import { APP_FULL_VERSION } from '../lib/constants';
@@ -24,7 +24,7 @@ const Settings = () => {
     const { alert, confirm } = useModal();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
-    const [profile, setProfile] = useState<{ username: string, email: string } | null>(null);
+    const [profile, setProfile] = useState<{ username: string, email: string, subscription_end_date: string | null } | null>(null);
     const [loading, setLoading] = useState(false);
 
     const currentYear = new Date().getFullYear();
@@ -39,7 +39,7 @@ const Settings = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
 
     // Preferences
-    const [notifications, setNotifications] = useState(true);
+    /* const [notifications, setNotifications] = useState(true); */
 
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -79,22 +79,24 @@ const Settings = () => {
         if (user) {
             const { data } = await supabase
                 .from('profiles')
-                .select('username, notifications_enabled')
+                .select('username, notifications_enabled, subscription_end_date')
                 .eq('id', user.id)
                 .single();
 
             setProfile({
                 username: data?.username || '',
-                email: user.email || ''
+                email: user.email || '',
+                subscription_end_date: data?.subscription_end_date || null
             });
-            setNewUsername(data?.username || '');
+
+          /*   setNewUsername(data?.username || '');
             if (data?.notifications_enabled !== undefined) {
                 setNotifications(data.notifications_enabled);
-            }
+            } */
         }
     };
 
-    const handleNotificationToggle = async () => {
+   /*  const handleNotificationToggle = async () => {
         const newState = !notifications;
         setNotifications(newState); // Optimistic update
 
@@ -110,7 +112,7 @@ const Settings = () => {
             console.error('Failed to save notification preference', error);
             // Revert on error? For now, keep optimistic.
         }
-    };
+    }; */
 
     const handleUpdateProfile = async () => {
         if (!profile || !newUsername.trim()) return;
@@ -409,8 +411,36 @@ const Settings = () => {
                                 </div>
                             )}
                         </div>
+                        {/* Subscriptions */}
+                        <div className="space-y-2">
+
+                            <div className="border-t border-slate-700/50">
+                                <div className="flex items-center justify-between p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-full bg-indigo-500/10 text-indigo-400">
+                                            <ShoppingCart size={20} />
+                                        </div>
+                                        <span className="font-medium text-white">{t('settings.subscription')}</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-sm text-slate-400 font-mono">
+                                            {profile?.subscription_end_date
+                                                ? new Date(profile.subscription_end_date).toLocaleDateString()
+                                                : '-'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+
                     </div>
+
+
                 </div>
+
 
                 {/* Preferences */}
                 <div className="space-y-2">
@@ -446,8 +476,11 @@ const Settings = () => {
                             </div>
                         </div>
 
+                        {/* por ahora las dejamos comentadas y sin uso a pesar de haber creado ya en la DB la columna. 
+                        Posible desarrollo futuro. */}
+
                         {/* Notifications */}
-                        <div className="flex items-center justify-between p-4">
+                        {/* <div className="flex items-center justify-between p-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-full bg-purple-500/10 text-purple-400">
                                     <Bell size={20} />
@@ -460,7 +493,7 @@ const Settings = () => {
                             >
                                 <div className={`absolute top-1 left-1 bg-white h-4 w-4 rounded-full transition-transform ${notifications ? 'translate-x-5' : ''}`} />
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
 

@@ -4,6 +4,7 @@
     "account": "Konto",
     "security": "Sicherheit & Passwort",
     "preferences": "Einstellungen",
+    "subscription": "Aboniert bis",
     "notifications": "Benachrichtigungen",
     "support": "Support",
     "help": "Hilfe & Feedback",
@@ -71,8 +72,8 @@
     "pts_next_level": "{{points}} Pkt bis zum nächsten Level",
     "recent_played": "Kürzlich gespielt",
     "no_matches": "Noch keine Spiele",
-    "win": "SIEG",
-    "loss": "NDLG",
+    "win": "WIN",
+    "loss": "LOSS",
     "last_5": "Letzte 5 Spiele",
     "pending_verification": "Ausstehende Bestätigung",
     "auto_accept": "Automatische Annahme in 24h",
@@ -95,6 +96,7 @@
   "profile": {
     "title": "Mein Profil",
     "admin_console": "Admin-Konsole",
+    "level": "Niveau",
     "full_stats": "Vollständige Statistiken",
     "win_rate": "Siegquote",
     "average": "Durchschnitt",
@@ -226,7 +228,19 @@
   },
   "levels": {
     "title": "ELO-Stufen",
-    "subtitle": "Verstehe das Ranglistensystem"
+    "subtitle": "Verstehe das Ranglistensystem",
+    "names": {
+      "beginner": "Anfänger",
+      "basic": "Basis",
+      "basic_plus": "Basis +",
+      "lower_intermediate": "Untere Mittelstufe",
+      "intermediate": "Mittelstufe",
+      "upper_intermediate": "Obere Mittelstufe",
+      "advanced": "Fortgeschritten",
+      "advanced_plus": "Fortgeschritten +",
+      "pro": "Profi / Wettbewerb",
+      "wpt": "World Padel Tour"
+    }
   },
   "pending": {
     "title": "Konto wartet auf Genehmigung",

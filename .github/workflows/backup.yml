@@ -1,0 +1,56 @@
+name: Supabase Backup
+
+on:
+  schedule:
+    # Run at 03:00 UTC every day
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    # Allow manual run from GitHub UI
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create backup directory
+        run: mkdir -p backups
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Dump Database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          # Get current date
+          DATE=$(date +%Y-%m-%d)
+
+          # Dump database to SQL file
+          # We use --db-url to connect directly
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f "backups/backup_$DATE.sql"
+
+      - name: Delete old backups (Optional - Keep last 30 days)
+        run: |
+          find backups -name "backup_*.sql" -mtime +30 -delete
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name 'Backup Bot'
+          git config --global user.email 'bot@noreply.github.com'
+
+          git add backups/*.sql
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "database backup: $(date +%Y-%m-%d)"
+            git push
+          fi

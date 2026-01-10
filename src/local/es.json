@@ -4,6 +4,7 @@
     "account": "Cuenta",
     "security": "Seguridad y Contraseña",
     "preferences": "Preferencias",
+    "subscription": "Suscripción hasta",
     "notifications": "Notificaciones",
     "support": "Soporte",
     "help": "Ayuda y Comentarios",
@@ -95,6 +96,7 @@
   "profile": {
     "title": "Mi Perfil",
     "admin_console": "Consola Admin",
+    "level": "Nivel",
     "full_stats": "Estadísticas completas",
     "win_rate": "Ratio Victoria",
     "average": "Promedio",
@@ -226,7 +228,19 @@
   },
   "levels": {
     "title": "Niveles ELO",
-    "subtitle": "Entiende el sistema de clasificación"
+    "subtitle": "Entiende el sistema de clasificación",
+    "names": {
+      "beginner": "Principiante",
+      "basic": "Básico",
+      "basic_plus": "Básico +",
+      "lower_intermediate": "Intermedio Bajo",
+      "intermediate": "Intermedio",
+      "upper_intermediate": "Intermedio Alto",
+      "advanced": "Avanzado",
+      "advanced_plus": "Avanzado +",
+      "pro": "Profesional / Competición",
+      "wpt": "World Padel Tour"
+    }
   },
   "pending": {
     "title": "Cuenta Pendiente de Aprobación",

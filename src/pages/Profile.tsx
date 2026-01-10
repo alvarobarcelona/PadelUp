@@ -395,9 +395,9 @@ const Profile = () => {
                     <p className="text-sm font-medium text-slate-400">{profile.email}</p>
                 </div>
                 <div className="rounded-full bg-slate-700/50 px-4 py-1.5 text-sm font-bold border border-green-500/20 text-white flex items-center gap-2">
-                    <span className="text-green-400">Level {getLevelFromElo(profile.elo).level}</span>
+                    <span className="text-green-400">{t('profile.level')} {getLevelFromElo(profile.elo).level}</span>
                     <span className="text-slate-500">|</span>
-                    <span className="text-slate-300">{getLevelFromElo(profile.elo).label}</span>
+                    <span className="text-slate-300">{t(`levels.names.${getLevelFromElo(profile.elo).key}`)}</span>
                 </div>
                 <div className="text-[10px] text-slate-500 font-medium">
                     ELO: {profile.elo}

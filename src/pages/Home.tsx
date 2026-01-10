@@ -306,7 +306,7 @@ const Home = () => {
 
                         </div>
                         <div>
-                            <span className="text-sm font-normal text-slate-400 ml-2">{getLevelFromElo(profile.elo).label}</span>
+                            <span className="text-sm font-normal text-slate-400 ml-2">{t(`levels.names.${getLevelFromElo(profile.elo).key}`)}</span>
                         </div>
 
                         {/* Progress Bar (Visual flair) */}
