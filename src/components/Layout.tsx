@@ -8,6 +8,7 @@ import ChatButton from './Chat/ChatButton';
 import ChatDrawer from './Chat/ChatDrawer';
 import { useChat } from '../context/ChatContext';
 import { useTranslation } from 'react-i18next';
+import { InstallPrompt } from './InstallPrompt';
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -125,6 +126,8 @@ const Layout = () => {
                     </li>
                 </ul>
             </nav>
+
+            <InstallPrompt />
         </div >
     );
 };

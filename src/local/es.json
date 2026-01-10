@@ -278,5 +278,11 @@
     "value_3_title": "Apoya a la Comunidad",
     "value_3_desc": "Tras el periodo de prueba, tu suscripción mensual mantiene PadelUp vivo y evolucionando. Apoya directamente nuevas funciones.",
     "button": "¡Estoy listo para disfrutar!"
+  },
+  "install_prompt": {
+    "title": "Instalar App",
+    "ios_instruction": "Toca el icono de compartir <share_icon/> y luego \"Añadir a Inicio\" <plus_icon/>",
+    "android_instruction": "Toca el icono de menú <menu_icon/> y luego \"Instalar App\"",
+    "dismiss": "Quizás más tarde"
   }
 }
