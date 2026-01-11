@@ -6,11 +6,14 @@ on:
     - cron: "0 2 * * *"
   workflow_dispatch:
     # Allow manual run from GitHub UI 
-    
+
 
 jobs:
   backup:
     runs-on: ubuntu-latest
+    environment:
+      name: Backup
+      url: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/backup.yml
     permissions:
       contents: write
 
