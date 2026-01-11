@@ -91,7 +91,8 @@
     "confirm_prompt": "¿Confirmar resultado? Esto actualizará los ratings ELO.",
     "reject_reason_prompt": "Por favor indica una razón para rechazar este partido (Requerido):",
     "reject_reason_required": "La razón de rechazo es obligatoria.",
-    "reject_confirm": "¿Rechazar este partido? Será eliminado. Siempre puedes crear uno nuevo. Recuerda que rechazar para evitar bajar ELO puede resultar en suspensión."
+    "reject_confirm": "¿Rechazar este partido? Será eliminado. Siempre puedes crear uno nuevo. Recuerda que rechazar para evitar bajar ELO puede resultar en suspensión.",
+    "tournaments": "Torneos"
   },
   "profile": {
     "title": "Mi Perfil",

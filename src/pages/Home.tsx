@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, History as HistoryIcon, User, Check, X, Clock } from 'lucide-react';
+import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
@@ -459,6 +459,18 @@ const Home = () => {
                 <Plus size={28} strokeWidth={3} />
                 <span className="text-lg tracking-tight">{t('home.record_match')}</span>
             </Link>
+
+            {/* Tournaments Link */}
+            <a
+                href="https://padel-tournaments-sepia.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 py-4 font-bold text-white shadow-xl shadow-orange-500/20 active:scale-95 transition-all hover:from-amber-400 hover:to-orange-500 overflow-hidden"
+            >
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                <Trophy size={24} strokeWidth={2} />
+                <span className="text-lg tracking-tight">{t('home.tournaments')}</span>
+            </a>
 
             {/* Player Suggestions */}
             {suggestions.length > 0 && (

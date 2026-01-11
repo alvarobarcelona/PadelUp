@@ -91,7 +91,8 @@
     "confirm_prompt": "Confirm this match result? This will update ELO ratings.",
     "reject_reason_prompt": "Please provide a reason for rejecting this match (Required):",
     "reject_reason_required": "Rejection reason is required.",
-    "reject_confirm": "Reject this game? It will be deleted. You can always create a new one. But remember that rejecting it to avoid a drop in your ELO rating may result in a temporary suspension."
+    "reject_confirm": "Reject this game? It will be deleted. You can always create a new one. But remember that rejecting it to avoid a drop in your ELO rating may result in a temporary suspension.",
+    "tournaments": "Tournaments"
   },
   "profile": {
     "title": "My Profile",
