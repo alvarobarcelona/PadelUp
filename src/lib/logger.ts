@@ -18,7 +18,7 @@ export const ACTIVITY_ACTIONS = [
 export type ActivityAction = (typeof ACTIVITY_ACTIONS)[number];
 
 // Set to false to pause logging during development/testing
-const LOGGING_ENABLED = false; // PAUSED
+const LOGGING_ENABLED = true; // PAUSED
 
 export const logActivity = async (
   action: ActivityAction,
