@@ -502,7 +502,7 @@ const Settings = () => {
                     <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">{t('settings.support')}</h2>
                     <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden shadow-none transition-colors duration-300">
                         <button
-                            onClick={() => window.location.href = 'mailto:support@padelup.com?subject=Feedback and support%20for%20PadelUp'}
+                            onClick={() => window.location.href = 'mailto:padeluppadeleros@gmail.com?subject=Feedback and support%20for%20PadelUp'}
                             className="w-full flex items-center justify-between p-4 hover:bg-slate-700/50 transition-colors"
                         >
                             <div className="flex items-center gap-3">
