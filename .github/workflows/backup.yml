@@ -3,7 +3,7 @@ name: Supabase Backup
 on:
   schedule:
     # Run at 03:00 UTC every day
-    - cron: "0 3 * * *"
+    - cron: "0 2 * * *"
   workflow_dispatch:
     # Allow manual run from GitHub UI
 
