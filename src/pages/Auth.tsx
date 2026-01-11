@@ -3,9 +3,14 @@ import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import { logActivity } from '../lib/logger';
+import { useTranslation } from 'react-i18next';
+import { useModal } from '../context/ModalContext';
 
 const Auth = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
+    const { alert } = useModal();
     const [loading, setLoading] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
     const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -16,9 +21,9 @@ const Auth = () => {
     const [showPassword, setShowPassword] = useState(false);
 
     const getFriendlyErrorMessage = (msg: string) => {
-        if (msg.includes('Invalid login credentials')) return 'Incorrect email or password.';
-        if (msg.includes('Password should be at least')) return 'Password is too short (min 6 chars).';
-        if (msg.includes('User already registered')) return 'This email is already registered.';
+        if (msg.includes('Invalid login credentials')) return t('auth.errors.incorrect_credentials');
+        if (msg.includes('Password should be at least')) return t('auth.errors.password_short');
+        if (msg.includes('User already registered')) return t('auth.errors.user_registered');
         return msg;
     };
 
@@ -37,7 +42,7 @@ const Auth = () => {
             if (profileCheckError || !profileCheck) {
 
                 if (profileCheckError?.code === 'PGRST116' || !profileCheck) {
-                    throw new Error('Email not found in our records.');
+                    throw new Error(t('auth.errors.email_not_found'));
                 }
 
             }
@@ -47,7 +52,14 @@ const Auth = () => {
                 redirectTo: window.location.origin + '/reset-password', // or just root
             });
             if (error) throw error;
-            alert('Password reset link sent! Check your email.');
+
+            logActivity('USER_RESET_PASSWORD', null, { email });
+
+            await alert({
+                title: 'Success',
+                message: t('auth.success.reset_sent'),
+                type: 'success'
+            });
             setIsForgotPassword(false);
             setIsLogin(true);
         } catch (err: any) {
@@ -77,10 +89,10 @@ const Auth = () => {
                     .maybeSingle();
 
                 if (!userExists) {
-                    throw new Error('Email not found. Please sign up first.');
+                    throw new Error(t('auth.errors.email_not_found_signup'));
                 }
 
-                const { error } = await supabase.auth.signInWithPassword({
+                const { error, data } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
@@ -88,25 +100,57 @@ const Auth = () => {
                 if (error) {
                     // Since email exists, this is likely a password error
                     if (error.message.includes('Invalid login credentials')) {
-                        throw new Error('Incorrect password.');
+                        throw new Error(t('auth.errors.incorrect_password'));
                     }
                     throw error;
                 }
+
+                // LOG LOGIN
+                if (data.user) {
+                    logActivity('USER_LOGIN', data.user.id, { email });
+                }
+
                 navigate('/');
             } else {
-                const { error } = await supabase.auth.signUp({
+                // Check if user already exists in profiles
+                const { data: existingProfile } = await supabase
+                    .from('profiles')
+                    .select('email, username')
+                    .or(`email.eq.${email},username.eq.${username}`)
+                    .maybeSingle();
+
+                if (existingProfile) {
+                    if (existingProfile.email === email) {
+                        throw new Error(t('auth.errors.email_registered'));
+                    }
+                    if (existingProfile.username === username) {
+                        throw new Error(t('auth.errors.username_taken'));
+                    }
+                }
+
+                const { error, data } = await supabase.auth.signUp({
                     email,
                     password,
+                    options: {
+                        emailRedirectTo: window.location.origin,
+                        data: {
+                            username: username,
+                            email: email
+                        }
+                    }
                 });
                 if (error) throw error;
 
-                const { error: updateError } = await supabase.auth.updateUser({
-                    data: { username }
+                // LOG REGISTER
+                if (data.user) {
+                    logActivity('USER_REGISTER', data.user.id, { username, email });
+                }
+
+                await alert({
+                    title: 'Success',
+                    message: t('auth.success.signup_confirm'),
+                    type: 'success'
                 });
-                if (updateError) console.error("Error saving username meta", updateError);
-
-
-                alert('Success! Check your email for the confirmation link!');
             }
         } catch (err: any) {
             setError(getFriendlyErrorMessage(err.message));
@@ -121,14 +165,14 @@ const Auth = () => {
                 <div className="text-center">
                     <h1 className="text-4xl font-bold text-green-400">PadelUp</h1>
                     <p className="mt-2 text-slate-400">
-                        {isForgotPassword ? 'Reset Password' : (isLogin ? 'Welcome back, Champion' : 'Join the Club')}
+                        {isForgotPassword ? t('auth.reset_password_title') : (isLogin ? t('auth.welcome_back') : t('auth.join_club'))}
                     </p>
                 </div>
 
                 <form onSubmit={handleAuth} className="space-y-4">
                     {!isLogin && !isForgotPassword && (
                         <div>
-                            <label className="block text-sm font-medium text-slate-400">Username</label>
+                            <label className="block text-sm font-medium text-slate-400">{t('auth.username')}</label>
                             <input
                                 type="text"
                                 required
@@ -140,7 +184,7 @@ const Auth = () => {
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-400">Email</label>
+                        <label className="block text-sm font-medium text-slate-400">{t('auth.email')}</label>
                         <input
                             type="email"
                             required
@@ -154,14 +198,14 @@ const Auth = () => {
                     {!isForgotPassword && (
                         <div>
                             <div className="flex items-center justify-between">
-                                <label className="block text-sm font-medium text-slate-400">Password</label>
+                                <label className="block text-sm font-medium text-slate-400">{t('auth.password')}</label>
                                 {isLogin && (
                                     <button
                                         type="button"
                                         onClick={() => setIsForgotPassword(true)}
                                         className="text-xs text-green-400 hover:text-green-300"
                                     >
-                                        Forgot?
+                                        {t('auth.forgot_password')}
                                     </button>
                                 )}
                             </div>
@@ -191,7 +235,7 @@ const Auth = () => {
                     )}
 
                     <Button type="submit" className="w-full" isLoading={loading}>
-                        {isForgotPassword ? 'Send Reset Link' : (isLogin ? 'Sign In' : 'Create Account')}
+                        {isForgotPassword ? t('auth.send_reset_link') : (isLogin ? t('auth.sign_in') : t('auth.create_account'))}
                     </Button>
 
                     {isForgotPassword && (
@@ -201,7 +245,7 @@ const Auth = () => {
                                 onClick={() => setIsForgotPassword(false)}
                                 className="text-sm text-slate-500 hover:text-white transition-colors"
                             >
-                                Back to Login
+                                {t('auth.back_to_login')}
                             </button>
                         </div>
                     )}
@@ -215,7 +259,7 @@ const Auth = () => {
                             }}
                             className="text-sm text-slate-500 hover:text-green-400 transition-colors"
                         >
-                            {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
+                            {isLogin ? t('auth.no_account') : t('auth.has_account')}
                         </button>
                     </div>
                 </form>
@@ -223,5 +267,6 @@ const Auth = () => {
         </div>
     );
 };
+
 
 export default Auth;

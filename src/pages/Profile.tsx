@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
@@ -7,7 +6,10 @@ import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { checkAchievements } from '../lib/achievements';
 import { useNavigate } from 'react-router-dom';
-import { AchievementModal } from '../components/AchievementModal';
+import { AchievementModal } from '../components/Modals/AchievementModal';
+import { APP_FULL_VERSION } from '../lib/constants';
+import { useTranslation } from 'react-i18next';
+import { useModal } from '../context/ModalContext';
 
 const iconMap: Record<string, any> = {
     'Trophy': Trophy,
@@ -19,12 +21,15 @@ const iconMap: Record<string, any> = {
 
 const Profile = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
+    const { alert } = useModal();
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [allAchievements, setAllAchievements] = useState<any[]>([]);
     const [userAchievementIds, setUserAchievementIds] = useState<Set<string>>(new Set());
     const [selectedAchievement, setSelectedAchievement] = useState<any | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const currentYear = new Date().getFullYear();
 
     // Data Strings
     const [profile, setProfile] = useState<{
@@ -243,7 +248,11 @@ const Profile = () => {
 
         } catch (error) {
             console.error('Error uploading avatar:', error);
-            alert('Error uploading avatar. Please try again.');
+            await alert({
+                title: 'Error',
+                message: t('profile.upload_error'),
+                type: 'danger'
+            });
         } finally {
             setUploading(false);
         }
@@ -348,13 +357,13 @@ const Profile = () => {
     };
 
     if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-green-500" /></div>;
-    if (!profile) return <div className="text-center p-10 text-slate-400">Profile not found.</div>;
+    if (!profile) return <div className="text-center p-10 text-slate-400">{t('profile.not_found')}</div>;
 
     return (
         <div className="space-y-6 animate-fade-in pb-20">
             {/* Header */}
             <header className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-white">My Profile</h1>
+                <h1 className="text-2xl font-bold text-white">{t('profile.title')}</h1>
                 <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
                     <Settings size={22} className="text-slate-400" />
                 </Button>
@@ -386,9 +395,9 @@ const Profile = () => {
                     <p className="text-sm font-medium text-slate-400">{profile.email}</p>
                 </div>
                 <div className="rounded-full bg-slate-700/50 px-4 py-1.5 text-sm font-bold border border-green-500/20 text-white flex items-center gap-2">
-                    <span className="text-green-400">Level {getLevelFromElo(profile.elo).level}</span>
+                    <span className="text-green-400">{t('profile.level')} {getLevelFromElo(profile.elo).level}</span>
                     <span className="text-slate-500">|</span>
-                    <span className="text-slate-300">{getLevelFromElo(profile.elo).label}</span>
+                    <span className="text-slate-300">{t(`levels.names.${getLevelFromElo(profile.elo).key}`)}</span>
                 </div>
                 <div className="text-[10px] text-slate-500 font-medium">
                     ELO: {profile.elo}
@@ -403,7 +412,7 @@ const Profile = () => {
                     onClick={() => navigate('/admin')}
                 >
                     <ShieldCheck size={18} />
-                    Admin Console
+                    {t('profile.admin_console')}
                 </Button>
             )}
 
@@ -417,7 +426,7 @@ const Profile = () => {
                             : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
                             }`}
                     >
-                        Full statistics
+                        {t('profile.full_stats')}
                     </button>
                     {years.map(year => (
                         <button
@@ -441,19 +450,19 @@ const Profile = () => {
                     <div className="rounded-xl bg-slate-800 p-4 border border-slate-700/50">
                         <div className="flex items-center gap-2 text-slate-400 mb-2">
                             <BarChart3 size={18} />
-                            <span className="text-xs font-semibold uppercase tracking-wider">Win Rate</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider">{t('profile.win_rate')}</span>
                         </div>
                         <p className="text-3xl font-bold text-white">{stats.winRate}%</p>
-                        <p className="text-xs text-slate-500 mt-1">Average</p>
+                        <p className="text-xs text-slate-500 mt-1">{t('profile.average')}</p>
                     </div>
                     {/* Total Matches */}
                     <div className="rounded-xl bg-slate-800 p-4 border border-slate-700/50">
                         <div className="flex items-center gap-2 text-slate-400 mb-2">
                             <Medal size={18} />
-                            <span className="text-xs font-semibold uppercase tracking-wider">Matches</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider">{t('profile.matches')}</span>
                         </div>
                         <p className="text-3xl font-bold text-white">{stats.matchesPlayed}</p>
-                        <p className="text-xs text-slate-500 mt-1">Played</p>
+                        <p className="text-xs text-slate-500 mt-1">{t('profile.played')}</p>
                     </div>
 
                     {/* Matches Won / Lost */}
@@ -462,38 +471,38 @@ const Profile = () => {
                             <Trophy size={48} className="text-green-500" />
                         </div>
                         <div className="flex items-center gap-2 text-green-400 mb-2">
-                            <span className="text-xs font-semibold uppercase tracking-wider">Won</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider">{t('profile.won')}</span>
                         </div>
                         <p className="text-3xl font-bold text-white">{stats.wins}</p>
-                        <p className="text-xs text-slate-500 mt-1">Matches</p>
+                        <p className="text-xs text-slate-500 mt-1">{t('profile.matches')}</p>
                     </div>
                     <div className="rounded-xl bg-slate-800 p-4 border border-slate-700/50 relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-2 opacity-10">
                             <X size={48} className="text-red-500" />
                         </div>
                         <div className="flex items-center gap-2 text-red-400 mb-2">
-                            <span className="text-xs font-semibold uppercase tracking-wider">Lost</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider">{t('profile.lost')}</span>
                         </div>
                         <p className="text-3xl font-bold text-white">{stats.losses}</p>
-                        <p className="text-xs text-slate-500 mt-1">Matches</p>
+                        <p className="text-xs text-slate-500 mt-1">{t('profile.matches')}</p>
                     </div>
 
                     {/* Sets & Games */}
                     <div className="rounded-xl bg-slate-800 p-4 border border-slate-700/50">
                         <div className="flex items-center gap-2 text-blue-400 mb-2">
                             <Swords size={18} />
-                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Sets</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('profile.sets')}</span>
                         </div>
                         <p className="text-3xl font-bold text-white">{stats.setsWon}</p>
-                        <p className="text-xs text-slate-500 mt-1">Sets Won</p>
+                        <p className="text-xs text-slate-500 mt-1">{t('profile.sets_won')}</p>
                     </div>
                     <div className="rounded-xl bg-slate-800 p-4 border border-slate-700/50">
                         <div className="flex items-center gap-2 text-purple-400 mb-2">
                             <div className="h-4 w-4 bg-purple-500 rounded-full opacity-60"></div>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Games</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('profile.games')}</span>
                         </div>
                         <p className="text-3xl font-bold text-white">{stats.gamesWon}</p>
-                        <p className="text-xs text-slate-500 mt-1">Games Won</p>
+                        <p className="text-xs text-slate-500 mt-1">{t('profile.games_won')}</p>
                     </div>
                 </div>
             )}
@@ -503,10 +512,10 @@ const Profile = () => {
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold uppercase text-slate-400 tracking-wider flex items-center gap-2">
                         <BarChart3 size={16} />
-                        Performance Trend
+                        {t('profile.performance_trend')}
                     </h3>
                     <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">
-                        {selectedYear === 'all' ? 'Last 20 Matches' : `Year ${selectedYear}`}
+                        {selectedYear === 'all' ? t('profile.last_20') : t('profile.year', { year: selectedYear })}
                     </span>
                 </div>
 
@@ -516,7 +525,7 @@ const Profile = () => {
             {/* Achievements */}
             <div className="rounded-xl bg-slate-800 p-5 border border-slate-700/50">
                 <h3 className="mb-4 text-sm font-semibold uppercase text-slate-400 tracking-wider flex items-center gap-2">
-                    Achievements <span className="text-xs bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">{userAchievementIds.size} / {allAchievements.length}</span>
+                    {t('profile.achievements')} <span className="text-xs bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">{userAchievementIds.size} / {allAchievements.length}</span>
                     <span className="text-xs bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full flex items-center gap-1">
                         {allAchievements.filter(a => userAchievementIds.has(a.id)).reduce((acc, curr) => acc + (curr.point_value || 0), 0)} pts
                     </span>
@@ -524,7 +533,7 @@ const Profile = () => {
 
                 {allAchievements.length === 0 ? (
                     <div className="text-center py-6 text-slate-500 text-sm">
-                        <p>No achievements available.</p>
+                        <p>{t('profile.no_achievements')}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-4 gap-4 overflow-x-auto pb-4 no-scrollbar">
@@ -563,11 +572,13 @@ const Profile = () => {
             <div className="pt-4">
                 <Button variant="danger" className="w-full gap-2" onClick={handleLogout}>
                     <LogOut size={18} />
-                    Sign Out
+                    {t('profile.sign_out')}
                 </Button>
             </div>
-            <div className="text-center text-xs text-slate-600">
-                PadelUp Version 1.2.0 {profile?.is_admin ? " (Admin Mode)" : ""}
+            <div className="text-center pt-4">
+                <p className="text-xs text-slate-500">{APP_FULL_VERSION}</p>
+                <p className="text-[10px] text-slate-500 mt-1">{t('profile.built_with')}</p>
+                <p className="text-[10px] text-slate-500 mt-1">{t('profile.by_author', { year: currentYear })}</p>
             </div>
 
             <AchievementModal

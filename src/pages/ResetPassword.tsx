@@ -3,8 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useModal } from '../context/ModalContext';
 
 const ResetPassword = () => {
+    const { t } = useTranslation();
+    const { alert } = useModal();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [password, setPassword] = useState('');
@@ -25,12 +29,12 @@ const ResetPassword = () => {
         e.preventDefault();
 
         if (password !== confirmPassword) {
-            setError("Passwords don't match");
+            setError(t('auth.password_mismatch'));
             return;
         }
 
         if (password.length < 6) {
-            setError("Password must be at least 6 characters");
+            setError(t('auth.password_short'));
             return;
         }
 
@@ -44,7 +48,11 @@ const ResetPassword = () => {
 
             if (error) throw error;
 
-            alert('Password updated successfully! You will be redirected to the home page.');
+            await alert({
+                title: 'Success',
+                message: t('auth.password_updated'),
+                type: 'success'
+            });
             navigate('/');
         } catch (err: any) {
             setError(err.message);
@@ -59,13 +67,13 @@ const ResetPassword = () => {
                 <div className="text-center">
                     <h1 className="text-4xl font-bold text-green-400">PadelUp</h1>
                     <p className="mt-2 text-slate-400">
-                        Set New Password
+                        {t('auth.set_new_password')}
                     </p>
                 </div>
 
                 <form onSubmit={handleUpdatePassword} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-400">New Password</label>
+                        <label className="block text-sm font-medium text-slate-400">{t('auth.new_password')}</label>
                         <input
                             type="password"
                             required
@@ -76,7 +84,7 @@ const ResetPassword = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-400">Confirm Password</label>
+                        <label className="block text-sm font-medium text-slate-400">{t('auth.confirm_password')}</label>
                         <input
                             type="password"
                             required
@@ -93,7 +101,7 @@ const ResetPassword = () => {
                     )}
 
                     <Button type="submit" className="w-full" isLoading={loading}>
-                        Update Password
+                        {t('auth.update_password')}
                     </Button>
                 </form>
             </div>

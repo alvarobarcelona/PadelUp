@@ -11,6 +11,7 @@ import Auth from './pages/Auth';
 import Players from './pages/Players';
 import Admin from './pages/Admin';
 import Settings from './pages/Settings';
+import Levels from './pages/Levels';
 
 import PendingApproval from './pages/PendingApproval';
 import Subscription from './pages/Subscription';
@@ -19,6 +20,10 @@ import ResetPassword from './pages/ResetPassword';
 
 import { useEffect } from 'react';
 import { supabase } from './lib/supabase';
+
+import { ChatProvider } from './context/ChatContext';
+
+import UserProfile from './pages/UserProfile';
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -37,23 +42,27 @@ function AppRoutes() {
   }, [navigate]);
 
   return (
-    <Routes>
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/pending" element={<PendingApproval />} />
-      <Route path="/subscription" element={<Subscription />} />
-      <Route path="/banned" element={<Banned />} />
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="rankings" element={<Rankings />} />
-        <Route path="new-match" element={<NewMatch />} />
-        <Route path="history" element={<History />} />
-        <Route path="players" element={<Players />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="admin" element={<Admin />} />
-        <Route path="settings" element={<Settings />} />
-      </Route>
-    </Routes>
+    <ChatProvider>
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/pending" element={<PendingApproval />} />
+        <Route path="/subscription" element={<Subscription />} />
+        <Route path="/banned" element={<Banned />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="rankings" element={<Rankings />} />
+          <Route path="new-match" element={<NewMatch />} />
+          <Route path="history" element={<History />} />
+          <Route path="players" element={<Players />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="user/:id" element={<UserProfile />} />
+          <Route path="admin" element={<Admin />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="levels" element={<Levels />} />
+        </Route>
+      </Routes>
+    </ChatProvider>
   );
 }
 

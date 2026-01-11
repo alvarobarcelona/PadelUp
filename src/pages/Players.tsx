@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, UserPlus, MessageCircle } from 'lucide-react';
 import { getLevelFromElo } from '../lib/elo';
+import { useTranslation } from 'react-i18next';
+import { useModal } from '../context/ModalContext';
 
 interface Player {
     id: string;
@@ -13,6 +15,8 @@ interface Player {
 }
 
 const Players = () => {
+    const { t } = useTranslation();
+    const { alert, confirm } = useModal();
     const [players, setPlayers] = useState<Player[]>([]);
     const [loading, setLoading] = useState(true);
     const [friendMap, setFriendMap] = useState<Record<string, 'friend' | 'pending_incoming' | 'pending_outgoing' | 'none'>>({});
@@ -37,6 +41,7 @@ const Players = () => {
                 .from('profiles')
                 .select('*')
                 .eq('approved', true)
+                .eq('is_admin', false)
                 .order('username');
 
             if (allPlayers) setPlayers(allPlayers);
@@ -87,7 +92,7 @@ const Players = () => {
             .insert({ user_id_1: currentUserId, user_id_2: targetId, status: 'pending' });
 
         if (error) {
-            alert('Error sending request');
+            await alert({ title: 'Error', message: t('common.error'), type: 'danger' });
             loadData(); // Revert on error
         } else {
             loadData(); // Refresh to get ID
@@ -145,14 +150,14 @@ const Players = () => {
         <div className="space-y-6 animate-fade-in pb-20">
             <header className="flex flex-col gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Community</h1>
-                    <p className="text-slate-400">Manage your network</p>
+                    <h1 className="text-3xl font-bold text-white">{t('community.title')}</h1>
+                    <p className="text-slate-400">{t('community.subtitle')}</p>
                 </div>
 
                 {/* Search Input */}
                 <input
                     type="text"
-                    placeholder="Search players..."
+                    placeholder={t('community.search_placeholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
@@ -163,23 +168,23 @@ const Players = () => {
                         onClick={() => setActiveTab('community')}
                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'community' ? "bg-slate-700 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"}`}
                     >
-                        Community
+                        {t('community.tab_community')}
                     </button>
                     <button
                         onClick={() => setActiveTab('friends')}
                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'friends' ? "bg-slate-700 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"}`}
                     >
-                        Friends
+                        {t('community.tab_friends')}
                     </button>
                 </div>
             </header>
 
             <div className="space-y-2">
                 {loading ? (
-                    <div className="text-center py-10 text-slate-500"><Loader2 className="animate-spin inline mr-2" /> Loading...</div>
+                    <div className="text-center py-10 text-slate-500"><Loader2 className="animate-spin inline mr-2" /> {t('common.loading')}</div>
                 ) : filteredPlayers.length === 0 ? (
                     <div className="text-center py-10 text-slate-500">
-                        {activeTab === 'friends' ? "No friends yet. Find them in Community!" : "No players found."}
+                        {activeTab === 'friends' ? t('community.no_friends') : t('community.no_players')}
                     </div>
                 ) : (
                     filteredPlayers.map(player => {
@@ -202,58 +207,68 @@ const Players = () => {
                                     {status === 'friend' && (
                                         activeTab === 'friends' ? (
                                             <button
-                                                onClick={() => {
-                                                    if (confirm('Remove this friend?')) handleRemove(player.id);
+                                                onClick={async () => {
+                                                    const confirmed = await confirm({
+                                                        title: 'Remove Friend',
+                                                        message: t('community.confirm_remove'),
+                                                        type: 'danger',
+                                                        confirmText: 'Remove'
+                                                    });
+                                                    if (confirmed) handleRemove(player.id);
                                                 }}
                                                 className="text-xs font-bold text-red-400 px-3 py-1.5 bg-red-500/10 rounded-lg hover:bg-red-500/20 transition-colors"
                                             >
-                                                Unfriend
+                                                {t('community.unfriend')}
                                             </button>
                                         ) : (
                                             <span className="text-xs font-bold text-green-500 px-3 py-1 bg-green-500/10 rounded-full border border-green-500/20">
-                                                Friend
+                                                {t('community.friend')}
                                             </span>
                                         )
                                     )}
 
-                                    {status === 'pending_outgoing' && (
-                                        <button
-                                            onClick={() => handleRemove(player.id)}
-                                            className="text-xs font-bold text-slate-400 px-3 py-1 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors"
-                                        >
-                                            Revoke Request
-                                        </button>
-                                    )}
+                                    {
+                                        status === 'pending_outgoing' && (
+                                            <button
+                                                onClick={() => handleRemove(player.id)}
+                                                className="text-xs font-bold text-slate-400 px-3 py-1 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors"
+                                            >
+                                                {t('community.revoke')}
+                                            </button>
+                                        )
+                                    }
 
-                                    {status === 'pending_incoming' && (
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleAccept(player.id)}
-                                                className="text-xs font-bold bg-green-500 text-slate-900 px-3 py-1.5 rounded-lg hover:bg-green-400 transition-colors"
-                                            >
-                                                Accept
-                                            </button>
-                                            <button
-                                                onClick={() => handleReject(player.id)}
-                                                className="text-xs font-bold bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/30 transition-colors"
-                                            >
-                                                Reject
-                                            </button>
-                                        </div>
-                                    )}
+                                    {
+                                        status === 'pending_incoming' && (
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleAccept(player.id)}
+                                                    className="text-xs font-bold bg-green-500 text-slate-900 px-3 py-1.5 rounded-lg hover:bg-green-400 transition-colors"
+                                                >
+                                                    {t('community.accept')}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleReject(player.id)}
+                                                    className="text-xs font-bold bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/30 transition-colors"
+                                                >
+                                                    {t('community.reject')}
+                                                </button>
+                                            </div>
+                                        )
+                                    }
                                     <div className="flex items-center gap-2"    >
 
                                         {status === 'none' && (
                                             player.id === currentUserId ? (
                                                 <span className="text-xs font-bold text-slate-500 px-3 py-1 bg-slate-800 rounded-full border border-slate-700">
-                                                    You
+                                                    {t('community.you')}
                                                 </span>
                                             ) : (
                                                 <button
                                                     onClick={() => handleSendRequest(player.id)}
                                                     className="text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-1"
                                                 >
-                                                    <UserPlus size={14} /> Add
+                                                    <UserPlus size={14} /> {t('community.add')}
                                                 </button>
                                             )
                                         )}
@@ -272,13 +287,13 @@ const Players = () => {
                                     </div>
 
 
-                                </div>
-                            </div>
+                                </div >
+                            </div >
                         );
                     })
                 )}
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

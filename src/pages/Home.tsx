@@ -5,7 +5,10 @@ import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
-import { WelcomeModal } from '../components/WelcomeModal';
+import { WelcomeModal } from '../components/Modals/WelcomeModal';
+import { logActivity } from '../lib/logger';
+import { useTranslation } from 'react-i18next';
+import { useModal } from '../context/ModalContext';
 
 interface Profile {
     id: string;
@@ -34,11 +37,13 @@ interface MatchPreview {
 }
 
 const Home = () => {
+    const { alert, confirm } = useModal();
+    const { t } = useTranslation();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [suggestions, setSuggestions] = useState<Profile[]>([]);
     const [recentMatches, setRecentMatches] = useState<MatchPreview[]>([]);
     const [pendingMatches, setPendingMatches] = useState<MatchPreview[]>([]);
-    const [recentForm, setRecentForm] = useState<boolean[]>([]);
+    const [recentForm, setRecentForm] = useState<{ id: number, won: boolean, points: number | null }[]>([]);
     const [, setLoading] = useState(true);
     const [showWelcome, setShowWelcome] = useState(false);
 
@@ -77,22 +82,69 @@ const Home = () => {
                 if (profileData) {
                     setProfile(profileData);
 
-                    // Fetch user's last 5 matches for form (only confirmed)
+                    // Fetch user's last 6 matches (to calc diff for 5)
                     const { data: userMatches } = await supabase
                         .from('matches')
-                        .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2')
+                        .select('id, winner_team, team1_p1, team1_p2, team2_p1, team2_p2, elo_snapshot')
                         .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
                         .eq('status', 'confirmed')
                         .order('created_at', { ascending: false })
-                        .limit(5);
+                        .limit(6);
 
                     if (userMatches) {
-                        const form = userMatches.map(m => {
+                        const form = [];
+                        // We iterate up to 5 (or less if fewer matches)
+                        const count = Math.min(5, userMatches.length);
+
+                        for (let i = 0; i < count; i++) {
+                            const m = userMatches[i];
                             const isTeam1 = m.team1_p1 === profileData.id || m.team1_p2 === profileData.id;
                             const isTeam2 = m.team2_p1 === profileData.id || m.team2_p2 === profileData.id;
-                            return (isTeam1 && m.winner_team === 1) || (isTeam2 && m.winner_team === 2);
-                        });
-                        setRecentForm(form.reverse());
+                            const won = (isTeam1 && m.winner_team === 1) || (isTeam2 && m.winner_team === 2);
+
+                            // Calculate points
+                            let points = null;
+                            if (m.elo_snapshot) {
+                                // Determine user's position key (t1p1, t1p2, etc.)
+                                let posKey = '';
+                                if (m.team1_p1 === profileData.id) posKey = 't1p1';
+                                else if (m.team1_p2 === profileData.id) posKey = 't1p2';
+                                else if (m.team2_p1 === profileData.id) posKey = 't2p1';
+                                else if (m.team2_p2 === profileData.id) posKey = 't2p2';
+
+                                const currentElo = (m.elo_snapshot as any)[posKey];
+
+                                // Get previous ELO
+                                let prevElo = 1150; // DEFAULT
+                                // If there is a "next" match (which is older in time), get its snapshot
+                                if (i + 1 < userMatches.length) {
+                                    const olderMatch = userMatches[i + 1];
+                                    if (olderMatch.elo_snapshot) {
+                                        // Find pos in older match
+                                        let olderPosKey = '';
+                                        if (olderMatch.team1_p1 === profileData.id) olderPosKey = 't1p1';
+                                        else if (olderMatch.team1_p2 === profileData.id) olderPosKey = 't1p2';
+                                        else if (olderMatch.team2_p1 === profileData.id) olderPosKey = 't2p1';
+                                        else if (olderMatch.team2_p2 === profileData.id) olderPosKey = 't2p2';
+
+                                        prevElo = (olderMatch.elo_snapshot as any)[olderPosKey] || prevElo;
+                                    }
+                                } else if (i === userMatches.length - 1 && userMatches.length < 6) {
+                                    // This is the absolute first match found, and no older match exists.
+                                    // Use default start rating 1150.
+                                    prevElo = 1150;
+                                }
+
+                                if (currentElo !== undefined && prevElo !== undefined) {
+                                    points = currentElo - prevElo;
+                                }
+                            }
+                            form.push({ id: m.id, won, points });
+                        }
+                        setRecentForm(form.reverse()); // Show old -> new, or new -> old? Usually L -> R is Old -> New in a graph. But dots...
+                        // Reversing makes index 0 the oldest.
+                        // The UI "Recent Form" usually shows Left=Oldest, Right=Newest.
+                        // So reversing is correct if userMatches is Newest First.
                     }
 
                     // Fetch Matchmaking Suggestions
@@ -102,7 +154,8 @@ const Home = () => {
                         .from('profiles')
                         .select('id, username, elo, avatar_url')
                         .neq('id', user.id)
-                        .eq('approved', true);
+                        .eq('approved', true)
+                        .eq('is_admin', false);
 
                     if (candidates) {
                         const minElo = profileData.elo - 100;
@@ -118,7 +171,7 @@ const Home = () => {
                     const { data: pending } = await supabase
                         .from('matches')
                         .select(`
-                            id, created_at, winner_team, commentary, status, created_by, score,
+                            id, created_at, winner_team, commentary, status, score, created_by,
                             team1_p1, team1_p2, team2_p1, team2_p2,
                             t1p1:team1_p1(username),
                             t1p2:team1_p2(username),
@@ -137,7 +190,7 @@ const Home = () => {
             const { data: matchesData } = await supabase
                 .from('matches')
                 .select(`
-                id, created_at, winner_team, commentary, status,
+                id, created_at, winner_team, commentary, status, score,
                 t1p1:team1_p1(username),
                 t1p2:team1_p2(username),
                 t2p1:team2_p1(username),
@@ -159,24 +212,60 @@ const Home = () => {
     };
 
     const handleConfirm = async (matchId: number) => {
-        if (!confirm('Confirm this match result? This will update ELO ratings.')) return;
+        const confirmed = await confirm({
+            title: t('home.confirm_title') || 'Confirm Match',
+            message: t('home.confirm_prompt'),
+            type: 'confirm',
+            confirmText: 'Confirm'
+        });
+        if (!confirmed) return;
+
         try {
             const { error } = await supabase.rpc('confirm_match', { match_id: matchId });
             if (error) throw error;
+
+            // LOG MATCH CONFIRM
+            logActivity('MATCH_CONFIRM', matchId.toString(), {});
+
             loadDashboardData(); // Refresh UI
         } catch (error: any) {
-            alert('Error confirming match: ' + error.message);
+            await alert({ title: 'Error', message: 'Error confirming match: ' + error.message, type: 'danger' });
         }
     };
 
     const handleReject = async (matchId: number) => {
-        if (!confirm('Reject this game? It will be deleted. You can always create a new one. But remember that rejecting it to avoid a drop in your ELO rating may result in a temporary suspension.')) return;
+        // 1. Prompt for Reason
+        const reason = prompt(t('home.reject_reason_prompt'));
+        if (reason === null) return; // Cancelled
+        if (reason.trim() === '') {
+            await alert({ title: 'Warning', message: t('home.reject_reason_required'), type: 'warning' });
+            return;
+        }
+
+        const confirmed = await confirm({
+            title: t('home.reject_title') || 'Reject Match',
+            message: t('home.reject_confirm'),
+            type: 'danger',
+            confirmText: 'Reject'
+        });
+        if (!confirmed) return;
+
         try {
+            // 2. Find Match Details for Logging (before it's deleted)
+            const match = pendingMatches.find(m => m.id === matchId);
+
             const { error } = await supabase.rpc('reject_match', { match_id: matchId });
             if (error) throw error;
+
+            // LOG MATCH REJECT with Reason and Snapshot
+            logActivity('MATCH_REJECT', matchId.toString(), {
+                reason: reason.trim(),
+                match_snapshot: match || 'Match details not found'
+            });
+
             loadDashboardData();
         } catch (error: any) {
-            alert('Error rejecting match: ' + error.message);
+            await alert({ title: 'Error', message: 'Error rejecting match: ' + error.message, type: 'danger' });
         }
     };
 
@@ -187,7 +276,7 @@ const Home = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-white tracking-tight">PadelUp</h1>
                     <p className="text-slate-400 font-medium">
-                        {profile ? `Welcome back, ${profile.username}` : 'Welcome Guest'}
+                        {profile ? t('home.welcome_user', { name: profile.username }) : t('home.welcome_guest')}
                     </p>
                 </div>
                 <Link to="/profile">
@@ -196,12 +285,13 @@ const Home = () => {
             </header>
 
             {/* Hero Stats Card (Only if logged in with a profile) */}
+            {/* Profile */}
             {profile && (
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">
+                    <Link to="/levels" className="block rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg hover:border-slate-500 transition-colors">
                         <div className="flex justify-between items-start mb-2">
                             <div>
-                                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Current Level</p>
+                                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">{t('home.current_level')}</p>
                                 <p className="text-3xl font-black text-white">
                                     {getLevelFromElo(profile.elo).level}
 
@@ -216,7 +306,7 @@ const Home = () => {
 
                         </div>
                         <div>
-                            <span className="text-sm font-normal text-slate-400 ml-2">{getLevelFromElo(profile.elo).label}</span>
+                            <span className="text-sm font-normal text-slate-400 ml-2">{t(`levels.names.${getLevelFromElo(profile.elo).key}`)}</span>
                         </div>
 
                         {/* Progress Bar (Visual flair) */}
@@ -227,26 +317,36 @@ const Home = () => {
                             />
                         </div>
                         <p className="text-[10px] text-green-500/80 mt-1.5 font-medium text-right">
-                            {getLevelFromElo(profile.elo).max - profile.elo} pts to next level
+                            {t('home.pts_next_level', { points: getLevelFromElo(profile.elo).max - profile.elo })}
                         </p>
-                    </div>
+                    </Link>
 
+                    {/* Recent played */}
                     <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Recent Form</p>
-                        <div className="flex gap-1.5 mt-1">
+                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">{t('home.recent_played')}</p>
+                        <div className="flex flex-col gap-2 mt-2">
                             {recentForm.length === 0 ? (
-                                <span className="text-xs text-slate-500">No matches yet</span>
+                                <span className="text-xs text-slate-500">{t('home.no_matches')}</span>
                             ) : (
-                                recentForm.map((won, i) => (
-                                    <div
-                                        key={i}
-                                        className={`h-3 w-3 rounded-full shadow-sm ${won ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500/50'}`}
-                                        title={won ? 'Win' : 'Loss'}
-                                    />
+                                recentForm.map((item, i) => (
+                                    <div key={i} className="flex items-center space-x-2 bg-white/5 p-0.5  rounded-lg">
+                                        <span className="text-[10px] text-slate-500 font-mono leading-none">Id: {item.id}</span>
+                                        <div className="flex items-center gap-2">
+                                            <div
+                                                className={`h-2 w-2 rounded-full shadow-sm ${item.won ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500/50'}`}
+                                            />
+                                            <span className={`text-[10px] font-bold leading-none ${item.won ? 'text-green-500' : 'text-red-500'}`}>
+                                                {item.won ? t('home.win') : t('home.loss')}
+                                            </span>
+                                        </div>
+                                        <span className={`text-xs font-bold leading-none ${item.won ? 'text-green-500' : 'text-red-500'}`}>
+                                            {item.points !== null ? (item.points > 0 ? `+${item.points}` : item.points) : '-'}
+                                        </span>
+                                    </div>
                                 ))
                             )}
                         </div>
-                        <p className="text-[10px] text-slate-500 mt-2 font-medium">Last 5 matches</p>
+                        <p className="text-[10px] text-slate-500 mt-2 font-medium">{t('home.last_5')}</p>
                     </div>
                 </div>
 
@@ -258,7 +358,7 @@ const Home = () => {
                     <div className="flex items-center justify-between mb-2">
                         <h2 className="text-sm font-bold text-yellow-500 flex items-center gap-2">
                             <Clock size={16} />
-                            Pending Verification
+                            {t('home.pending_verification')}
                         </h2>
                     </div>
                     <div className="space-y-3">
@@ -282,10 +382,10 @@ const Home = () => {
                                     {/* Header: Time and Auto-Accept */}
                                     <div className="flex justify-between items-center pb-2 border-b border-yellow-500/10">
                                         <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
-                                            <Clock size={12} /> Auto-accepts in 24h
+                                            <Clock size={12} /> {t('home.auto_accept')}
                                         </p>
                                         <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
-                                            Match number: {match.id}
+                                            {t('home.match_number', { id: match.id })}
                                         </p>
                                         <p className="text-[10px] text-slate-400 font-medium">
                                             {new Date(match.created_at).toLocaleString()}
@@ -327,18 +427,18 @@ const Home = () => {
                                             <button
                                                 onClick={() => handleConfirm(match.id)}
                                                 className="flex-1 bg-green-500/20 hover:bg-green-500 text-green-500 hover:text-white py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
-                                                <Check size={14} /> Confirm
+                                                <Check size={14} /> {t('home.confirm')}
                                             </button>
                                             <button
                                                 onClick={() => handleReject(match.id)}
                                                 className="flex-1 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
-                                                <X size={14} /> Reject
+                                                <X size={14} /> {t('home.reject')}
                                             </button>
                                         </div>
                                     ) : (
                                         <div className="mt-1 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-center">
                                             <p className="text-xs text-slate-400 italic flex items-center justify-center gap-2">
-                                                <Clock size={12} /> Waiting for opponent confirmation...
+                                                <Clock size={12} /> {t('home.waiting_opponent')}
                                             </p>
                                         </div>
                                     )}
@@ -357,45 +457,41 @@ const Home = () => {
             >
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                 <Plus size={28} strokeWidth={3} />
-                <span className="text-lg tracking-tight">Record New Match</span>
+                <span className="text-lg tracking-tight">{t('home.record_match')}</span>
             </Link>
 
-            {/* Matchmaking Suggestions */}
+            {/* Player Suggestions */}
             {suggestions.length > 0 && (
                 <div>
                     <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                         <User size={18} className="text-blue-400" />
-                        Match Suggestions
-                        <span className="text-xs font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">ELO +/- 100</span>
+                        {t('home.suggestions')}
+                        <span className="text-xs font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-3">
                         {suggestions.map(s => {
                             const diff = s.elo - (profile?.elo || 0);
                             const diffColor = diff > 0 ? "text-green-400" : diff < 0 ? "text-red-400" : "text-slate-400";
                             const diffText = diff > 0 ? `+${diff}` : diff;
 
-                            
+
                             return (
                                 <div key={s.id} className="relative flex items-center p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 hover:bg-slate-800 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <Link to={`/profile/${s.id}`}>
-                                            <Avatar src={s.avatar_url} fallback={s.username} size="md" />
-                                        </Link>
+                                        <Avatar src={s.avatar_url} fallback={s.username} size="md" />
                                         <div>
-                                            <Link to={`/profile/${s.id}`} className="font-semibold text-slate-200 block hover:text-white transition-colors text-sm">
-                                                {s.username}
-                                            </Link>
+                                            {s.username}
                                             <div className="flex items-center gap-2 text-xs">
                                                 <span className="text-slate-400 font-bold">{s.elo} ELO</span>
-                                                <span className={cn("font-medium", diffColor)}>({diffText})</span>
+                                                <span className={cn("font-medium", diffColor)}>{t('home.diff_of', { diff: diffText, defaultValue: `diff of (${diffText})` })}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: s.id }))}
-                                        className="absolute top-2 right-2 px-2 py-0.5 bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded transition-colors font-bold text-[9px] uppercase tracking-wider border border-blue-500/20"
+                                        className="absolute top-5 right-2 px-3 py-0.5 bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded transition-colors font-bold text-[9px] uppercase tracking-wider border border-blue-500/20 whitespace-pre-line text-center"
                                     >
-                                        Challenge
+                                        {t('home.get_in_touch')}
                                     </button>
                                 </div>
                             )
@@ -409,19 +505,25 @@ const Home = () => {
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
                         <HistoryIcon size={18} className="text-slate-400" />
-                        Latest Activity
+                        {t('home.latest_activity')}
                     </h2>
-                    <Link to="/history" className="text-xs font-medium text-green-400 hover:text-green-300">View All</Link>
+                    <Link to="/history" className="text-xs font-medium text-green-400 hover:text-green-300">{t('home.match_history')}</Link>
                 </div>
 
                 <div className="space-y-3">
                     {recentMatches.length === 0 ? (
                         <div className="text-center py-8 text-slate-500 text-sm bg-slate-800/30 rounded-xl border border-dashed border-slate-800">
-                            No recent confirmed matches found.
+                            {t('home.no_confirmed_matches')}
                         </div>
                     ) : (
                         recentMatches.map((match) => (
                             <div key={match.id} className="group flex flex-col gap-2 rounded-xl bg-slate-800/60 p-4 border border-slate-800 hover:border-slate-600 transition-all">
+                                <div className=" flex justify-between text-xs text-slate-500">
+                                    <span className="text-[10px] text-slate-500">
+                                        {new Date(match.created_at).toLocaleDateString()}
+                                    </span>
+                                    <span>{t('home.match_label', { id: match.id })}</span>
+                                </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
@@ -432,10 +534,15 @@ const Home = () => {
                                             <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
                                                 {match.t2p1?.username} & {match.t2p2?.username}
                                             </span>
+
                                         </div>
-                                        <span className="text-[10px] text-slate-500">
-                                            {new Date(match.created_at).toLocaleDateString()}
-                                        </span>
+                                        <div className="flex gap-2">
+                                            {Array.isArray(match.score) && match.score.map((s: any, i: number) => (
+                                                <span key={i} className="text-slate-400 font-mono text-xs">
+                                                    {s.t1}-{s.t2}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center group-hover:bg-slate-600 transition-colors">
                                         <HistoryIcon size={14} className="text-slate-400" />
