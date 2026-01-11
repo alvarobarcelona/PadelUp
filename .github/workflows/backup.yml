@@ -29,6 +29,12 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "Error: SUPABASE_DB_URL secret is not set!"
+            echo "Please add SUPABASE_DB_URL to your Repository Secrets."
+            exit 1
+          fi
+
           # Get current date
           DATE=$(date +%Y-%m-%d)
 
