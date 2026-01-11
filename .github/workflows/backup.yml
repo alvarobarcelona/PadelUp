@@ -42,7 +42,7 @@ jobs:
           DATE=$(date +%Y-%m-%d)
 
           # Dump database to SQL file (Schema + Data)
-          pg_dump "$SUPABASE_DB_URL" -f "backups/backup_$DATE.sql"
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" -f "backups/backup_$DATE.sql"
 
       - name: Delete old backups (Optional - Keep last 30 days)
         run: |
