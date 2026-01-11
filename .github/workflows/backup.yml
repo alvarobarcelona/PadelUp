@@ -44,6 +44,9 @@ jobs:
           # Dump database to SQL file (Schema + Data)
           /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" -f "backups/backup_$DATE.sql"
 
+          # Dump ONLY public schema (Schema + Data)
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" -n public -f "backups/backup_public_$DATE.sql"
+
       - name: Delete old backups (Optional - Keep last 30 days)
         run: |
           find backups -name "backup_*.sql" -mtime +30 -delete
