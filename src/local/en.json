@@ -117,7 +117,27 @@
     "built_with": "Built with ❤️ for Padel Lovers",
     "by_author": "{{year}} By Alvaro Barcelona Peralta",
     "not_found": "Profile not found.",
-    "upload_error": "Error uploading avatar. Please try again."
+    "upload_error": "Error uploading avatar. Please try again.",
+    "joined": "Joined {{date}}",
+    "head_to_head": "Head-to-Head",
+    "record_against": "Your Record against {{name}}",
+    "matches_total_wr": "{{count}} matches total ({{wr}}% WR)",
+    "current_run": "Current Run",
+    "streak_wins": "+{{count}} Wins",
+    "streak_wins_desc": "You're on a roll against them!",
+    "streak_losses": "{{count}} Losses",
+    "streak_losses_desc": "Time for revenge!",
+    "no_streak": "No active streak",
+    "rivalry": {
+      "unknown_title": "Unknown Rivals",
+      "unknown_desc": "Play more matches to establish rivalry",
+      "client_title": "Your Client",
+      "client_desc": "You clearly dominate this matchup",
+      "nemesis_title": "Your Nemesis",
+      "nemesis_desc": "They have your number... for now",
+      "even_title": "Even Match",
+      "even_desc": "A truly balanced rivalry"
+    }
   },
   "nav": {
     "home": "Home",
@@ -196,7 +216,8 @@
     "search_placeholder": "Search players...",
     "no_results": "No players found matching your search.",
     "no_friends": "No friends found. Go to 'Community' to add some!",
-    "no_players": "No players found."
+    "no_players": "No players found.",
+    "click_hint": "Click on a player to see Head-to-Head stats"
   },
   "community": {
     "title": "Community",

@@ -117,7 +117,27 @@
     "built_with": "Hecho con ❤️ para Amantes del Pádel",
     "by_author": "{{year}} Por Alvaro Barcelona Peralta",
     "not_found": "Perfil no encontrado.",
-    "upload_error": "Error subiendo avatar. Intenta de nuevo."
+    "upload_error": "Error subiendo avatar. Intenta de nuevo.",
+    "joined": "Unido el {{date}}",
+    "head_to_head": "Cara a Cara",
+    "record_against": "Tu récord contra {{name}}",
+    "matches_total_wr": "{{count}} partidos en total ({{wr}}% Vic)",
+    "current_run": "Racha Actual",
+    "streak_wins": "+{{count}} Victorias",
+    "streak_wins_desc": "¡Estás en racha contra ellos!",
+    "streak_losses": "{{count}} Derrotas",
+    "streak_losses_desc": "¡Hora de la revancha!",
+    "no_streak": "Sin racha activa",
+    "rivalry": {
+      "unknown_title": "Rivales Desconocidos",
+      "unknown_desc": "Juega más partidos para establecer rivalidad",
+      "client_title": "Tu Cliente",
+      "client_desc": "Dominas claramente este enfrentamiento",
+      "nemesis_title": "Tu Némesis",
+      "nemesis_desc": "Te tienen la medida tomada... por ahora",
+      "even_title": "Partido Igualado",
+      "even_desc": "Una rivalidad verdaderamente equilibrada"
+    }
   },
   "nav": {
     "home": "Inicio",
@@ -196,7 +216,8 @@
     "search_placeholder": "Buscar jugadores...",
     "no_results": "No se encontraron jugadores.",
     "no_friends": "No tienes amigos aún. ¡Ve a 'Comunidad' para añadir algunos!",
-    "no_players": "No se encontraron jugadores."
+    "no_players": "No se encontraron jugadores.",
+    "click_hint": "Haz clic en un jugador para ver estadísticas Cara a Cara"
   },
   "community": {
     "title": "Comunidad",

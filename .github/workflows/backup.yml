@@ -45,9 +45,9 @@ jobs:
           # We focus on 'public' as it contains all application tables and data.
           /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" -n public -f "backups/backup_$DATE.sql"
 
-      - name: Delete old backups (Optional - Keep last 30 days)
+      - name: Delete old backups (Optional - Keep last 10 days)
         run: |
-          find backups -name "backup_*.sql" -mtime +30 -delete
+          find backups -name "backup_*.sql" -mtime +10 -delete
 
       - name: Commit and Push
         run: |

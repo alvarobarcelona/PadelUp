@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
@@ -86,6 +87,9 @@ const Rankings = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-white">{t('rankings.title')}</h1>
                     <p className="text-slate-400">{t('rankings.subtitle')}</p>
+                    <p className="text-xs text-slate-500 mt-2 italic flex items-center gap-1">
+                        <TrendingUp size={12} /> {t('rankings.click_hint')}
+                    </p>
                 </div>
 
                 {/* Tabs */}
@@ -133,11 +137,13 @@ const Rankings = () => {
                         const rank = index + 1;
                         const isTop = rank <= 3;
 
+
                         return (
-                            <div
+                            <Link
+                                to={`/user/${player.id}`}
                                 key={player.id}
                                 className={cn(
-                                    "group relative flex items-center gap-4 rounded-xl border p-4 transition-all",
+                                    "group relative flex items-center gap-4 rounded-xl border p-4 transition-all hover:scale-[1.02]",
                                     isTop
                                         ? "border-slate-700 bg-slate-800/80 shadow-lg"
                                         : "border-transparent bg-slate-900/50 hover:bg-slate-800"
@@ -181,7 +187,7 @@ const Rankings = () => {
                                         <Crown size={24} fill="currentColor" />
                                     </div>
                                 )}
-                            </div>
+                            </Link>
                         );
                     })
                 )}

@@ -117,7 +117,27 @@
     "built_with": "Gebaut mit ❤️ für Padel-Liebhaber",
     "by_author": "{{year}} Von Alvaro Barcelona Peralta",
     "not_found": "Profil nicht gefunden.",
-    "upload_error": "Fehler beim Hochladen des Avatars. Bitte versuchen Sie es erneut."
+    "upload_error": "Fehler beim Hochladen des Avatars. Bitte versuchen Sie es erneut.",
+    "joined": "Beigetreten am {{date}}",
+    "head_to_head": "Direkter Vergleich",
+    "record_against": "Deine Bilanz gegen {{name}}",
+    "matches_total_wr": "{{count}} Spiele insgesamt ({{wr}}% Siegquote)",
+    "current_run": "Aktuelle Serie",
+    "streak_wins": "+{{count}} Wins",
+    "streak_wins_desc": "Du hast einen Lauf gegen sie!",
+    "streak_losses": "{{count}} Losses",
+    "streak_losses_desc": "Zeit für Revanche!",
+    "no_streak": "Keine aktive Serie",
+    "rivalry": {
+      "unknown_title": "Unbekannte Rivalen",
+      "unknown_desc": "Spiele mehr Matches, um eine Rivalität aufzubauen",
+      "client_title": "Dein Kunde",
+      "client_desc": "Du dominierst dieses Matchup eindeutig",
+      "nemesis_title": "Dein Angstgegner",
+      "nemesis_desc": "Sie haben dich im Griff... vorerst",
+      "even_title": "Ausgeglichenes Match",
+      "even_desc": "Eine wirklich ausgeglichene Rivalität"
+    }
   },
   "nav": {
     "home": "Startseite",
@@ -196,7 +216,8 @@
     "search_placeholder": "Spieler suchen...",
     "no_results": "Keine Spieler gefunden.",
     "no_friends": "Keine Freunde gefunden. Gehen Sie zu 'Community', um welche hinzuzufügen!",
-    "no_players": "Keine Spieler gefunden."
+    "no_players": "Keine Spieler gefunden.",
+    "click_hint": "Klicken Sie auf einen Spieler, um den direkten Vergleich zu sehen"
   },
   "community": {
     "title": "Community",
