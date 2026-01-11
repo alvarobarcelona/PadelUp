@@ -294,9 +294,9 @@
     "button": "I'm Ready to enjoy!"
   },
   "install_prompt": {
-    "title": "Install App",
-    "ios_instruction": "Tap the share icon <share_icon/> and then \"Add to Home Screen\" <plus_icon/>",
-    "android_instruction": "Tap the menu icon <menu_icon/> and then \"Install App\"",
+    "title": "Install App on Screen",
+    "ios_instruction": "In Safari, tap the three dots icon, then tap Share, then tap Add to Home Screen.",
+    "android_instruction": "In Chrome, tap the menu icon and then Install App.",
     "dismiss": "Maybe later"
   }
 }

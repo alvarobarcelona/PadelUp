@@ -294,9 +294,9 @@
     "button": "¡Estoy listo para disfrutar!"
   },
   "install_prompt": {
-    "title": "Instalar App",
-    "ios_instruction": "Toca el icono de compartir <share_icon/> y luego \"Añadir a Inicio\" <plus_icon/>",
-    "android_instruction": "Toca el icono de menú <menu_icon/> y luego \"Instalar App\"",
+    "title": "Instalar App en tu pantalla",
+    "ios_instruction": "En Safari, toca el icono de los tres puntos y luego compartir, luego Añadir a Inicio",
+    "android_instruction": "En Chrome, toca el icono de menú y luego Instalar App",
     "dismiss": "Quizás más tarde"
   }
 }

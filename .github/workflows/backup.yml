@@ -41,11 +41,9 @@ jobs:
           # Get current date
           DATE=$(date +%Y-%m-%d)
 
-          # Dump database to SQL file (Schema + Data)
-          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" -f "backups/backup_$DATE.sql"
-
           # Dump ONLY public schema (Schema + Data)
-          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" -n public -f "backups/backup_public_$DATE.sql"
+          # We focus on 'public' as it contains all application tables and data.
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" -n public -f "backups/backup_$DATE.sql"
 
       - name: Delete old backups (Optional - Keep last 30 days)
         run: |
@@ -62,6 +60,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "database backup: $(date +%Y-%m-%d)"
+            git commit -m "database backup: $(date +%Y-%m-%d) [skip ci]"
             git push
           fi
