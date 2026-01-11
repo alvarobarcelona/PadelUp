@@ -405,7 +405,8 @@ const Admin = () => {
                                             {(p.banned_until) && <span className='text-[10px] bg-red-500 text-white px-1 rounded uppercase font-bold'>BANNED UNTIL {p.banned_until ? (new Date(p.banned_until).toLocaleString()) : 'No Date'}</span>}
                                         </div>
                                         <div className="flex flex-col gap-1 mt-1">
-                                            <p className="text-xs text-slate-500">ELO: {p.elo} | ID: {p.id}</p>
+                                            <p className="text-xs text-slate-500">ELO: {p.elo} | AuthId: {p.id}</p>
+                                            <p className='text-xs text-slate-500'>Member-Id: {p.member_id}</p>
                                             <p className="text-xs text-slate-400">{p.email}</p>
                                             <p className={`text-xs font-mono flex items-center gap-1 ${isExpired ? 'text-red-400 font-bold' : 'text-green-400'}`}>
                                                 {isExpired ? '⚠️ Expired' : '✅ Active'}
