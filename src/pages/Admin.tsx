@@ -87,11 +87,24 @@ const Admin = () => {
         });
         if (!confirmed) return;
 
-        const { error } = await supabase.from('profiles').delete().eq('id', id);
-        if (error) {
-            await alert({ title: 'Error', message: error.message, type: 'danger' });
-        } else {
+        setLoading(true);
+        try {
+            const { error }: any = await supabase.functions.invoke('delete-user', {
+                body: { user_id: id }
+            });
+
+            if (error) throw new Error(error.message || 'Failed to delete user');
+
+            // LOG ADMIN DELETE USER
+            logActivity('ADMIN_DELETE_USER', id, { deleted_id: id });
+
+            await alert({ title: 'Success', message: 'User deleted permanently.', type: 'success' });
             fetchData();
+        } catch (error: any) {
+            console.error(error);
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
         }
     };
 

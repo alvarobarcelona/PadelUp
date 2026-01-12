@@ -188,6 +188,7 @@
     "reject": "Reject",
     "edit_player": "Edit Player",
     "delete_match": "Delete Match",
+    "delete_player_title": "Delete Player",
     "confirm_delete_match": "This will DELETE the match and REVERT ELO points for all players. Are you sure?",
     "confirm_delete_player": "Are you sure? This might break matches linked to this player!",
     "search_placeholder": "Search by username or ID...",

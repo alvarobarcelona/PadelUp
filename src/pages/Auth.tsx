@@ -144,6 +144,19 @@ const Auth = () => {
                 // LOG REGISTER
                 if (data.user) {
                     logActivity('USER_REGISTER', data.user.id, { username, email });
+
+                    // Notify Admin
+                    supabase.functions.invoke('notify-admin', {
+                        body: {
+                            record: {
+                                username: username,
+                                id: data.user.id,
+                                email: email
+                            }
+                        }
+                    }).then(({ error }) => {
+                        if (error) console.error('Failed to notify admin:', error);
+                    });
                 }
 
                 await alert({
