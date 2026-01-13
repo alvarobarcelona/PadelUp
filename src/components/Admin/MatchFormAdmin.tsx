@@ -352,9 +352,10 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                         <Avatar fallback={selectedPlayers.t1p1?.username || ''} src={selectedPlayers.t1p1?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
                         <Avatar fallback={selectedPlayers.t1p2?.username || ''} src={selectedPlayers.t1p2?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
                     </div>
-                    <span className="text-xs font-semibold text-slate-300 truncate block">
-                        {selectedPlayers.t1p1?.username} & {selectedPlayers.t1p2?.username}
-                    </span>
+                    <div className="flex flex-col mt-1">
+                        <span className="text-sm font-bold text-white truncate">{selectedPlayers.t1p1?.username}</span>
+                        <span className="text-sm font-bold text-white truncate">{selectedPlayers.t1p2?.username}</span>
+                    </div>
                 </div>
                 <div className="text-slate-500 font-bold text-lg">VS</div>
                 <div className="text-center w-5/12">
@@ -363,9 +364,10 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                         <Avatar fallback={selectedPlayers.t2p1?.username || ''} src={selectedPlayers.t2p1?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
                         <Avatar fallback={selectedPlayers.t2p2?.username || ''} src={selectedPlayers.t2p2?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
                     </div>
-                    <span className="text-xs font-semibold text-slate-300 truncate block">
-                        {selectedPlayers.t2p1?.username} & {selectedPlayers.t2p2?.username}
-                    </span>
+                    <div className="flex flex-col mt-1">
+                        <span className="text-sm font-bold text-white truncate">{selectedPlayers.t2p1?.username}</span>
+                        <span className="text-sm font-bold text-white truncate">{selectedPlayers.t2p2?.username}</span>
+                    </div>
                 </div>
             </div>
 
@@ -426,13 +428,13 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
 const PlayerSelector = ({ label, player, onClick }: { label: string, player: Player | null, onClick: () => void }) => {
     return (
-        <div onClick={onClick} className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/30 p-4 transition-all hover:bg-slate-800 hover:border-slate-500 cursor-pointer active:scale-95 h-32">
+        <div onClick={onClick} className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/30 p-4 transition-all hover:bg-slate-800 hover:border-slate-500 cursor-pointer active:scale-95 min-h-[140px] h-auto">
             {player ? (
                 <>
                     <Avatar fallback={player.username} src={player.avatar_url} className="bg-green-500/20 text-green-400" />
-                    <span className="text-xs font-medium text-slate-300 truncate w-full text-center">{player.username}</span>
-                    <span className="text-[10px] text-slate-500">ELO {player.elo}</span>
-                    <span className="text-[10px] text-slate-500">Level {getLevelFromElo(player.elo).level}</span>
+                    <p className="text-sm font-bold text-white truncate w-full text-center mt-1">{player.username}</p>
+                    <span className="text-[10px] text-slate-400">ELO {player.elo}</span>
+                    <span className="text-[10px] text-slate-400">Level {getLevelFromElo(player.elo).level}</span>
                 </>
             ) : (
                 <>

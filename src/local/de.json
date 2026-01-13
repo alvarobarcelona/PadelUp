@@ -275,6 +275,7 @@
     "message": "Danke, dass du PadelUp beigetreten bist! Um die Qualität unserer Community zu wahren, müssen alle neuen Konten von einem Administrator genehmigt werden.",
     "what_happens": "Was passiert jetzt?",
     "what_happens_desc": "Deine Anfrage wurde an den Admin gesendet. Du erhältst eine E-Mail oder kannst hier nachsehen, sobald dein Konto aktiv ist.",
+    "check_status": "Status prüfen",
     "sign_out": "Abmelden"
   },
   "subscription": {

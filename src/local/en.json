@@ -277,6 +277,7 @@
     "message": "Thanks for joining PadelUp! To maintain the quality of our community, all new accounts must be approved by an administrator.",
     "what_happens": "What happens now?",
     "what_happens_desc": "Your request has been sent to the admin. You will receive an email or can check back here once your account is active.",
+    "check_status": "Check Status",
     "sign_out": "Sign Out"
   },
   "subscription": {
