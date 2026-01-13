@@ -92,6 +92,7 @@
     "confirm_prompt": "Dieses Spielergebnis bestätigen? Dies aktualisiert die ELO-Bewertungen.",
     "reject_reason_prompt": "Bitte geben Sie einen Grund für die Ablehnung des Spiels an (Erforderlich):",
     "reject_reason_required": "Ablehnungsgrund ist erforderlich.",
+    "reject_title": "Ablehnen",
     "reject_confirm": "Dieses Spiel ablehnen? Es wird gelöscht. Sie können immer ein neues erstellen. Bedenken Sie, dass die Ablehnung zur Vermeidung eines ELO-Abstiegs zu einer vorübergehenden Sperrung führen kann.",
     "subscription_expired_alert": "Ihr Abonnement ist abgelaufen. Bitte erneuern Sie es, um auf Turniere zugreifen zu können."
   },

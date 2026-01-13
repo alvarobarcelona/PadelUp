@@ -92,6 +92,7 @@
     "confirm_prompt": "Confirm this match result? This will update ELO ratings.",
     "reject_reason_prompt": "Please provide a reason for rejecting this match (Required):",
     "reject_reason_required": "Rejection reason is required.",
+    "reject_title": "Reject Match",
     "reject_confirm": "Reject this game? It will be deleted. You can always create a new one. But remember that rejecting it to avoid a drop in your ELO rating may result in a temporary suspension.",
     "subscription_expired_alert": "Your subscription has expired. Please renew to access tournaments.",
     "tournaments": "Tournaments"
