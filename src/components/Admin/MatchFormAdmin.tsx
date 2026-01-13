@@ -91,17 +91,50 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
     const updateScore = (setIndex: number, team: 't1' | 't2', value: number) => {
         const newSets = [...sets];
-        newSets[setIndex][team] = Math.max(0, Math.min(7, value));
+        const val = Math.max(0, Math.min(7, value));
+
+        // Prevent 7-7
+        const otherTeam = team === 't1' ? 't2' : 't1';
+        if (val === 7 && newSets[setIndex][otherTeam] === 7) {
+            return;
+        }
+
+        newSets[setIndex][team] = val;
         setSets(newSets);
+    };
+
+    const validateScore = () => {
+        for (let i = 0; i < sets.length; i++) {
+            const { t1, t2 } = sets[i];
+            const total = t1 + t2;
+            if (total === 0) continue;
+
+            if (t1 < 6 && t2 < 6) return t('new_match.invalid_set_score') || `Set ${i + 1}: Someone must reach 6 or 7.`;
+
+            if (t1 === 7 && t2 < 5) return t('new_match.invalid_7_score') || `Set ${i + 1}: 7-${t2} is not valid. Need 5 or 6.`;
+            if (t2 === 7 && t1 < 5) return t('new_match.invalid_7_score') || `Set ${i + 1}: ${t1}-7 is not valid. Need 5 or 6.`;
+
+            if (t1 === 6 && t2 >= 5) return t('new_match.invalid_6_score') || `Set ${i + 1}: 6-${t2} is not valid. Play to 7.`;
+            if (t2 === 6 && t1 >= 5) return t('new_match.invalid_6_score') || `Set ${i + 1}: ${t1}-6 is not valid. Play to 7.`;
+
+            if (t1 === 7 && t2 === 7) return t('new_match.invalid_7_7') || `Set ${i + 1}: 7-7 is not valid.`;
+        }
+        return null;
     };
 
     const handleSave = async () => {
         if (!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2) return;
 
-        // Validation: Check if at least one game has been played
+        // Validation
         const totalGames = sets.reduce((acc, s) => acc + s.t1 + s.t2, 0);
         if (totalGames === 0) {
             await alert({ title: 'Error', message: t('new_match.enter_valid_result'), type: 'danger' });
+            return;
+        }
+
+        const scoreError = validateScore();
+        if (scoreError) {
+            await alert({ title: 'Invalid Score', message: scoreError, type: 'danger' });
             return;
         }
 
@@ -114,6 +147,12 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 if (s.t1 > s.t2) t1Sets++;
                 if (s.t2 > s.t1) t2Sets++;
             });
+
+            if (t1Sets === t2Sets) {
+                await alert({ title: 'Error', message: t('new_match.cannot_be_draw') || "Match cannot end in a draw.", type: 'danger' });
+                setLoading(false);
+                return;
+            }
 
             const winnerTeam = t1Sets > t2Sets ? 1 : 2;
 

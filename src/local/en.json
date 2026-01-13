@@ -177,7 +177,11 @@
     "player_already_selected": "Player already selected!",
     "enter_valid_result": "Please enter a valid result (at least one game played).",
     "duplicate_match": "It looks like this match has already been recorded recently (range: 2 hours ago) by another player. No need to duplicate it. Please be fair :)",
-    "invite_friends": "No players found. Invite friends to Sign Up!"
+    "invite_friends": "No players found. Invite friends to Sign Up!",
+    "invalid_set_score": "Invalid set score. Someone must reach 6 or 7 games.",
+    "invalid_7_score": "Invalid score (7-x). Loser must have 5 or 6 games.",
+    "invalid_6_score": "Invalid score (6-x). If opponent has 5 or more, you must play to 7.",
+    "invalid_7_7": "7-7 is not a valid score. You must play a tie-break (7-6)."
   },
   "admin": {
     "title": "Admin Console",

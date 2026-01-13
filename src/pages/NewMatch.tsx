@@ -94,8 +94,53 @@ const NewMatch = () => {
 
     const updateScore = (setIndex: number, team: 't1' | 't2', value: number) => {
         const newSets = [...sets];
-        newSets[setIndex][team] = Math.max(0, Math.min(7, value));
+        const val = Math.max(0, Math.min(7, value));
+
+        // Prevent 7-7
+        const otherTeam = team === 't1' ? 't2' : 't1';
+        if (val === 7 && newSets[setIndex][otherTeam] === 7) {
+            // If trying to set 7 and other is 7, don't allow it (or clamp other? No, just don't set this to 7? 
+            // Better: Allow setting 7, but clamp other to 6 if it was 7?
+            // User: "un set no puede introducirse 7-7 nunca". 
+            // Let's strictly prevent the update if it results in 7-7? 
+            // Actually, if I have 6-7 and I try to make it 7-7.
+            // Let's just block the input if it creates 7-7.
+            return;
+        }
+
+        newSets[setIndex][team] = val;
         setSets(newSets);
+    };
+
+    const validateScore = () => {
+        // Validate each played set
+        // Rules:
+        // Valid: 6-0 to 6-4
+        // Valid: 7-5, 7-6
+        // Invalid: 7-0 to 7-4, 6-5, 6-6, 7-7, anything < 6 (unless incomplete? No, must finish set)
+
+        for (let i = 0; i < sets.length; i++) {
+            const { t1, t2 } = sets[i];
+            const total = t1 + t2;
+            if (total === 0) continue; // Empty set (assuming trailing sets can be 0-0)
+
+            // One must be >= 6
+            if (t1 < 6 && t2 < 6) {
+                return t('new_match.invalid_set_score') || `Set ${i + 1}: Someone must reach 6 or 7 games.`;
+            }
+
+            // If 7, other must be 5 or 6
+            if (t1 === 7 && t2 < 5) return t('new_match.invalid_7_score') || `Set ${i + 1}: 7-${t2} is not valid. Winner needs 5 or 6 games.`;
+            if (t2 === 7 && t1 < 5) return t('new_match.invalid_7_score') || `Set ${i + 1}: ${t1}-7 is not valid. Winner needs 5 or 6 games.`;
+
+            // If 6, other must be < 5 (because 6-5 -> 7-5, 6-6 -> mean not done)
+            if (t1 === 6 && t2 >= 5) return t('new_match.invalid_6_score') || `Set ${i + 1}: 6-${t2} is not valid. Play to 7.`;
+            if (t2 === 6 && t1 >= 5) return t('new_match.invalid_6_score') || `Set ${i + 1}: ${t1}-6 is not valid. Play to 7.`;
+
+            // 7-7 handled by input but good to double check
+            if (t1 === 7 && t2 === 7) return t('new_match.invalid_7_7') || `Set ${i + 1}: 7-7 is not valid.`;
+        }
+        return null;
     };
 
     const handleSave = async () => {
@@ -105,6 +150,13 @@ const NewMatch = () => {
         const totalGames = sets.reduce((acc, s) => acc + s.t1 + s.t2, 0);
         if (totalGames === 0) {
             await alert({ title: 'Validation Error', message: t('new_match.enter_valid_result'), type: 'warning' });
+            return;
+        }
+
+        // Deep Score Validation
+        const scoreError = validateScore();
+        if (scoreError) {
+            await alert({ title: 'Invalid Score', message: scoreError, type: 'warning' });
             return;
         }
 
@@ -138,6 +190,12 @@ const NewMatch = () => {
                 if (s.t1 > s.t2) t1Sets++;
                 if (s.t2 > s.t1) t2Sets++;
             });
+
+            if (t1Sets === t2Sets) {
+                await alert({ title: 'Draw', message: t('new_match.cannot_be_draw') || "Match cannot end in a draw.", type: 'warning' });
+                setLoading(false);
+                return;
+            }
 
             const winnerTeam = t1Sets > t2Sets ? 1 : 2;
 
@@ -262,7 +320,7 @@ const NewMatch = () => {
                             className="w-full bg-slate-800 border-slate-700 rounded-lg pl-10 pr-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-slate-500"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            
+
                         />
                     </div>
                 </header>

@@ -177,7 +177,11 @@
     "player_already_selected": "¡Jugador ya seleccionado!",
     "enter_valid_result": "Por favor introduce un resultado válido (al menos un juego jugado).",
     "duplicate_match": "Parece que este partido ya ha sido registrado recientemente (hace 2 horas) por otro jugador. No hace falta duplicarlo. Por favor sé justo :)",
-    "invite_friends": "No se encontraron jugadores. ¡Invita a amigos a registrarse!"
+    "invite_friends": "No se encontraron jugadores. ¡Invita a amigos a registrarse!",
+    "invalid_set_score": "Resultado de set inválido. Alguien debe llegar a 6 o 7 juegos.",
+    "invalid_7_score": "Resultado inválido (7-x). El perdedor debe tener 5 o 6 juegos.",
+    "invalid_6_score": "Resultado inválido (6-x). Si el rival tiene 5 o más, debes jugar a 7.",
+    "invalid_7_7": "7-7 no es un resultado válido. Debes jugar tie-break (7-6)."
   },
   "admin": {
     "title": "Consola de Admin",
