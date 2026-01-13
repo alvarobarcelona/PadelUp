@@ -89,30 +89,30 @@ const Settings = () => {
                 subscription_end_date: data?.subscription_end_date || null
             });
 
-          /*   setNewUsername(data?.username || '');
-            if (data?.notifications_enabled !== undefined) {
-                setNotifications(data.notifications_enabled);
-            } */
+            /*   setNewUsername(data?.username || '');
+              if (data?.notifications_enabled !== undefined) {
+                  setNotifications(data.notifications_enabled);
+              } */
         }
     };
 
-   /*  const handleNotificationToggle = async () => {
-        const newState = !notifications;
-        setNotifications(newState); // Optimistic update
-
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                await supabase
-                    .from('profiles')
-                    .update({ notifications_enabled: newState })
-                    .eq('id', user.id);
-            }
-        } catch (error) {
-            console.error('Failed to save notification preference', error);
-            // Revert on error? For now, keep optimistic.
-        }
-    }; */
+    /*  const handleNotificationToggle = async () => {
+         const newState = !notifications;
+         setNotifications(newState); // Optimistic update
+ 
+         try {
+             const { data: { user } } = await supabase.auth.getUser();
+             if (user) {
+                 await supabase
+                     .from('profiles')
+                     .update({ notifications_enabled: newState })
+                     .eq('id', user.id);
+             }
+         } catch (error) {
+             console.error('Failed to save notification preference', error);
+             // Revert on error? For now, keep optimistic.
+         }
+     }; */
 
     const handleUpdateProfile = async () => {
         if (!profile || !newUsername.trim()) return;
@@ -515,7 +515,7 @@ const Settings = () => {
                         </button>
                     </div>
                     <p className="text-[10px] text-slate-500 px-2 leading-relaxed">
-                        Use support for disputes (e.g. opponent refuses result). An admin will intervene and ensure a fair outcome. You can also request longer subscription plans here.
+                        {t('settings.support_desc')}
                     </p>
                 </div>
 

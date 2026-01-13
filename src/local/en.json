@@ -7,6 +7,7 @@
     "subscription": "Subscribed until",
     "notifications": "Notifications",
     "support": "Support",
+    "support_desc": "Use support for disputes (e.g. The opponent rejects the result repeatedly without justified reason). An admin will intervene and ensure a fair outcome and correct result. You can also request longer subscription plans here.",
     "help": "Help & Feedback",
     "language": "Language",
     "logout": "Log Out",
@@ -92,6 +93,7 @@
     "reject_reason_prompt": "Please provide a reason for rejecting this match (Required):",
     "reject_reason_required": "Rejection reason is required.",
     "reject_confirm": "Reject this game? It will be deleted. You can always create a new one. But remember that rejecting it to avoid a drop in your ELO rating may result in a temporary suspension.",
+    "subscription_expired_alert": "Your subscription has expired. Please renew to access tournaments.",
     "tournaments": "Tournaments"
   },
   "profile": {
@@ -321,5 +323,14 @@
     "ios_instruction": "In Safari, tap the three dots icon, then tap Share, then tap Add to Home Screen.",
     "android_instruction": "In Chrome, tap the menu icon and then Install App.",
     "dismiss": "Maybe later"
+  },
+  "info_modal": {
+    "title": "How PadelUp Works",
+    "step_1_title": "Record Match",
+    "step_1_desc": "Press the '+' button to log a new match result.",
+    "step_2_title": "Select Players",
+    "step_2_desc": "<b>Important:</b> You can only select players who are already registered in the app. Invite friends to join to track stats together.",
+    "step_3_title": "Validation",
+    "step_3_desc": "Your opponent will see in his home screen the match to confirm the score. true! Auto confirmation after 24h"
   }
 }

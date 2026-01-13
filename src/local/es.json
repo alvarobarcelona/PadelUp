@@ -7,6 +7,7 @@
     "subscription": "Suscripción hasta",
     "notifications": "Notificaciones",
     "support": "Soporte",
+    "support_desc": "Usa el soporte para disputas (ej. El oponente rechaza el resultado repetidamente sin razón justificada). Un administrador intervendrá para asegurar un resultado correcto y justo. También puedes solicitar planes de suscripción más largos aquí.",
     "help": "Ayuda y Comentarios",
     "language": "Idioma",
     "logout": "Cerrar Sesión",
@@ -92,6 +93,7 @@
     "reject_reason_prompt": "Por favor indica una razón para rechazar este partido (Requerido):",
     "reject_reason_required": "La razón de rechazo es obligatoria.",
     "reject_confirm": "¿Rechazar este partido? Será eliminado. Siempre puedes crear uno nuevo. Recuerda que rechazar para evitar bajar ELO puede resultar en suspensión.",
+    "subscription_expired_alert": "Tu suscripción ha caducado. Por favor renueva para acceder a los torneos.",
     "tournaments": "Torneos"
   },
   "profile": {
@@ -320,5 +322,14 @@
     "ios_instruction": "En Safari, toca el icono de los tres puntos y luego compartir, luego Añadir a Inicio",
     "android_instruction": "En Chrome, toca el icono de menú y luego Instalar App",
     "dismiss": "Quizás más tarde"
+  },
+  "info_modal": {
+    "title": "¿Cómo funciona PadelUp?",
+    "step_1_title": "Registra el partido",
+    "step_1_desc": "Pulsa el botón '+' para crear un nuevo registro de partido.",
+    "step_2_title": "Selecciona Jugadores",
+    "step_2_desc": "<b>Importante:</b> Solo puedes seleccionar jugadores que ya estén registrados en la app. Invita a tus amigos a unirse para incluirlos en las estadísticas.",
+    "step_3_title": "Validación",
+    "step_3_desc": "Tu rival recibirá el partido en su pantalla para confirmar el resultado. ¡Sé honesto! Auto confirmacion tras 24h "
   }
 }

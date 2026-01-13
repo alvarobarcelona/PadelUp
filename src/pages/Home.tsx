@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy } from 'lucide-react';
+import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
 import { WelcomeModal } from '../components/Modals/WelcomeModal';
+import { InfoModal } from '../components/Modals/InfoModal';
 import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
@@ -15,6 +16,8 @@ interface Profile {
     username: string;
     elo: number;
     avatar_url: string | null;
+    subscription_end_date?: string;
+    is_admin?: boolean;
 }
 
 interface MatchPreview {
@@ -46,6 +49,7 @@ const Home = () => {
     const [recentForm, setRecentForm] = useState<{ id: number, won: boolean, points: number | null }[]>([]);
     const [, setLoading] = useState(true);
     const [showWelcome, setShowWelcome] = useState(false);
+    const [showInfo, setShowInfo] = useState(false);
 
     useEffect(() => {
         loadDashboardData();
@@ -272,9 +276,18 @@ const Home = () => {
     return (
         <div className="space-y-6 animate-fade-in relative z-10 pb-20">
             <WelcomeModal isOpen={showWelcome} onClose={handleCloseWelcome} />
+            <InfoModal isOpen={showInfo} onClose={() => setShowInfo(false)} />
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">PadelUp</h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-3xl font-bold text-white tracking-tight">PadelUp</h1>
+                        <button
+                            onClick={() => setShowInfo(true)}
+                            className="p-1 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-800"
+                        >
+                            <Info size={20} />
+                        </button>
+                    </div>
                     <p className="text-slate-400 font-medium">
                         {profile ? t('home.welcome_user', { name: profile.username }) : t('home.welcome_guest')}
                     </p>
@@ -461,16 +474,34 @@ const Home = () => {
             </Link>
 
             {/* Tournaments Link */}
-            <a
-                href="https://padel-tournaments-sepia.vercel.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 py-4 font-bold text-white shadow-xl shadow-orange-500/20 active:scale-95 transition-all hover:from-amber-400 hover:to-orange-500 overflow-hidden"
+            <button
+                onClick={() => {
+                    const isAdmin = profile?.is_admin;
+
+                    if (isAdmin) {
+                        window.open("https://padel-tournaments-sepia.vercel.app", "_blank", "noopener,noreferrer");
+                        return;
+                    }
+
+                    const isExpired = !profile?.subscription_end_date || new Date(profile.subscription_end_date) < new Date();
+
+                    if (isExpired) {
+                        confirm({
+                            title: t('subscription.title'),
+                            message: t('home.subscription_expired_alert'),
+                            type: 'warning'
+                        });
+                        return;
+                    }
+
+                    window.open("https://padel-tournaments-sepia.vercel.app", "_blank", "noopener,noreferrer");
+                }}
+                className="w-full group relative flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 py-4 font-bold text-white shadow-xl shadow-orange-500/20 active:scale-95 transition-all hover:from-amber-400 hover:to-orange-500 overflow-hidden"
             >
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                 <Trophy size={24} strokeWidth={2} />
                 <span className="text-lg tracking-tight">{t('home.tournaments')}</span>
-            </a>
+            </button>
 
             {/* Player Suggestions */}
             {suggestions.length > 0 && (

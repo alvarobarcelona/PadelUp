@@ -7,6 +7,7 @@
     "subscription": "Aboniert bis",
     "notifications": "Benachrichtigungen",
     "support": "Support",
+    "support_desc": "Nutzen Sie den Support für Streitigkeiten (z.B. Der Gegner lehnt das Ergebnis wiederholt ohne gerechtfertigten Grund ab). Ein Admin wird eingreifen und ein faires und korrektes Ergebnis sicherstellen. Sie können hier auch längere Abonnementpläne anfragen.",
     "help": "Hilfe & Feedback",
     "language": "Sprache",
     "logout": "Abmelden",
@@ -91,7 +92,8 @@
     "confirm_prompt": "Dieses Spielergebnis bestätigen? Dies aktualisiert die ELO-Bewertungen.",
     "reject_reason_prompt": "Bitte geben Sie einen Grund für die Ablehnung des Spiels an (Erforderlich):",
     "reject_reason_required": "Ablehnungsgrund ist erforderlich.",
-    "reject_confirm": "Dieses Spiel ablehnen? Es wird gelöscht. Sie können immer ein neues erstellen. Bedenken Sie, dass die Ablehnung zur Vermeidung eines ELO-Abstiegs zu einer vorübergehenden Sperrung führen kann."
+    "reject_confirm": "Dieses Spiel ablehnen? Es wird gelöscht. Sie können immer ein neues erstellen. Bedenken Sie, dass die Ablehnung zur Vermeidung eines ELO-Abstiegs zu einer vorübergehenden Sperrung führen kann.",
+    "subscription_expired_alert": "Ihr Abonnement ist abgelaufen. Bitte erneuern Sie es, um auf Turniere zugreifen zu können."
   },
   "profile": {
     "title": "Mein Profil",
@@ -319,5 +321,14 @@
     "ios_instruction": "Tippen Sie auf das Teilen-Symbol <share_icon/> und dann \"Zum Home-Bildschirm\" <plus_icon/>",
     "android_instruction": "Tippen Sie auf das Menü-Symbol <menu_icon/> und dann \"App installieren\"",
     "dismiss": "Vielleicht später"
+  },
+  "info_modal": {
+    "title": "Wie PadelUp funktioniert",
+    "step_1_title": "Spiel eintragen",
+    "step_1_desc": "Drücke den '+' Button, um ein neues Spielergebnis einzutragen.",
+    "step_2_title": "Spieler auswählen",
+    "step_2_desc": "<b>Wichtig:</b> Du kannst nur Spieler auswählen, die bereits in der App registriert sind. Lade Freunde ein, um gemeinsam Statistiken zu verfolgen.",
+    "step_3_title": "Bestätigung",
+    "step_3_desc": "Dein Gegner sieht das Spiel auf seinem Startbildschirm zur Bestätigung. Sei ehrlich! Automatische Bestätigung nach 24 Std."
   }
 }

@@ -118,7 +118,21 @@ const Profile = () => {
 
     // Derived Stats with Memoization
     const stats = useMemo(() => {
-        if (!profile || allMatches.length === 0) return null;
+        if (!profile) return null;
+
+        // Default empty stats
+        const defaultStats = {
+            matchesPlayed: 0,
+            winRate: 0,
+            wins: 0,
+            losses: 0,
+            setsWon: 0,
+            gamesWon: 0,
+            eloHistory: [] as any[],
+            bestStreak: 0
+        };
+
+        if (allMatches.length === 0) return defaultStats;
 
         // 1. Calculate Full ELO History (Chronological) for ALL matches to generate accurate curve
         const chronological = [...allMatches].reverse();
