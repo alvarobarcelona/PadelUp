@@ -10,6 +10,8 @@ import { useChat } from '../context/ChatContext';
 import { useTranslation } from 'react-i18next';
 import { InstallPrompt } from './InstallPrompt';
 
+import BetaBanner from './BetaBanner';
+
 const Layout = () => {
     const navigate = useNavigate();
     const { unreadCount } = useChat();
@@ -90,6 +92,7 @@ const Layout = () => {
 
     return (
         <div className="mx-auto min-h-screen max-w-md bg-slate-900 text-slate-100 shadow-2xl transition-colors duration-300 relative">
+            <BetaBanner />
             <main className="min-h-[calc(100vh-80px)] p-4 pb-24">
                 <Outlet />
             </main>

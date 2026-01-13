@@ -155,7 +155,8 @@
     "confirm_title": "Aktion bestätigen",
     "confirm_prompt": "Sind Sie sicher, dass Sie fortfahren möchten?",
     "confirm": "Bestätigen",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "beta_message": "Diese App befindet sich in der Betatestphase. Jedes Feedback ist willkommen!"
   },
   "new_match": {
     "title": "Spieler auswählen",

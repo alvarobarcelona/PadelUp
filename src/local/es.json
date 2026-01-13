@@ -156,7 +156,8 @@
     "confirm_title": "Confirmar Acción",
     "confirm_prompt": "¿Estás seguro de que deseas continuar?",
     "confirm": "Confirmar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "beta_message": "Esta aplicación está en periodo de pruebas. Cualquier feedback será bien recibido."
   },
   "new_match": {
     "title": "Seleccionar Jugadores",
