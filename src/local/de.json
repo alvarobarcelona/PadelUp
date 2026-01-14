@@ -200,6 +200,8 @@
     "player_already_selected": "Spieler bereits ausgewählt!",
     "enter_valid_result": "Bitte geben Sie ein gültiges Ergebnis ein (mindestens zweis sets gespielt).",
     "cannot_be_draw": "Spiel kann nicht unentschieden enden.",
+    "minimum_sets_required": "Ein Spiel muss mindestens zwei Sets umfassen.",
+    "match_already_finished": "Das Spiel ist nach 2 Sätzen bereits beendet. Sie können keinen 3. Satz eingeben.",
     "duplicate_match": "Es sieht so aus, als ob dieses Spiel bereits kürzlich (vor 2 Stunden) registriert wurde. Keine Notwendigkeit, es zu duplizieren. Bitte seien Sie fair :)",
     "invite_friends": "Keine Spieler gefunden. Laden Sie Freunde ein!",
     "invalid_set_score": "Ungültiges Satzergebnis. Jemand muss 6 oder 7 Spiele erreichen.",

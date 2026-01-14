@@ -96,24 +96,12 @@ const Auth = () => {
 
         try {
             if (isLogin) {
-                // Pre-check for email existence to provide specific error message
-                const { data: userExists } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('email', email)
-                    .maybeSingle();
-
-                if (!userExists) {
-                    throw new Error(t('auth.errors.email_not_found_signup'));
-                }
-
                 const { error, data } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
 
                 if (error) {
-                    // Since email exists, this is likely a password error
                     if (error.message.includes('Invalid login credentials')) {
                         throw new Error(t('auth.errors.incorrect_password'));
                     }

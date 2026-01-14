@@ -205,7 +205,8 @@
     "invalid_7_score": "Resultado inválido (7-x). El perdedor debe tener 5 o 6 juegos.",
     "invalid_6_score": "Resultado inválido (6-x). Si el rival tiene 5 o más, debes jugar a 7.",
     "invalid_7_7": "7-7 no es un resultado válido. Debes jugar tie-break (7-6).",
-    "minimum_sets_required": "Un partido debe tener al menos 2 sets."
+    "minimum_sets_required": "Un partido debe tener al menos 2 sets.",
+    "match_already_finished": "El partido ya ha terminado después de 2 sets. No puedes introducir un 3er set."
   },
   "admin": {
     "title": "Consola de Admin",

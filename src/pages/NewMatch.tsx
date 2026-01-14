@@ -168,6 +168,14 @@ const NewMatch = () => {
             // 7-7 handled by input but good to double check
             if (t1 === 7 && t2 === 7) return prefix + t('new_match.invalid_7_7');
         }
+        // Check if match ended in 2 sets
+        if (sets[0].t1 > sets[0].t2 && sets[1].t1 > sets[1].t2) {
+            if (sets[2].t1 + sets[2].t2 > 0) return t('new_match.match_already_finished');
+        }
+        if (sets[0].t2 > sets[0].t1 && sets[1].t2 > sets[1].t1) {
+            if (sets[2].t1 + sets[2].t2 > 0) return t('new_match.match_already_finished');
+        }
+
         return null;
     };
 
