@@ -24,10 +24,10 @@
     "dynamic_elo": "Sistema ELO Dinámico",
     "install_app": "Instalar App",
     "install_app_desc": "Añade PadelUp a tu pantalla de inicio para la mejor experiencia.",
-    "elo_desc": "El sistema calcula la probabilidad de victoria basándose en el **promedio ELO de la pareja**, premiando más las victorias contra rivales fuertes.",
-    "elo_placement": "Inicio (0-10): K=48 (Ajuste rápido para encontrar tu nivel real).",
-    "elo_standard": "Estándar (10-30): K=32.",
-    "elo_stable": "Veterano (+30): K=24 (Mayor estabilidad).",
+    "elo_desc": "El sistema calcula la probabilidad de victoria basándose en el **promedio ELO de la pareja**, premiando más las victorias contra rivales fuertes.\n\n Segundo ajuste el K-Factor, que es un factor que ajusta la cantidad de puntos que se asignan a un jugador por una victoria. .",
+    "elo_placement": "Inicio entre(0-10) partidos: K=48 (Ajuste rápido para encontrar tu nivel real).",
+    "elo_standard": "Estándar entre(10-30) partidos: K=32.",
+    "elo_stable": "Veterano (+30) partidos: K=24 (Mayor estabilidad).",
     "elo_note": "Nota: Los puntos se asignan **individualmente**. En un mismo partido, un jugador nuevo puede sumar +40 puntos mientras su compañero veterano suma +20."
   },
   "auth": {
@@ -166,6 +166,7 @@
     "error": "Error",
     "success": "Éxito",
     "back": "Volver",
+    "save": "Guardar",
     "confirm_title": "Confirmar Acción",
     "confirm_prompt": "¿Estás seguro de que deseas continuar?",
     "confirm": "Confirmar",
