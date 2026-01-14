@@ -77,6 +77,7 @@
     "loss": "LOSS",
     "last_5": "Letzte 5 Spiele",
     "pending_verification": "Ausstehende Bestätigung",
+    "confirm_title": "Bestätigen",
     "auto_accept": "Automatische Annahme in 24h",
     "match_number": "Spielnummer: {{id}}",
     "confirm": "Bestätigen",
@@ -94,7 +95,8 @@
     "reject_reason_required": "Ablehnungsgrund ist erforderlich.",
     "reject_title": "Ablehnen",
     "reject_confirm": "Dieses Spiel ablehnen? Es wird gelöscht. Sie können immer ein neues erstellen. Bedenken Sie, dass die Ablehnung zur Vermeidung eines ELO-Abstiegs zu einer vorübergehenden Sperrung führen kann.",
-    "subscription_expired_alert": "Ihr Abonnement ist abgelaufen. Bitte erneuern Sie es, um auf Turniere zugreifen zu können."
+    "subscription_expired_alert": "Ihr Abonnement ist abgelaufen. Bitte erneuern Sie es, um auf Turniere zugreifen zu können.",
+    "diff_of": "Diff {{diff}}"
   },
   "profile": {
     "title": "Mein Profil",
@@ -141,6 +143,19 @@
       "even_title": "Ausgeglichenes Match",
       "even_desc": "Eine wirklich ausgeglichene Rivalität"
     }
+  },
+  "clubs": {
+    "all_clubs": "Alle Clubs",
+    "search_club": "Suche Club",
+    "select_club": "Wähle Club",
+    "no_club": "Kein Club (Freundschaftsspiel)",
+    "main_club": "HauptClub",
+    "select_club_if_you_wish": "Wähle Club (optional)",
+    "no_club_selected": "Kein Club ausgewählt",
+    "no_club_selected_desc": "Du kannst später einen Club auswählen",
+    "select_club_desc": "Wähle deinen Club aus, um deine Spiele in der Rangliste zu verfolgen",
+    "select_club_desc_2": "Du kannst später einen Club auswählen",
+    "select_club_desc_3": "Du kannst später einen Club auswählen"
   },
   "nav": {
     "home": "Startseite",
@@ -219,9 +234,19 @@
     "approved_user": "Genehmigter Benutzer?",
     "ban_user": "Benutzer sperren?",
     "subscription_end": "Abo-Enddatum",
+    "delete_match_title": "Spiel löschen",
     "direct_entry_warning": "DIREKTEINGABE: Dieses Spiel wird SOFORT bestätigt und ELOs aktualisiert.",
+    "match_created_success": "Spiel erfolgreich erstellt und validiert! ELO aktualisiert.",
     "instant_action_note": "Sofortige Aktion - Keine Überprüfung erforderlich.",
-    "record_match_title": "Spiel erfassen (ohne Bestätigung)"
+    "record_match_title": "Spiel erfassen (ohne Bestätigung)",
+    "tab_clubs": "Clubs",
+    "add_club": "Club hinzufügen",
+    "club_name": "Clubname",
+    "club_location": "Ort",
+    "edit_club": "Club bearbeiten",
+    "create_club": "Club erstellen",
+    "delete_club_confirm": "Möchten Sie diesen Club wirklich löschen?",
+    "no_clubs": "Keine Clubs gefunden."
   },
   "rankings": {
     "title": "Rangliste",
@@ -237,9 +262,18 @@
   "community": {
     "title": "Community",
     "subtitle": "Netzwerk verwalten",
+    "tab_activity": "Aktivität",
+    "tab_clubs": "Clubs",
+    "add_club": "Club hinzufügen",
+    "club_name": "Clubname",
+    "club_location": "Ort",
+    "create_club": "Club erstellen",
+    "delete_club_confirm": "Möchten Sie diesen Club wirklich löschen?",
+    "no_clubs": "Keine Clubs gefunden.",
     "tab_community": "Community",
     "tab_friends": "Freunde",
-    "search_placeholder": "Spieler suchen...",
+    "search_placeholder": "Benutzer suchen...",
+    "search_match_placeholder": "Spiel suchen (ID)...",
     "no_friends": "Noch keine Freunde. Finde sie in der Community!",
     "no_players": "Keine Spieler gefunden.",
     "unfriend": "Entfernen",

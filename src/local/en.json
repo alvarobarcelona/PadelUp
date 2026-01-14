@@ -66,6 +66,15 @@
       "signup_confirm": "Success! Check your email for the confirmation link! Some times it can take a few minutes to arrive."
     }
   },
+  "clubs": {
+    "all_clubs": "All Clubs",
+    "search_club": "Search Club",
+    "select_club": "Select Club",
+    "select_club_if_you_wish": "Select Club (Optional)",
+    "no_club": "No Club (Friendly Match)",
+    "main_club": "Main Club",
+    "no_club_selected": "No club selected"
+  },
   "home": {
     "welcome_user": "Welcome back, {{name}}",
     "welcome_guest": "Welcome Guest",
@@ -77,6 +86,7 @@
     "loss": "LOSS",
     "last_5": "Last 5 matches",
     "pending_verification": "Pending Verification",
+    "confirm_title": "Confirm Result",
     "auto_accept": "Auto-accepts in 24h",
     "match_number": "Match number: {{id}}",
     "confirm": "Confirm",
@@ -95,7 +105,8 @@
     "reject_title": "Reject Match",
     "reject_confirm": "Reject this game? It will be deleted. You can always create a new one. But remember that rejecting it to avoid a drop in your ELO rating may result in a temporary suspension.",
     "subscription_expired_alert": "Your subscription has expired. Please renew to access tournaments.",
-    "tournaments": "Tournaments"
+    "tournaments": "Tournaments",
+    "diff_of": "Diff of {{diff}}"
   },
   "profile": {
     "title": "My Profile",
@@ -205,10 +216,11 @@
     "edit_player": "Edit Player",
     "delete_match": "Delete Match",
     "delete_player_title": "Delete Player",
+    "delete_match_title": "Delete Match",
     "confirm_delete_match": "This will DELETE the match and REVERT ELO points for all players. Are you sure?",
     "confirm_delete_player": "Are you sure? This might break matches linked to this player!",
-    "search_placeholder": "Search by username or ID...",
-    "search_match_placeholder": "Filter by Match ID...",
+    "search_placeholder": "Search user...",
+    "search_match_placeholder": "Search match (ID)...",
     "search_log_placeholder": "Search logs...",
     "no_pending": "No pending requests.",
     "no_members": "No members found.",
@@ -221,8 +233,17 @@
     "is_admin": "Is Admin?",
     "approved_user": "Approved User?",
     "ban_user": "Ban User?",
+    "tab_clubs": "Clubs",
+    "add_club": "Add Club",
+    "club_name": "Club Name",
+    "club_description": "Club Description",
+    "club_image": "Club Image",
+    "create_club": "Create Club",
+    "edit_club": "Edit Club",
+    "club_location": "Club Location",
     "subscription_end": "Subscription End Date",
     "direct_entry_warning": "DIRECT ENTRY: This match will be confirmed IMMEDIATELY and ELOs updated.",
+    "match_created_success": "Match created and validated successfully! ELO updated.",
     "instant_action_note": "Instant Action - No verification required.",
     "record_match_title": "Record Match (without confirmation)"
   },

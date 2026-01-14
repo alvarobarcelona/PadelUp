@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +19,21 @@ const Auth = () => {
     const [username, setUsername] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [clubs, setClubs] = useState<any[]>([]);
+    const [selectedClubId, setSelectedClubId] = useState<number | string>(''); // Default empty or first club
+
+    useEffect(() => {
+        const fetchClubs = async () => {
+            const { data } = await supabase.from('clubs').select('*').order('id', { ascending: true });
+            if (data) {
+                setClubs(data);
+                setClubs(data);
+                // Default to empty (no club selected)
+                // if (data.length > 0) setSelectedClubId(data[0].id);
+            }
+        };
+        fetchClubs();
+    }, []);
 
     const getFriendlyErrorMessage = (msg: string) => {
         if (msg.includes('Invalid login credentials')) return t('auth.errors.incorrect_credentials');
@@ -141,6 +156,11 @@ const Auth = () => {
                 });
                 if (error) throw error;
 
+                // UPDATE PROFILE WITH CLUB
+                if (data.user && selectedClubId) {
+                    await supabase.from('profiles').update({ main_club_id: selectedClubId }).eq('id', data.user.id);
+                }
+
                 // LOG REGISTER
                 if (data.user) {
                     logActivity('USER_REGISTER', data.user.id, { username, email });
@@ -206,6 +226,25 @@ const Auth = () => {
                             onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
+
+                    {/* Club Selection */}
+                    {!isLogin && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-400">{t('clubs.select_club_if_you_wish')}</label>
+                            <select
+                                className="mt-1 block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 transition-colors"
+                                value={selectedClubId}
+                                onChange={(e) => setSelectedClubId(Number(e.target.value))}
+                            >
+                                <option value="">{t('clubs.no_club_selected')}</option>
+                                {clubs.map(club => (
+                                    <option key={club.id} value={club.id}>
+                                        {club.name} ({club.location})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Password Field - Hide in Forgot Password Mode */}
                     {!isForgotPassword && (

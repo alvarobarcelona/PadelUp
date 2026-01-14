@@ -541,7 +541,7 @@ const Profile = () => {
                 <h3 className="mb-4 text-sm font-semibold uppercase text-slate-400 tracking-wider flex items-center gap-2">
                     {t('profile.achievements')} <span className="text-xs bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">{userAchievementIds.size} / {allAchievements.length}</span>
                     <span className="text-xs bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        {allAchievements.filter(a => userAchievementIds.has(a.id)).reduce((acc, curr) => acc + (curr.point_value || 0), 0)} pts
+                        {allAchievements.filter(a => userAchievementIds.has(a.id)).reduce((acc, curr) => acc + (curr.point_value || 0), 0)} pts / {allAchievements.reduce((acc, curr) => acc + (curr.point_value || 0), 0)} pts
                     </span>
                 </h3>
 

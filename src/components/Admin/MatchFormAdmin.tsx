@@ -235,7 +235,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 });
             }
 
-            await alert({ title: 'Success', message: t('new_match.success_alert'), type: 'success' }); // Using existing key for success
+            await alert({ title: 'Success', message: t('admin.match_created_success'), type: 'success' });
 
             onSuccess();
 

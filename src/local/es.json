@@ -75,6 +75,7 @@
     "no_matches": "Sin partidos aún",
     "win": "VIC",
     "loss": "DER",
+    "confirm_title": "Confirmar Resultado",
     "last_5": "Últimos 5 partidos",
     "pending_verification": "Pendiente de Verificación",
     "auto_accept": "Auto-aceptar en 24h",
@@ -95,7 +96,8 @@
     "reject_title": "Rechazar",
     "reject_confirm": "¿Rechazar este partido? Será eliminado. Siempre puedes crear uno nuevo. Recuerda que rechazar para evitar bajar ELO puede resultar en suspensión.",
     "subscription_expired_alert": "Tu suscripción ha caducado. Por favor renueva para acceder a los torneos.",
-    "tournaments": "Torneos"
+    "tournaments": "Torneos",
+    "diff_of": "Dif de {{diff}}"
   },
   "profile": {
     "title": "Mi Perfil",
@@ -142,6 +144,17 @@
       "even_title": "Partido Igualado",
       "even_desc": "Una rivalidad verdaderamente equilibrada"
     }
+  },
+  "clubs": {
+    "all_clubs": "Todos los clubs",
+    "search_club": "Buscar Club",
+    "select_club": "Seleccionar Club",
+    "select_club_if_you_wish": "Seleccionar Club (Opcional)",
+    "no_club": "Sin Club (Amistoso)",
+    "main_club": "Club Principal",
+    "no_club_selected": "No club seleccionado",
+    "select_club_prompt": "Por favor selecciona un club",
+    "select_club_prompt_desc": "Esto es necesario para que puedas jugar partidos con otros usuarios."
   },
   "nav": {
     "home": "Inicio",
@@ -200,14 +213,23 @@
     "tab_matches": "Partidos",
     "tab_add_match": "Añadir nuevo Partido",
     "tab_activity": "Actividad",
+    "tab_clubs": "Clubs",
+    "add_club": "Añadir Club",
+    "club_name": "Nombre del Club",
+    "club_location": "Ubicación",
+    "edit_club": "Editar Club",
+    "create_club": "Crear Club",
+    "delete_club_confirm": "¿Estás seguro de querer borrar este club?",
+    "no_clubs": "No hay clubs registrados.",
     "approve": "Aprobar",
     "reject": "Rechazar",
     "edit_player": "Editar Jugador",
     "delete_match": "Eliminar Partido",
+    "delete_match_title": "Eliminar Partido",
     "confirm_delete_match": "Esto ELIMINARÁ el partido y REVERTIRÁ los puntos ELO. ¿Estás seguro?",
     "confirm_delete_player": "¿Estás seguro? ¡Esto podría romper partidos vinculados a este jugador!",
-    "search_placeholder": "Buscar por usuario o ID...",
-    "search_match_placeholder": "Filtrar por ID de Partido...",
+    "search_placeholder": "Buscar usuario...",
+    "search_match_placeholder": "Buscar partido (ID)...",
     "search_log_placeholder": "Buscar logs...",
     "no_pending": "No hay solicitudes pendientes.",
     "no_members": "No se encontraron miembros.",
@@ -222,6 +244,7 @@
     "ban_user": "¿Banear Usuario?",
     "subscription_end": "Fecha Fin Suscripción",
     "direct_entry_warning": "ENTRADA DIRECTA: Este partido se confirmará INMEDIATAMENTE y se actualizarán los ELOs.",
+    "match_created_success": "¡Partido creado y validado correctamente! ELO actualizado.",
     "instant_action_note": "Acción Inmediata - No requiere verificación.",
     "record_match_title": "Registrar Partido (sin confirmación)"
   },

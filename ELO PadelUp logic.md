@@ -34,3 +34,17 @@ Resumen:
 Calculamos la media del equipo para ver quién es favorito.
 Si gana el favorito, suman pocos puntos. Si gana el "débil", suman muchos.
 Cada jugador multiplica esos puntos por su propio "factor de velocidad" (K).
+
+
+El sistema ELO ajusta los puntos basándose en la probabilidad de victoria (Expected Score). La fórmula es: NuevoELO = ELO_Actual + K * (Resultado_Real - Resultado_Esperado)
+
+TEST CASE:
+
+Todos tienen 1150 ELO: El sistema considera que el partido está perfectamente equilibrado.
+Probabilidad de victoria: Al ser iguales, la probabilidad (Resultado Esperado) es del 50% (o 0.5).
+Resultado: Ganasteis, así que tu "Resultado_Real" es 1.
+Aplicando la fórmula con K=48: Cambio = 48 * (1 - 0.5) Cambio = 48 * 0.5 Cambio = +24
+
+¿Por qué no +48? Para ganar los 48 puntos completos, el sistema tendría que haber predicho que teníais 0% de posibilidades de ganar (es decir, el Resultado Esperado hubiera sido 0). Como estabais igualados, "la mitad" de los puntos se descuentan porque la victoria entraba dentro de lo probable.
+
+Nota: El marcador (6-3 6-3) no influye en la cantidad de puntos ELO en este sistema estándar, solo importa quién ganó (1) o perdió (0).

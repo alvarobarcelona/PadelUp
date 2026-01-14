@@ -39,9 +39,32 @@ const NewMatch = () => {
     const [activePosition, setActivePosition] = useState<keyof typeof selectedPlayers | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Club State
+    const [clubs, setClubs] = useState<any[]>([]);
+    const [selectedClubId, setSelectedClubId] = useState<number | string>('');
+
     useEffect(() => {
         fetchPlayers();
+        fetchClubs();
     }, []);
+
+    const fetchClubs = async () => {
+        const { data: clubsData } = await supabase.from('clubs').select('*').order('id');
+        if (clubsData) {
+            setClubs(clubsData);
+
+            // Set default from profile
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('main_club_id').eq('id', user.id).single();
+                if (profile?.main_club_id) {
+                    setSelectedClubId(profile.main_club_id);
+                } else if (clubsData.length > 0) {
+                    setSelectedClubId(clubsData[0].id);
+                }
+            }
+        }
+    };
 
     const fetchPlayers = async () => {
         try {
@@ -206,10 +229,23 @@ const NewMatch = () => {
                 .gte('created_at', twoHoursAgo);
 
             if (recentMatches) {
-                const currentIds = new Set([selectedPlayers.t1p1.id, selectedPlayers.t1p2.id, selectedPlayers.t2p1.id, selectedPlayers.t2p2.id]);
+                // Check for exact team pairings (order independent within team, and team order independent)
+                const currentT1 = new Set([selectedPlayers.t1p1.id, selectedPlayers.t1p2.id]);
+                const currentT2 = new Set([selectedPlayers.t2p1.id, selectedPlayers.t2p2.id]);
+
                 const isDuplicate = recentMatches.some(m => {
-                    const matchIds = new Set([m.team1_p1, m.team1_p2, m.team2_p1, m.team2_p2]);
-                    return matchIds.size === currentIds.size && [...currentIds].every(id => matchIds.has(id));
+                    const matchT1 = new Set([m.team1_p1, m.team1_p2]);
+                    const matchT2 = new Set([m.team2_p1, m.team2_p2]);
+
+                    // Helper to compare two sets
+                    const areSetsEqual = (s1: Set<any>, s2: Set<any>) => s1.size === s2.size && [...s1].every(i => s2.has(i));
+
+                    // Check T1 vs T1 AND T2 vs T2
+                    const exactMatch = areSetsEqual(currentT1, matchT1) && areSetsEqual(currentT2, matchT2);
+                    // Check T1 vs T2 AND T2 vs T1 (flipped teams)
+                    const flippedMatch = areSetsEqual(currentT1, matchT2) && areSetsEqual(currentT2, matchT1);
+
+                    return exactMatch || flippedMatch;
                 });
 
                 if (isDuplicate) {
@@ -282,6 +318,7 @@ const NewMatch = () => {
                 team1_p2: selectedPlayers.t1p2.id,
                 team2_p1: selectedPlayers.t2p1.id,
                 team2_p2: selectedPlayers.t2p2.id,
+                club_id: selectedClubId ? Number(selectedClubId) : null,
                 score: sets,
                 winner_team: winnerTeam,
                 commentary: commentary.trim() || null,
@@ -379,6 +416,23 @@ const NewMatch = () => {
                 </header>
 
                 <section className="space-y-3">
+                    {clubs.length > 0 && (
+                        <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <label className="block text-sm font-medium text-slate-400 mb-2">{t('clubs.select_club') || 'Select Club'}</label>
+                            <select
+                                className="block w-full rounded-lg bg-slate-900 border-transparent focus:border-green-500 focus:bg-slate-900 focus:ring-0 text-white p-3 transition-colors"
+                                value={selectedClubId}
+                                onChange={(e) => setSelectedClubId(e.target.value)}
+                            >
+                                <option value="">{t('clubs.no_club') || 'No Club (Friendly Match)'}</option>
+                                {clubs.map(club => (
+                                    <option key={club.id} value={club.id}>
+                                        {club.name} ({club.location})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     <h2 className="text-sm font-semibold uppercase text-green-400 tracking-wider">{t('new_match.team_1')}</h2>
                     <div className="grid grid-cols-2 gap-4">
                         <PlayerSelector

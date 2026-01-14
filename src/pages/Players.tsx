@@ -12,6 +12,7 @@ interface Player {
     username: string;
     elo: number;
     avatar_url: string | null;
+    main_club_id: number | null;
 }
 
 const Players = () => {
@@ -24,6 +25,8 @@ const Players = () => {
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'community' | 'friends'>('community');
     const [searchQuery, setSearchQuery] = useState('');
+    const [clubs, setClubs] = useState<any[]>([]);
+    const [selectedClubId, setSelectedClubId] = useState<number | string>('all');
 
     useEffect(() => {
         loadData();
@@ -45,6 +48,10 @@ const Players = () => {
                 .order('username');
 
             if (allPlayers) setPlayers(allPlayers);
+
+            // Fetch Clubs
+            const { data: c } = await supabase.from('clubs').select('*').order('name');
+            if (c) setClubs(c);
 
             // 3. Fetch Friendships if logged in
             if (user) {
@@ -139,11 +146,12 @@ const Players = () => {
         }
 
         // Search Filtering
-        if (searchQuery.trim()) {
-            return player.username.toLowerCase().includes(searchQuery.toLowerCase());
-        }
+        const matchesSearch = !searchQuery.trim() || player.username.toLowerCase().includes(searchQuery.toLowerCase());
 
-        return true;
+        // Club Filtering
+        const matchesClub = selectedClubId === 'all' || player.main_club_id === Number(selectedClubId);
+
+        return matchesSearch && matchesClub;
     });
 
     return (
@@ -154,14 +162,27 @@ const Players = () => {
                     <p className="text-slate-400">{t('community.subtitle')}</p>
                 </div>
 
-                {/* Search Input */}
-                <input
-                    type="text"
-                    placeholder={t('community.search_placeholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
-                />
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        placeholder={t('community.search_placeholder')}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                    />
+                    {clubs.length > 0 && (
+                        <select
+                            value={selectedClubId}
+                            onChange={(e) => setSelectedClubId(e.target.value)}
+                            className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                        >
+                            <option value="all">{t('clubs.all_clubs') || 'All Clubs'}</option>
+                            {clubs.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    )}
+                </div>
 
                 <div className="flex p-1 bg-slate-800/50 rounded-xl border border-slate-700/50">
                     <button
