@@ -24,11 +24,11 @@
     "dynamic_elo": "Dynamisches ELO-System",
     "install_app": "App installieren",
     "install_app_desc": "Fügen Sie PadelUp zu Ihrem Startbildschirm hinzu für das beste Erlebnis.",
-    "elo_desc": "PadelUp verwendet ein **Dynamisches K-Faktor**-System, das sich an Ihr Erfahrungsniveau anpasst. Dies ermöglicht es neuen Spielern, ihr wahres Niveau schneller zu erreichen, während es für Veteranen Stabilität bietet.",
-    "elo_placement": "Platzierung (0-10 Spiele): K=48. Hohe Anpassungen, um Ihr Spielniveau schnell zu finden.",
-    "elo_standard": "Standard (10-30 Spiele): K=32. Standardvolatilität.",
-    "elo_stable": "Stabil (30+ Spiele): K=24. Geringere Anpassungen zur Belohnung von Beständigkeit.",
-    "elo_note": "Hinweis: Punkte werden **individuell** berechnet. Ein neuer Spieler kann +40 Punkte für einen Sieg erhalten, während sein erfahrener Partner +20 erhält."
+    "elo_desc": "Das System berechnet die Gewinnwahrscheinlichkeit basierend auf dem **Team-ELO-Durchschnitt** und belohnt Siege gegen stärkere Gegner.",
+    "elo_placement": "Start (0-10): K=48 (Schnelle Anpassung, um das wahre Level zu finden).",
+    "elo_standard": "Standard (10-30): K=32.",
+    "elo_stable": "Veteran (+30): K=24 (Höhere Stabilität).",
+    "elo_note": "Hinweis: Punkte werden **individuell** vergeben. In einem Spiel kann ein neuer Spieler +40 Punkte sammeln, während sein Veteranen-Partner +20 erhält."
   },
   "auth": {
     "welcome_back": "Willkommen zurück, Champion",
@@ -156,7 +156,11 @@
     "confirm_prompt": "Sind Sie sicher, dass Sie fortfahren möchten?",
     "confirm": "Bestätigen",
     "cancel": "Abbrechen",
-    "beta_message": "Diese App befindet sich in der Betatestphase. Jedes Feedback ist willkommen!"
+    "beta_message": "Diese App befindet sich in der Betatestphase. Jedes Feedback ist willkommen!",
+    "validation_error": "Validierungsfehler",
+    "invalid_score": "Ungültiger Punktestand",
+    "draw": "Unentschieden",
+    "duplicate": "Doppeltes Spiel"
   },
   "new_match": {
     "title": "Spieler auswählen",
@@ -165,6 +169,8 @@
     "team_2": "Team 2",
     "player_1": "Spieler 1",
     "player_2": "Spieler 2",
+    "vs": "VS",
+    "set_error_prefix": "Satz {{set}}: ",
     "next_step": "Weiter: Ergebnis eingeben",
     "match_result": "Spielergebnis",
     "fair_play": "Bitte stellen Sie sicher, dass die Ergebnisse fair erfasst werden. Wenn ein Admin falsche Einträge entdeckt, wird das Spiel gelöscht und die ELO-Punkte zurückgesetzt. Der Benutzer kann vorübergehend gesperrt werden.",
@@ -176,7 +182,8 @@
     "verification_note": "Das Spiel wird an die Gegner zur Überprüfung gesendet. (Bei Ignorieren wird es nach 24 Stunden automatisch akzeptiert.)",
     "success_alert": "Spiel eingereicht! Gegner haben 24h Zeit zur Bestätigung.",
     "player_already_selected": "Spieler bereits ausgewählt!",
-    "enter_valid_result": "Bitte geben Sie ein gültiges Ergebnis ein (mindestens ein Spiel gespielt).",
+    "enter_valid_result": "Bitte geben Sie ein gültiges Ergebnis ein (mindestens zweis sets gespielt).",
+    "cannot_be_draw": "Spiel kann nicht unentschieden enden.",
     "duplicate_match": "Es sieht so aus, als ob dieses Spiel bereits kürzlich (vor 2 Stunden) registriert wurde. Keine Notwendigkeit, es zu duplizieren. Bitte seien Sie fair :)",
     "invite_friends": "Keine Spieler gefunden. Laden Sie Freunde ein!",
     "invalid_set_score": "Ungültiges Satzergebnis. Jemand muss 6 oder 7 Spiele erreichen.",

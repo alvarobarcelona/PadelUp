@@ -24,11 +24,11 @@
     "dynamic_elo": "Sistema ELO Dinámico",
     "install_app": "Instalar App",
     "install_app_desc": "Añade PadelUp a tu pantalla de inicio para la mejor experiencia.",
-    "elo_desc": "PadelUp usa un sistema de **Factor-K Dinámico** que se adapta a tu nivel de experiencia. Esto permite a los nuevos jugadores alcanzar su nivel real más rápido mientras proporciona estabilidad a los veteranos.",
-    "elo_placement": "Colocación (0-10 partidos): K=48. Altos ajustes para encontrar tu nivel rápidamente.",
-    "elo_standard": "Estándar (10-30 partidos): K=32. Volatilidad estándar.",
-    "elo_stable": "Estable (30+ partidos): K=24. Menores ajustes para premiar la consistencia.",
-    "elo_note": "Nota: Los puntos se calculan **individualmente**. Un jugador nuevo puede ganar +40 puntos, mientras su compañero veterano gana +20."
+    "elo_desc": "El sistema calcula la probabilidad de victoria basándose en el **promedio ELO de la pareja**, premiando más las victorias contra rivales fuertes.",
+    "elo_placement": "Inicio (0-10): K=48 (Ajuste rápido para encontrar tu nivel real).",
+    "elo_standard": "Estándar (10-30): K=32.",
+    "elo_stable": "Veterano (+30): K=24 (Mayor estabilidad).",
+    "elo_note": "Nota: Los puntos se asignan **individualmente**. En un mismo partido, un jugador nuevo puede sumar +40 puntos mientras su compañero veterano suma +20."
   },
   "auth": {
     "welcome_back": "Bienvenido de nuevo, Campeón",
@@ -157,7 +157,11 @@
     "confirm_prompt": "¿Estás seguro de que deseas continuar?",
     "confirm": "Confirmar",
     "cancel": "Cancelar",
-    "beta_message": "Esta aplicación está en periodo de pruebas. Cualquier feedback será bien recibido."
+    "beta_message": "Esta aplicación está en periodo de pruebas. Cualquier feedback será bien recibido.",
+    "validation_error": "Error de Validación",
+    "invalid_score": "Puntuación Inválida",
+    "draw": "Empate",
+    "duplicate": "Partido Duplicado"
   },
   "new_match": {
     "title": "Seleccionar Jugadores",
@@ -166,6 +170,8 @@
     "team_2": "Equipo 2",
     "player_1": "Jugador 1",
     "player_2": "Jugador 2",
+    "vs": "VS",
+    "set_error_prefix": "Set {{set}}: ",
     "next_step": "Siguiente: Introducir Marcador",
     "match_result": "Resultado del Partido",
     "fair_play": "Por favor asegúrate de que los resultados se registran justamente. Si un admin detecta registros falsos, el partido será eliminado y los puntos ELO revertidos. El usuario podría ser baneado temporalmente.",
@@ -177,13 +183,15 @@
     "verification_note": "El partido será enviado a los oponentes para verificar el resultado. (Si se ignora, se aceptará automáticamente tras 24 horas).",
     "success_alert": "¡Partido enviado! Los oponentes tienen 24h para confirmar.",
     "player_already_selected": "¡Jugador ya seleccionado!",
-    "enter_valid_result": "Por favor introduce un resultado válido (al menos un juego jugado).",
+    "enter_valid_result": "Por favor introduce un resultado válido (al menos dos sets jugados).",
+    "cannot_be_draw": "El partido no puede terminar en empate.",
     "duplicate_match": "Parece que este partido ya ha sido registrado recientemente (hace 2 horas) por otro jugador. No hace falta duplicarlo. Por favor sé justo :)",
     "invite_friends": "No se encontraron jugadores. ¡Invita a amigos a registrarse!",
     "invalid_set_score": "Resultado de set inválido. Alguien debe llegar a 6 o 7 juegos.",
     "invalid_7_score": "Resultado inválido (7-x). El perdedor debe tener 5 o 6 juegos.",
     "invalid_6_score": "Resultado inválido (6-x). Si el rival tiene 5 o más, debes jugar a 7.",
-    "invalid_7_7": "7-7 no es un resultado válido. Debes jugar tie-break (7-6)."
+    "invalid_7_7": "7-7 no es un resultado válido. Debes jugar tie-break (7-6).",
+    "minimum_sets_required": "Un partido debe tener al menos 2 sets."
   },
   "admin": {
     "title": "Consola de Admin",

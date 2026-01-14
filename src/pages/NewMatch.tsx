@@ -18,7 +18,7 @@ interface Player {
 }
 
 const NewMatch = () => {
-    const { alert } = useModal();
+    const { alert, confirm } = useModal();
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [step, setStep] = useState<1 | 2>(1); // 1: Players, 2: Score
@@ -115,30 +115,35 @@ const NewMatch = () => {
     const validateScore = () => {
         // Validate each played set
         // Rules:
-        // Valid: 6-0 to 6-4
-        // Valid: 7-5, 7-6
-        // Invalid: 7-0 to 7-4, 6-5, 6-6, 7-7, anything < 6 (unless incomplete? No, must finish set)
+        // 6-0, 6-1, 6-2, 6-3, 6-4 -> Valid.
+        // 6 - 5, 5 - 6 -> Invalid(Must play to 7).
+        // 6 - 6 -> Invalid(Tie -break must be played).
+        // 7 - 5, 5 - 7 -> Valid.
+        // 7 - 6, 6 - 7 -> Valid(Tie -break).
+        // 7 - 7 -> Invalid(No further play is possible).
 
         for (let i = 0; i < sets.length; i++) {
             const { t1, t2 } = sets[i];
             const total = t1 + t2;
             if (total === 0) continue; // Empty set (assuming trailing sets can be 0-0)
 
+            const prefix = t('new_match.set_error_prefix', { set: i + 1 });
+
             // One must be >= 6
             if (t1 < 6 && t2 < 6) {
-                return t('new_match.invalid_set_score') || `Set ${i + 1}: Someone must reach 6 or 7 games.`;
+                return prefix + t('new_match.invalid_set_score');
             }
 
             // If 7, other must be 5 or 6
-            if (t1 === 7 && t2 < 5) return t('new_match.invalid_7_score') || `Set ${i + 1}: 7-${t2} is not valid. Winner needs 5 or 6 games.`;
-            if (t2 === 7 && t1 < 5) return t('new_match.invalid_7_score') || `Set ${i + 1}: ${t1}-7 is not valid. Winner needs 5 or 6 games.`;
+            if (t1 === 7 && t2 < 5) return prefix + t('new_match.invalid_7_score');
+            if (t2 === 7 && t1 < 5) return prefix + t('new_match.invalid_7_score');
 
             // If 6, other must be < 5 (because 6-5 -> 7-5, 6-6 -> mean not done)
-            if (t1 === 6 && t2 >= 5) return t('new_match.invalid_6_score') || `Set ${i + 1}: 6-${t2} is not valid. Play to 7.`;
-            if (t2 === 6 && t1 >= 5) return t('new_match.invalid_6_score') || `Set ${i + 1}: ${t1}-6 is not valid. Play to 7.`;
+            if (t1 === 6 && t2 >= 5 && t2 < 7) return prefix + t('new_match.invalid_6_score');
+            if (t2 === 6 && t1 >= 5 && t1 < 7) return prefix + t('new_match.invalid_6_score');
 
             // 7-7 handled by input but good to double check
-            if (t1 === 7 && t2 === 7) return t('new_match.invalid_7_7') || `Set ${i + 1}: 7-7 is not valid.`;
+            if (t1 === 7 && t2 === 7) return prefix + t('new_match.invalid_7_7');
         }
         return null;
     };
@@ -149,16 +154,47 @@ const NewMatch = () => {
         // Validation: Check if at least one game has been played
         const totalGames = sets.reduce((acc, s) => acc + s.t1 + s.t2, 0);
         if (totalGames === 0) {
-            await alert({ title: 'Validation Error', message: t('new_match.enter_valid_result'), type: 'warning' });
+            await alert({ title: t('common.validation_error'), message: t('new_match.enter_valid_result'), type: 'warning' });
+            return;
+        }
+
+        // Validation: Check if at least 2 sets have been played
+        const playedSets = sets.filter(s => s.t1 + s.t2 > 0).length;
+        if (playedSets < 2) {
+            await alert({ title: t('common.validation_error'), message: t('new_match.minimum_sets_required') || "Minimum 2 sets required", type: 'warning' });
             return;
         }
 
         // Deep Score Validation
         const scoreError = validateScore();
         if (scoreError) {
-            await alert({ title: 'Invalid Score', message: scoreError, type: 'warning' });
+            await alert({ title: t('common.invalid_score'), message: scoreError, type: 'warning' });
             return;
         }
+
+        // Calculate Winner (Pre-validation to prevent draws)
+        let t1Sets = 0;
+        let t2Sets = 0;
+        sets.forEach(s => {
+            if (s.t1 > s.t2) t1Sets++;
+            if (s.t2 > s.t1) t2Sets++;
+        });
+
+        if (t1Sets === t2Sets) {
+            await alert({ title: t('common.draw'), message: t('new_match.cannot_be_draw') || "Match cannot end in a draw.", type: 'warning' });
+            return; // No need to setLoading(false) as it hasn't started
+        }
+
+        // --- MANUAL CONFIRMATION ---
+        const isConfirmed = await confirm({
+            title: t('common.confirm_title') || 'Confirm Action',
+            message: t('home.confirm_prompt') || "Confirm this match result? This will update ELO ratings.",
+            type: 'confirm',
+            confirmText: t('common.confirm') || 'Confirm',
+            cancelText: t('common.cancel') || 'Cancel'
+        });
+
+        if (!isConfirmed) return;
 
         setLoading(true);
         try {
@@ -177,24 +213,10 @@ const NewMatch = () => {
                 });
 
                 if (isDuplicate) {
-                    await alert({ title: 'Duplicate Match', message: t('new_match.duplicate_match'), type: 'warning' });
+                    await alert({ title: t('common.duplicate'), message: t('new_match.duplicate_match'), type: 'warning' });
                     setLoading(false);
                     return;
                 }
-            }
-
-            // Calculate Winner
-            let t1Sets = 0;
-            let t2Sets = 0;
-            sets.forEach(s => {
-                if (s.t1 > s.t2) t1Sets++;
-                if (s.t2 > s.t1) t2Sets++;
-            });
-
-            if (t1Sets === t2Sets) {
-                await alert({ title: 'Draw', message: t('new_match.cannot_be_draw') || "Match cannot end in a draw.", type: 'warning' });
-                setLoading(false);
-                return;
             }
 
             const winnerTeam = t1Sets > t2Sets ? 1 : 2;
@@ -282,11 +304,11 @@ const NewMatch = () => {
             // Note: We do NOT update profiles or achievements here anymore.
             // This happens on confirmation.
 
-            await alert({ title: 'Success', message: t('new_match.success_alert'), type: 'success' });
+            await alert({ title: t('common.success'), message: t('new_match.success_alert'), type: 'success' });
             navigate('/');
         } catch (error: any) {
             console.error('Error saving match:', error);
-            await alert({ title: 'Error', message: t('common.error') + ': ' + error.message, type: 'danger' });
+            await alert({ title: t('common.error'), message: t('common.error') + ': ' + error.message, type: 'danger' });
         } finally {
             setLoading(false);
         }
@@ -423,7 +445,7 @@ const NewMatch = () => {
                         <span className="text-sm font-bold text-white truncate">{selectedPlayers.t1p2?.username}</span>
                     </div>
                 </div>
-                <div className="text-slate-500 font-bold text-lg">VS</div>
+                <div className="text-slate-500 font-bold text-lg">{t('new_match.vs')}</div>
                 <div className="text-center w-5/12">
                     <span className="block text-xs text-blue-400 font-bold mb-1">{t('new_match.team_2').toUpperCase()}</span>
                     <div className="flex justify-center -space-x-2 mb-1">
@@ -486,7 +508,7 @@ const NewMatch = () => {
             </div>
 
             <div className="pt-8 space-y-3">
-                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm={t('home.confirm_prompt') || "Are you sure?"}>
+                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading}>
                     <Trophy size={20} />
                     {t('new_match.finish_match')}
                 </Button>

@@ -24,11 +24,11 @@
     "dynamic_elo": "Dynamic ELO System",
     "install_app": "Install App",
     "install_app_desc": "Add PadelUp to your home screen for the best experience.",
-    "elo_desc": "PadelUp uses a **Dynamic K-Factor** system that adapts to your experience level. This allows new players to reach their real level faster while providing stability for veterans.",
-    "elo_placement": "Placement (0-10 matches): K=48. High adjustments to quickly find your skill level.",
-    "elo_standard": "Standard (10-30 matches): K=32. Standard volatility.",
-    "elo_stable": "Stable (30+ matches): K=24. Lower adjustments to reward consistency.",
-    "elo_note": "Note: Points exchanged are calculated **individually**. A new player might gain +40 points for a win, while their veteran partner gains +20."
+    "elo_desc": "The system calculates win probability based on the **Team ELO Average**, rewarding wins against stronger opponents.",
+    "elo_placement": "Start (0-10): K=48 (Fast adjustment to find real level).",
+    "elo_standard": "Standard (10-30): K=32.",
+    "elo_stable": "Veteran (+30): K=24 (Higher stability).",
+    "elo_note": "Note: Points are assigned **individually**. In the same match, a new player might gain +40 pts while their veteran partner gains +20."
   },
   "auth": {
     "welcome_back": "Welcome back, Champion",
@@ -157,7 +157,11 @@
     "confirm_prompt": "Are you sure you want to proceed?",
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "beta_message": "This app is in beta testing period. Any feedback is welcome!"
+    "beta_message": "This app is in beta testing period. Any feedback is welcome!",
+    "validation_error": "Validation Error",
+    "invalid_score": "Invalid Score",
+    "draw": "Draw",
+    "duplicate": "Duplicate Match"
   },
   "new_match": {
     "title": "Select Players",
@@ -166,6 +170,8 @@
     "team_2": "Team 2",
     "player_1": "Player 1",
     "player_2": "Player 2",
+    "vs": "VS",
+    "set_error_prefix": "Set {{set}}: ",
     "next_step": "Next: Enter Score",
     "match_result": "Match Result",
     "fair_play": "Please ensure scores are recorded fairly. If an admin detects false records, the match will be deleted and ELO points reverted to maintain a fair and real community. The user may be temporarily banned if necessary.",
@@ -177,13 +183,15 @@
     "verification_note": "The match will be sent to the opponents to verify the result. (If ignored, it will be automatically accepted after 24 hours.)",
     "success_alert": "Match submitted! Opponents have 24h to confirm the result.",
     "player_already_selected": "Player already selected!",
-    "enter_valid_result": "Please enter a valid result (at least one game played).",
+    "enter_valid_result": "Please enter a valid result (at least two sets played).",
+    "cannot_be_draw": "Match cannot end in a draw.",
     "duplicate_match": "It looks like this match has already been recorded recently (range: 2 hours ago) by another player. No need to duplicate it. Please be fair :)",
     "invite_friends": "No players found. Invite friends to Sign Up!",
-    "invalid_set_score": "Invalid set score. Someone must reach 6 or 7 games.",
+    "invalid_set_scoreinvalid_set_score": "Invalid set score. Someone must reach 6 or 7 games.",
     "invalid_7_score": "Invalid score (7-x). Loser must have 5 or 6 games.",
     "invalid_6_score": "Invalid score (6-x). If opponent has 5 or more, you must play to 7.",
-    "invalid_7_7": "7-7 is not a valid score. You must play a tie-break (7-6)."
+    "invalid_7_7": "7-7 is not a valid score. You must play a tie-break (7-6).",
+    "minimum_sets_required": "A match must consist of at least 2 sets."
   },
   "admin": {
     "title": "Admin Console",
