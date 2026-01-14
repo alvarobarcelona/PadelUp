@@ -184,6 +184,8 @@ export const syncAchievements = async (userId: string) => {
       .delete()
       .eq("user_id", userId)
       .in("achievement_id", toRemove);
+
+    if (removeError) throw removeError;
   }
 
   return { added: toAdd, removed: toRemove };
