@@ -7,7 +7,7 @@ project_id = "PadelUp"
 [api]
 enabled = true
 # Port to use for the API URL.
-port = 54321
+port = 54421
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` and `graphql_public` schemas are included by default.
 schemas = ["public", "graphql_public"]
@@ -26,9 +26,9 @@ enabled = false
 
 [db]
 # Port to use for the local database URL.
-port = 54322
+port = 54422
 # Port used by db diff command to initialize the shadow database.
-shadow_port = 54320
+shadow_port = 54420
 # Maximum amount of time to wait for health check when starting the local database.
 health_timeout = "2m"
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
@@ -38,7 +38,7 @@ major_version = 17
 [db.pooler]
 enabled = false
 # Port to use for the local connection pooler.
-port = 54329
+port = 54429
 # Specifies when a server connection can be reused by other clients.
 # Configure one of the supported pooler modes: `transaction`, `session`.
 pool_mode = "transaction"
@@ -84,7 +84,7 @@ enabled = true
 [studio]
 enabled = true
 # Port to use for Supabase Studio.
-port = 54323
+port = 54423
 # External URL of the API server that frontend connects to.
 api_url = "http://127.0.0.1"
 # OpenAI API Key to use for Supabase AI in the Supabase Studio.
@@ -95,10 +95,10 @@ openai_api_key = "env(OPENAI_API_KEY)"
 [inbucket]
 enabled = true
 # Port to use for the email testing server web interface.
-port = 54324
+port = 54424
 # Uncomment to expose additional ports for testing user applications that send emails.
-# smtp_port = 54325
-# pop3_port = 54326
+# smtp_port = 54425
+# pop3_port = 54426
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
@@ -147,12 +147,12 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:5173"
+site_url = "http://localhost:5173"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:5173"]
+additional_redirect_urls = ["http://localhost:5173", "https://localhost:5173"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
-# JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
+# JWT issuer URL. If not set, defaults to the local API URL (http://localhost:<port>/auth/v1).
 # jwt_issuer = ""
 # Path to JWT signing key. DO NOT commit your signing keys file to git.
 # signing_keys_path = "./signing_keys.json"
@@ -226,6 +226,14 @@ otp_expiry = 3600
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.confirmation]
+subject = "Confirm your registration"
+content_path = "supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your password"
+content_path = "supabase/templates/recovery.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
@@ -366,7 +374,7 @@ deno_version = 2
 
 [analytics]
 enabled = false
-port = 54327
+port = 54427
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 
