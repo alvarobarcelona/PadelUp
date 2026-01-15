@@ -36,6 +36,7 @@
     "reset_password_title": "Reset Password",
     "username": "Username",
     "email": "Email",
+    "support_email": "Support email",
     "password": "Password",
     "forgot_password": "Forgot?",
     "send_reset_link": "Send Reset Link",

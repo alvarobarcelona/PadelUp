@@ -301,6 +301,7 @@ const Auth = () => {
                         >
                             {isLogin ? t('auth.no_account') : t('auth.has_account')}
                         </button>
+                        <div className="text-xs text-slate-500">{t('auth.support_email')}: padeluppadeleros@gmail.com</div>
                     </div>
                 </form>
             </div>
