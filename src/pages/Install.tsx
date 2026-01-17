@@ -35,10 +35,10 @@ const Install = () => {
                         <img src="/icon-192.png" alt="PadelUp" className="w-16 h-16 rounded-xl" />
                     </div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                        Instala PadelUp
+                        Install PadelUp
                     </h1>
                     <p className="text-slate-400">
-                        La mejor experiencia para gestionar tus torneos
+                        The best experience to manage your results, tournaments and statistics.
                     </p>
                 </div>
 
@@ -51,7 +51,7 @@ const Install = () => {
                         </div>
                     ) : (
                         <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 text-center space-y-4">
-                            <h3 className="text-lg font-medium text-white">Escanea para instalar en tu móvil</h3>
+                            <h3 className="text-lg font-medium text-white">Scan to install on your mobile</h3>
                             <div className="flex justify-center">
                                 <ClubQR />
                             </div>
@@ -65,13 +65,13 @@ const Install = () => {
                         <div className="p-2 bg-blue-500/20 rounded-full text-blue-400">
                             <Download size={16} />
                         </div>
-                        <span>Acceso instantáneo desde inicio</span>
+                        <span>Instant access from home screen</span>
                     </div>
                     <div className="flex items-center gap-3 bg-slate-800/30 p-3 rounded-lg border border-slate-700/30">
                         <div className="p-2 bg-purple-500/20 rounded-full text-purple-400">
                             <Share2 size={16} />
                         </div>
-                        <span>Sin descargas de la tienda</span>
+                        <span>No downloads from the store</span>
                     </div>
                 </div>
             </div>

@@ -303,6 +303,17 @@ const Auth = () => {
                         </button>
                         <div className="text-xs text-slate-500">{t('auth.support_email')}: padeluppadeleros@gmail.com</div>
                     </div>
+
+                    <div className="pt-6 border-t border-slate-700/50">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/install')}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all text-sm font-medium"
+                        >
+                            <span>📲</span>
+                            {t('auth.install_app', 'Instalar App en el móvil')}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
