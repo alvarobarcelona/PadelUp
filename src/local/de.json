@@ -80,7 +80,7 @@
     "pending_verification": "Ausstehende Bestätigung",
     "confirm_title": "Bestätigen",
     "auto_accept": "Automatische Annahme in 24h",
-    "match_number": "Spielnummer: {{id}}",
+    "match_number": "Spiel Id: {{id}}",
     "confirm": "Bestätigen",
     "reject": "Ablehnen",
     "waiting_opponent": "Warte auf Bestätigung des Gegners...",
@@ -91,7 +91,7 @@
     "match_history": "Spielverlauf",
     "no_confirmed_matches": "Keine kürzlich bestätigten Spiele gefunden.",
     "match_label": "Spiel: {{id}}",
-    "confirm_prompt": "Dieses Spielergebnis bestätigen? Dies aktualisiert die ELO-Bewertungen.",
+    "confirm_prompt": "Dieses Spielergebnis bestätigen? Dies wird das Spiel für den Gegner sichtbar machen, um die Ergebnisse zu bestätigen.",
     "reject_reason_prompt": "Bitte geben Sie einen Grund für die Ablehnung des Spiels an (Erforderlich):",
     "reject_reason_required": "Ablehnungsgrund ist erforderlich.",
     "reject_title": "Ablehnen",
@@ -208,7 +208,8 @@
     "invalid_set_score": "Ungültiges Satzergebnis. Jemand muss 6 oder 7 Spiele erreichen.",
     "invalid_7_score": "Ungültiges Ergebnis (7-x). Verlierer muss 5 oder 6 Spiele haben.",
     "invalid_6_score": "Ungültiges Ergebnis (6-x). Wenn der Gegner 5 oder mehr hat, spielen Sie bis 7.",
-    "invalid_7_7": "7-7 ist kein gültiges Ergebnis. Spielen Sie einen Tie-Break (7-6)."
+    "invalid_7_7": "7-7 ist kein gültiges Ergebnis. Spielen Sie einen Tie-Break (7-6).",
+    "must_include_self": "Sie müssen einer der registrierten Spieler sein, um das Spiel zu erstellen."
   },
   "admin": {
     "title": "Admin-Konsole",

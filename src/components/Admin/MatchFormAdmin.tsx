@@ -4,6 +4,7 @@ import { Avatar } from '../../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor, getLevelFromElo } from '../../lib/elo';
+import { normalizeForSearch } from '../../lib/utils';
 import { logActivity } from '../../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../../context/ModalContext';
@@ -253,7 +254,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
     if (isSelectionModalOpen) {
         const filteredPlayers = availablePlayers.filter(p =>
-            p.username.toLowerCase().includes(searchQuery.toLowerCase())
+            normalizeForSearch(p.username).includes(normalizeForSearch(searchQuery))
         );
 
         return (

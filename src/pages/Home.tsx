@@ -258,7 +258,7 @@ const Home = () => {
             // 2. Find Match Details for Logging (before it's deleted)
             const match = pendingMatches.find(m => m.id === matchId);
 
-            const { error } = await supabase.rpc('reject_match', { match_id: matchId });
+            const { error } = await supabase.rpc('reject_match', { match_id: matchId, reason: reason });
             if (error) throw error;
 
             // LOG MATCH REJECT with Reason and Snapshot
@@ -301,7 +301,7 @@ const Home = () => {
             {/* Profile */}
             {profile && (
                 <div className="grid grid-cols-2 gap-4">
-                    <Link to="/levels" className="block rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg hover:border-slate-500 transition-colors">
+                    <div className="relative block rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg hover:border-slate-500 transition-colors">
                         <div className="flex justify-between items-start mb-2">
                             <div>
                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">{t('home.current_level')}</p>
@@ -319,7 +319,7 @@ const Home = () => {
 
                         </div>
                         <div>
-                            <span className="text-sm font-normal text-slate-400 ml-2">{t(`levels.names.${getLevelFromElo(profile.elo).key}`)}</span>
+                            <span className="text-sm font-normal text-slate-400 ">{t(`levels.names.${getLevelFromElo(profile.elo).key}`)}</span>
                         </div>
 
                         {/* Progress Bar (Visual flair) */}
@@ -332,7 +332,12 @@ const Home = () => {
                         <p className="text-[10px] text-green-500/80 mt-1.5 font-medium text-right">
                             {t('home.pts_next_level', { points: getLevelFromElo(profile.elo).max - profile.elo })}
                         </p>
-                    </Link>
+
+                        {/* Info Button - Bottom Left */}
+                        <Link to="/levels" className="absolute bottom-2 left-3 p-1 text-slate-500 hover:text-white transition-colors bg-slate-800/50 rounded-full">
+                            <Info size={20} />
+                        </Link>
+                    </div>
 
                     {/* Recent played */}
                     <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">

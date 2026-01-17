@@ -1,7 +1,3 @@
--- Fix for "role mutable search_path" vulnerability in reject_match
--- AND Implementation of Rejection Auditing logic
--- We explicitly set the search_path to 'public'.
-
 CREATE OR REPLACE FUNCTION public.reject_match(match_id bigint, reason text)
 RETURNS void
 LANGUAGE plpgsql

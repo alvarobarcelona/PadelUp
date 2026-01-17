@@ -80,7 +80,7 @@
     "last_5": "Últimos 5 partidos",
     "pending_verification": "Pendiente de Verificación",
     "auto_accept": "Auto-aceptar en 24h",
-    "match_number": "Partido número: {{id}}",
+    "match_number": "Id del partido: {{id}}",
     "confirm": "Confirmar",
     "reject": "Rechazar",
     "waiting_opponent": "Esperando confirmación del oponente...",
@@ -91,7 +91,7 @@
     "match_history": "Historial",
     "no_confirmed_matches": "No hay partidos confirmados recientes.",
     "match_label": "Partido: {{id}}",
-    "confirm_prompt": "¿Confirmar resultado? Esto actualizará los ratings ELO.",
+    "confirm_prompt": "¿Confirmar resultado? El partido aparecerá en la pantalla de los oponentes para su confirmación.",
     "reject_reason_prompt": "Por favor indica una razón para rechazar este partido (Requerido):",
     "reject_reason_required": "La razón de rechazo es obligatoria.",
     "reject_title": "Rechazar",
@@ -207,7 +207,8 @@
     "invalid_6_score": "Resultado inválido (6-x). Si el rival tiene 5 o más, debes jugar a 7.",
     "invalid_7_7": "7-7 no es un resultado válido. Debes jugar tie-break (7-6).",
     "minimum_sets_required": "Un partido debe tener al menos 2 sets.",
-    "match_already_finished": "El partido ya ha terminado después de 2 sets. No puedes introducir un 3er set."
+    "match_already_finished": "El partido ya ha terminado después de 2 sets. No puedes introducir un 3er set.",
+    "must_include_self": "Debes participar en el partido para poder registrarlo."
   },
   "admin": {
     "title": "Consola de Admin",

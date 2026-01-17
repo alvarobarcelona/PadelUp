@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, UserPlus, MessageCircle } from 'lucide-react';
 import { getLevelFromElo } from '../lib/elo';
+import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
 
@@ -146,7 +147,7 @@ const Players = () => {
         }
 
         // Search Filtering
-        const matchesSearch = !searchQuery.trim() || player.username.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = !searchQuery.trim() || normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery));
 
         // Club Filtering
         const matchesClub = selectedClubId === 'all' || player.main_club_id === Number(selectedClubId);

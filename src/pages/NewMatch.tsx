@@ -5,6 +5,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { Users, X, Trophy, Loader2, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor, getLevelFromElo } from '../lib/elo';
+import { normalizeForSearch } from '../lib/utils';
 import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
@@ -182,6 +183,25 @@ const NewMatch = () => {
     const handleSave = async () => {
         if (!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2) return;
 
+        // Validation: Verify User is participating
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const isParticipant =
+                selectedPlayers.t1p1.id === user.id ||
+                selectedPlayers.t1p2.id === user.id ||
+                selectedPlayers.t2p1.id === user.id ||
+                selectedPlayers.t2p2.id === user.id;
+
+            if (!isParticipant) {
+                await alert({
+                    title: t('common.validation_error'),
+                    message: t('new_match.must_include_self') || "You must be a participant to create a match.",
+                    type: 'warning'
+                });
+                return;
+            }
+        }
+
         // Validation: Check if at least one game has been played
         const totalGames = sets.reduce((acc, s) => acc + s.t1 + s.t2, 0);
         if (totalGames === 0) {
@@ -313,7 +333,7 @@ const NewMatch = () => {
             // --- ELO CALCULATION END ---
 
             // 1. Prepare Match Data
-            const { data: { user } } = await supabase.auth.getUser();
+            // user is already fetched at start of handleSave
             const eloSnapshot = {
                 t1p1: newRatings.t1p1,
                 t1p2: newRatings.t1p2,
@@ -368,7 +388,7 @@ const NewMatch = () => {
     // PLAYER SELECTION MODAL
     if (isSelectionModalOpen) {
         const filteredPlayers = availablePlayers.filter(p =>
-            p.username.toLowerCase().includes(searchQuery.toLowerCase())
+            normalizeForSearch(p.username).includes(normalizeForSearch(searchQuery))
         );
 
         return (
@@ -531,25 +551,51 @@ const NewMatch = () => {
             {/* Score Inputs */}
             <div className="space-y-4">
                 <h3 className="text-center text-slate-400 text-sm tracking-widest uppercase">{t('new_match.set_scores')}</h3>
-                {[0, 1, 2].map((i) => (
-                    <div key={i} className="flex items-center justify-center gap-6">
-                        <input
-                            type="number"
-                            min="0" max="7"
-                            className="w-16 h-16 rounded-xl bg-slate-800 text-center text-3xl font-bold text-white focus:bg-slate-700 focus:ring-2 ring-green-500 outline-none transition-all placeholder-slate-600"
-                            value={sets[i].t1.toString()}
-                            onChange={(e) => updateScore(i, 't1', parseInt(e.target.value) || 0)}
-                        />
-                        <span className="text-slate-600 font-bold text-xl">-</span>
-                        <input
-                            type="number"
-                            min="0" max="7"
-                            className="w-16 h-16 rounded-xl bg-slate-800 text-center text-3xl font-bold text-white focus:bg-slate-700 focus:ring-2 ring-blue-500 outline-none transition-all placeholder-slate-600"
-                            value={sets[i].t2.toString()}
-                            onChange={(e) => updateScore(i, 't2', parseInt(e.target.value) || 0)}
-                        />
-                    </div>
-                ))}
+                {[0, 1, 2].map((i) => {
+                    const getWinner = (s: { t1: number, t2: number }) => {
+                        if (s.t1 >= 6 && (s.t1 - s.t2 >= 2 || s.t1 === 7)) return 1;
+                        if (s.t2 >= 6 && (s.t2 - s.t1 >= 2 || s.t2 === 7)) return 2;
+                        return 0;
+                    };
+
+                    // Logic for Set 2 (Index 1)
+                    if (i === 1) {
+                        // Hide if Set 1 is not finished
+                        if (getWinner(sets[0]) === 0) return null;
+                    }
+
+                    // Logic for Set 3 (Index 2)
+                    if (i === 2) {
+                        const w1 = getWinner(sets[0]);
+                        const w2 = getWinner(sets[1]);
+
+                        // Hide if Set 2 is not finished
+                        if (w2 === 0) return null;
+
+                        // Hide if Match is decided (2-0)
+                        if (w1 !== 0 && w1 === w2) return null;
+                    }
+
+                    return (
+                        <div key={i} className="flex items-center justify-center gap-6">
+                            <input
+                                type="number"
+                                min="0" max="7"
+                                className="w-16 h-16 rounded-xl bg-slate-800 text-center text-3xl font-bold text-white focus:bg-slate-700 focus:ring-2 ring-green-500 outline-none transition-all placeholder-slate-600"
+                                value={sets[i].t1.toString()}
+                                onChange={(e) => updateScore(i, 't1', parseInt(e.target.value) || 0)}
+                            />
+                            <span className="text-slate-600 font-bold text-xl">-</span>
+                            <input
+                                type="number"
+                                min="0" max="7"
+                                className="w-16 h-16 rounded-xl bg-slate-800 text-center text-3xl font-bold text-white focus:bg-slate-700 focus:ring-2 ring-blue-500 outline-none transition-all placeholder-slate-600"
+                                value={sets[i].t2.toString()}
+                                onChange={(e) => updateScore(i, 't2', parseInt(e.target.value) || 0)}
+                            />
+                        </div>
+                    );
+                })}
                 <p className="text-center text-xs text-slate-500 italic px-4">
                     {t('new_match.score_hint')}
                 </p>

@@ -5,6 +5,7 @@ import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
 import { Crown, TrendingUp, Loader2, Search } from 'lucide-react';
+import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 
 interface Player {
@@ -19,7 +20,7 @@ const Rankings = () => {
     const { t } = useTranslation();
     const [players, setPlayers] = useState<Player[]>([]);
     const [loading, setLoading] = useState(true);
-    const [view, setView] = useState<'global' | 'friends'>('global');
+    const [view, setView] = useState<'global' | 'friends'>('friends');
     const [searchQuery, setSearchQuery] = useState('');
     const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>('all');
@@ -85,8 +86,9 @@ const Rankings = () => {
         }
     };
 
+
     const filteredPlayers = players.filter(player => {
-        const matchesSearch = player.username.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery));
         const matchesClub = selectedClubId === 'all' || player.main_club_id === Number(selectedClubId);
         return matchesSearch && matchesClub;
     });

@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { normalizeForSearch } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, Calendar, AlertCircle, Search, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -71,10 +72,10 @@ const History = () => {
     };
 
     const filteredMatches = matches.filter(match => {
-        const lowerQuery = searchQuery.toLowerCase();
-        const idMatch = match.id.toString().includes(lowerQuery);
+        const normalizedQuery = normalizeForSearch(searchQuery);
+        const idMatch = match.id.toString().includes(normalizedQuery);
 
-        const checkPlayer = (player: any) => player?.username?.toLowerCase().includes(lowerQuery);
+        const checkPlayer = (player: any) => player?.username && normalizeForSearch(player.username).includes(normalizedQuery);
 
         return idMatch ||
             checkPlayer(match.team1_p1) ||

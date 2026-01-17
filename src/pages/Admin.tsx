@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { getMatchPointsFromHistory } from '../lib/elo';
 import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
 import { logActivity, ACTIVITY_ACTIONS, type ActivityAction } from '../lib/logger';
+import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
 
@@ -320,8 +321,8 @@ const Admin = () => {
     const activeUsers = players.filter(p => {
         if (!p.approved) return false;
         if (!memberSearch) return true;
-        const search = memberSearch.toLowerCase();
-        return p.username.toLowerCase().includes(search) || p.id.includes(search);
+        const search = normalizeForSearch(memberSearch);
+        return normalizeForSearch(p.username).includes(search) || p.id.includes(search);
     });
 
     // Filter Matches
@@ -743,7 +744,7 @@ const Admin = () => {
                     <div className="space-y-2">
                         {logs
                             .filter(l => selectedActions.includes(l.action as ActivityAction))
-                            .filter(l => JSON.stringify(l).toLowerCase().includes(logSearch.toLowerCase()))
+                            .filter(l => normalizeForSearch(JSON.stringify(l)).includes(normalizeForSearch(logSearch)))
                             .map(log => {
                                 const isError = log.action.includes('REJECT') || log.action.includes('DELETE');
                                 const isCreate = log.action.includes('CREATE') || log.action.includes('REGISTER');

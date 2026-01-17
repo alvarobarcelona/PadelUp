@@ -89,7 +89,7 @@
     "pending_verification": "Pending Verification",
     "confirm_title": "Confirm Result",
     "auto_accept": "Auto-accepts in 24h",
-    "match_number": "Match number: {{id}}",
+    "match_number": "Match id: {{id}}",
     "confirm": "Confirm",
     "reject": "Reject",
     "waiting_opponent": "Waiting for opponent confirmation...",
@@ -100,7 +100,7 @@
     "match_history": "Match history",
     "no_confirmed_matches": "No recent confirmed matches found.",
     "match_label": "Match: {{id}}",
-    "confirm_prompt": "Confirm this match result? This will update ELO ratings.",
+    "confirm_prompt": "Confirm this match result? The match will be visible to the opponent for confirmation.",
     "reject_reason_prompt": "Please provide a reason for rejecting this match (Required):",
     "reject_reason_required": "Rejection reason is required.",
     "reject_title": "Reject Match",
@@ -205,7 +205,8 @@
     "invalid_6_score": "Invalid score (6-x). If opponent has 5 or more, you must play to 7.",
     "invalid_7_7": "7-7 is not a valid score. You must play a tie-break (7-6).",
     "minimum_sets_required": "A match must consist of at least 2 sets.",
-    "match_already_finished": "Match already finished after 2 sets. You cannot enter a 3rd set."
+    "match_already_finished": "Match already finished after 2 sets. You cannot enter a 3rd set.",
+    "must_include_self": "You must be a participant to create a match."
   },
   "admin": {
     "title": "Admin Console",
