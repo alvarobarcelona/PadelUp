@@ -311,7 +311,7 @@ const Auth = () => {
                             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all text-sm font-medium"
                         >
                             <span>📲</span>
-                            {t('auth.install_app', 'Instalar App en el móvil')}
+                            {t('auth.install_app', 'Install App')}
                         </button>
                     </div>
                 </form>

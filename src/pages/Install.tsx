@@ -30,7 +30,14 @@ const Install = () => {
 
             <div className="z-10 w-full max-w-md space-y-8 flex flex-col items-center">
                 {/* Header */}
-                <div className="text-center space-y-4">
+                <div className="text-center space-y-4 relative">
+                    <button
+                        onClick={() => window.history.back()}
+                        className="absolute left-0 top-0 text-slate-400 hover:text-white p-2"
+                        aria-label="Go back"
+                    >
+                        ✕
+                    </button>
                     <div className="bg-gradient-to-br from-blue-500 to-purple-600 w-20 h-20 rounded-2xl mx-auto flex items-center justify-center shadow-2xl shadow-blue-500/20">
                         <img src="/icon-192.png" alt="PadelUp" className="w-16 h-16 rounded-xl" />
                     </div>
