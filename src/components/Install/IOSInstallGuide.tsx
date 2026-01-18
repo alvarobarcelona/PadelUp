@@ -21,7 +21,7 @@ const IOSInstallGuide = () => {
                             <Share size={24} />
                         </div>
                         <div>
-                            <p className="text-slate-300">1. Tap the <span className="text-white font-bold">Share</span> button at the bottom.</p>
+                            <p className="text-slate-300">1. Tap the <span className="text-white font-bold">Share</span> button at the top.</p>
                         </div>
                     </div>
 
@@ -30,7 +30,7 @@ const IOSInstallGuide = () => {
                             <PlusSquare size={24} />
                         </div>
                         <div>
-                            <p className="text-slate-300">2. Select <span className="text-white font-bold">Add to Home Screen</span>.</p>
+                            <p className="text-slate-300">2. Select more(3 Dots)<span className="text-white font-bold">Add to Home Screen</span>.</p>
                         </div>
                     </div>
                 </div>
