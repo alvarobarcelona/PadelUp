@@ -239,7 +239,7 @@ export default function UserProfile() {
                                 <div className="flex items-center">
                                     
                                     <div>
-                                            <div className="text-2xl font-bold text-red-400">{t('profile.streak_losses', { count: Math.abs(stats.streak) })}<TrendingDown className="w-4 h-4 text-red-500 shrink-0" /></div>
+                                            <div className="text-2xl font-bold text-red-400">{t('profile.streak_losses',{ count: Math.abs(stats.streak<=1 ? 1 : stats.streak) })}<TrendingDown className="w-4 h-4 text-red-500 shrink-0" /></div>
                                         <div className="text-xs text-red-500/80">{t('profile.streak_losses_desc')}</div>
                                     </div>
                                 </div>

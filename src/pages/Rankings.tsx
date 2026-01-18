@@ -186,7 +186,7 @@ const Rankings = () => {
                                     {rank}
                                 </div>
 
-                                {/* Player Info */}
+                                {/* Player Info  head to head*/}
                                 <Avatar src={player.avatar_url} fallback={player.username} />
 
                                 <div className="flex-1 min-w-0">

@@ -132,7 +132,8 @@
     "current_run": "Aktuelle Serie",
     "streak_wins": "+{{count}} Wins",
     "streak_wins_desc": "Du hast einen Lauf gegen sie!",
-    "streak_losses": "{{count}} Losses",
+    "streak_losses": "{{count}} Niederlage",
+    "streak_losses_plural": "{{count}} Niederlagen",
     "streak_losses_desc": "Zeit für Revanche!",
     "no_streak": "Keine aktive Serie",
     "rivalry": {

@@ -133,7 +133,8 @@
     "current_run": "Racha Actual",
     "streak_wins": "+{{count}} Victorias",
     "streak_wins_desc": "¡Estás en racha contra ellos!",
-    "streak_losses": "{{count}} Derrotas",
+    "streak_losses": "{{count}} Derrota",
+    "streak_losses_plural": "{{count}} Derrotas",
     "streak_losses_desc": "¡Hora de la revancha!",
     "no_streak": "Sin racha activa",
     "rivalry": {

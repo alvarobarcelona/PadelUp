@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import InstallPrompt from '../components/Install/InstallPrompt';
 import IOSInstallGuide from '../components/Install/IOSInstallGuide';
-import AndroidInstallGuide from '../components/Install/AndroidInstallGuide';
+/* import AndroidInstallGuide from '../components/Install/AndroidInstallGuide'; */
 import ClubQR from '../components/QRCode/ClubQR';
 import { Download, Share2 } from 'lucide-react';
 
@@ -57,7 +57,7 @@ const Install = () => {
                             {isAndroid && (
                                 <>
                                     <InstallPrompt />
-                                    <AndroidInstallGuide />
+                                    {/* <AndroidInstallGuide /> */}
                                 </>
                             )}
                             {isIOS && <IOSInstallGuide />}

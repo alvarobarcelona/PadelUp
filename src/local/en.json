@@ -142,7 +142,8 @@
     "current_run": "Current Run",
     "streak_wins": "+{{count}} Wins",
     "streak_wins_desc": "You're on a roll against them!",
-    "streak_losses": "{{count}} Losses",
+    "streak_losses": "{{count}} Loss",
+    "streak_losses_plural": "{{count}} Losses",
     "streak_losses_desc": "Time for revenge!",
     "no_streak": "No active streak",
     "rivalry": {
