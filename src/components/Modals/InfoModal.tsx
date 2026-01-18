@@ -1,4 +1,4 @@
-import { X, Trophy, Users, CheckCircle2 } from 'lucide-react';
+import { Trophy, Users, CheckCircle2 } from 'lucide-react';
 import { useTranslation, Trans } from 'react-i18next';
 
 interface InfoModalProps {
@@ -12,7 +12,7 @@ export const InfoModal = ({ isOpen, onClose }: InfoModalProps) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-12 animate-fade-in overflow-y-auto">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
@@ -21,14 +21,6 @@ export const InfoModal = ({ isOpen, onClose }: InfoModalProps) => {
 
             {/* Modal Content */}
             <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl transition-all animate-scale-in">
-                {/* Close Button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white transition-colors z-10"
-                >
-                    <X size={20} />
-                </button>
-
                 <div className="p-6">
                     <h2 className="text-2xl font-bold text-white mb-6 text-center">
                         {t('info_modal.title')}

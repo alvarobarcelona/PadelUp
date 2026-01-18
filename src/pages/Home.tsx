@@ -426,31 +426,27 @@ const Home = () => {
                             return (
                                 <div key={match.id} className="relative flex flex-col gap-1 rounded-xl bg-yellow-500/10 p-4 border border-yellow-500/30">
                                     {/* Header: Time and Auto-Accept */}
-                                    <div className="flex justify-between items-center pb-2 border-b border-yellow-500/10">
-                                        <div className="flex items-center gap-2">
+                                    <div className="flex justify-between pb-1 border-b border-yellow-500/10">
 
-                                            <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
-                                                <Clock size={12} /> {t('home.auto_accept')}
-                                            </p>
-                                        </div>
+                                        <span className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
+                                            <Clock size={12} /> {t('home.auto_accept')}
+                                        </span>
 
-                                        <span className="text-[10px] text-slate-500 font-mono">{t('home.match_number', { id: match.id })}</span>
-                                        <div>
-                                            <p className="text-[10px] text-slate-400 font-medium">
-                                                {new Date(match.created_at).toLocaleString()}
-                                            </p>
-                                        </div>
-
+                                        <span className="text-[10px] text-slate-500 font-mono">{t('home.match_number', { id: match.id })}</span>                    
                                     </div>
-                                    <div className="flex justify-end pb-2 border-b border-yellow-500/10">  
-                                        <p className="text-[10px] text-slate-400 font-medium">
-                                        {match.creator?.username && (
-                                            <span className="mr-2 text-slate-500">
-                                                {t('home.by')} {match.creator.username}
-                                            </span>
-                                        )}
+                                    <div className="flex justify-end pb-2 border-b border-yellow-500/10">
 
-                                    </p>
+                                        <p className="text-[10px] text-slate-400 font-medium">
+                                            {match.creator?.username && (
+                                                <span className="mr-2 text-slate-500">
+                                                    {t('home.by')} {match.creator.username}
+                                                </span>
+                                            )}
+
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 font-medium">
+                                            {new Date(match.created_at).toLocaleString()}
+                                        </p>
                                     </div>
 
                                     {/* Main Content: Teams vs Score */}
