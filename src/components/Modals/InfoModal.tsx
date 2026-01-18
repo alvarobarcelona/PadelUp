@@ -15,7 +15,7 @@ export const InfoModal = ({ isOpen, onClose }: InfoModalProps) => {
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-12 animate-fade-in overflow-y-auto">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity overflow-y-auto"
                 onClick={onClose}
             />
 

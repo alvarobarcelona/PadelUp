@@ -239,7 +239,7 @@ const NewMatch = () => {
         // --- MANUAL CONFIRMATION ---
         const isConfirmed = await confirm({
             title: t('common.confirm_title') || 'Confirm Action',
-            message: t('home.confirm_prompt') || "Confirm this match result? This will update ELO ratings.",
+            message: t('common.confirm_prompt') || "Confirm this match result? This will update ELO ratings.",
             type: 'confirm',
             confirmText: t('common.confirm') || 'Confirm',
             cancelText: t('common.cancel') || 'Cancel'

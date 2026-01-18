@@ -142,6 +142,9 @@ const Home = () => {
 
                                 if (currentElo !== undefined && prevElo !== undefined) {
                                     points = currentElo - prevElo;
+                                    // Visual Fix: Clamp points based on result to handle out-of-order confirmation anomalies
+                                    if (won && points < 0) points = 0;
+                                    if (!won && points > 0) points = 0;
                                 }
                             }
                             form.push({ id: m.id, won, points });
@@ -432,7 +435,7 @@ const Home = () => {
                                             <Clock size={12} /> {t('home.auto_accept')}
                                         </span>
 
-                                        <span className="text-[10px] text-slate-500 font-mono">{t('home.match_number', { id: match.id })}</span>                    
+                                        <span className="text-[10px] text-slate-500 font-mono">{t('home.match_number', { id: match.id })}</span>
                                     </div>
                                     <div className="flex justify-end pb-2 border-b border-yellow-500/10">
 
@@ -442,8 +445,8 @@ const Home = () => {
                                                     {t('home.by')} {match.creator.username}
                                                 </span>
                                             )}
-
                                         </p>
+
                                         <p className="text-[10px] text-slate-400 font-medium">
                                             {new Date(match.created_at).toLocaleString()}
                                         </p>

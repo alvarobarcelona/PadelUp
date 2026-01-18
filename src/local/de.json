@@ -223,7 +223,7 @@
     "reject": "Ablehnen",
     "edit_player": "Spieler bearbeiten",
     "delete_match": "Spiel löschen",
-    "confirm_delete_match": "Dies LÖSCHT das Spiel und SETZT ELO-Punkte zurück. Sind Sie sicher?",
+    "confirm_delete_match": "Dadurch wird das Spiel gelöscht und die ELO-Punkte werden nur dann zurückgesetzt, wenn das Spiel angenommen wurde. Sind Sie sicher?",
     "confirm_delete_player": "Sind Sie sicher? Dies könnte verknüpfte Spiele beschädigen!",
     "search_placeholder": "Suche nach Benutzer oder ID...",
     "search_match_placeholder": "Filtern nach Spiel-ID...",

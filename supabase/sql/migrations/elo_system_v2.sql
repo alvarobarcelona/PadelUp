@@ -1,5 +1,50 @@
--- Refactored confirm_match to calculate ELO server-side
--- Fixes issue with sequential updates relying on stale snapshots
+-- Migration: ELO System V2 (Server-side Calculation)
+
+-- 1. Helper Functions (elo_utils.sql)
+
+CREATE OR REPLACE FUNCTION public.get_k_factor(matches_played int)
+RETURNS int
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+BEGIN
+  IF matches_played < 10 THEN
+    RETURN 48;
+  ELSIF matches_played < 30 THEN
+    RETURN 32;
+  ELSE
+    RETURN 24;
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.calculate_expected_score(rating_a int, rating_b int)
+RETURNS float
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+BEGIN
+  RETURN 1.0 / (1.0 + power(10.0, (rating_b::float - rating_a::float) / 400.0));
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.calculate_new_rating(
+  current_rating int,
+  actual_score float,
+  expected_score float,
+  k_factor int
+)
+RETURNS int
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+BEGIN
+  RETURN round(current_rating::float + k_factor::float * (actual_score - expected_score))::int;
+END;
+$$;
+
+-- 2. Updated confirm_match Function (confirm_match.sql)
+
 CREATE OR REPLACE FUNCTION public.confirm_match(match_id bigint)
 RETURNS void
 LANGUAGE plpgsql

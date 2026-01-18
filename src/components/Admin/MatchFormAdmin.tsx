@@ -415,7 +415,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
             </div>
 
             <div className="pt-8 space-y-3">
-                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm={t('common.confirm_prompt') || "Are you sure?"}>
+                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm={t('admin.confirm_prompt') || "Are you sure?"}>
                     <Trophy size={20} />
                     {t('admin.save_changes')}
                 </Button>

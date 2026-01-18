@@ -231,7 +231,7 @@
     "edit_player": "Editar Jugador",
     "delete_match": "Eliminar Partido",
     "delete_match_title": "Eliminar Partido",
-    "confirm_delete_match": "Esto ELIMINARÁ el partido y REVERTIRÁ los puntos ELO. ¿Estás seguro?",
+    "confirm_delete_match": "Esto ELIMINARÁ el partido y REVERTIRÁ los puntos ELO solo si el partido fue aceptado. ¿Estás seguro?",
     "confirm_delete_player": "¿Estás seguro? ¡Esto podría romper partidos vinculados a este jugador!",
     "search_placeholder": "Buscar usuario...",
     "search_match_placeholder": "Buscar partido (ID)...",
