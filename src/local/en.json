@@ -107,7 +107,8 @@
     "reject_confirm": "Reject this game? It will be deleted. You can always create a new one. But remember that rejecting it to avoid a drop in your ELO rating may result in a temporary suspension.",
     "subscription_expired_alert": "Your subscription has expired. Please renew to access tournaments.",
     "tournaments": "Tournaments",
-    "diff_of": "Diff of {{diff}}"
+    "diff_of": "Diff of {{diff}}",
+    "by": "by"
   },
   "profile": {
     "title": "My Profile",

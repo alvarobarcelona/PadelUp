@@ -27,6 +27,7 @@ interface MatchPreview {
     commentary?: string | null;
     status: 'pending' | 'confirmed' | 'rejected';
     created_by?: string | null;
+    creator?: { username: string } | null;
     score?: any[];
     // We only need basic info for the feed
     t1p1: { username: string };
@@ -186,7 +187,34 @@ const Home = () => {
                         .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
                         .order('created_at', { ascending: false });
 
-                    if (pending) setPendingMatches(pending as any);
+                    let pendingWithCreators: MatchPreview[] = [];
+
+                    if (pending) {
+                        // Manual fetch for creators to avoid FK issues
+                        const creatorIds = [...new Set(pending.map(m => m.created_by).filter(Boolean))];
+
+                        let creatorsMap: Record<string, string> = {};
+
+                        if (creatorIds.length > 0) {
+                            const { data: creators } = await supabase
+                                .from('profiles')
+                                .select('id, username')
+                                .in('id', creatorIds);
+
+                            if (creators) {
+                                creators.forEach(c => {
+                                    creatorsMap[c.id] = c.username;
+                                });
+                            }
+                        }
+
+                        pendingWithCreators = pending.map((m: any) => ({
+                            ...m,
+                            creator: m.created_by ? { username: creatorsMap[m.created_by] || 'Unknown' } : null
+                        }));
+                    }
+
+                    setPendingMatches(pendingWithCreators);
                 }
             }
 
@@ -399,15 +427,30 @@ const Home = () => {
                                 <div key={match.id} className="relative flex flex-col gap-1 rounded-xl bg-yellow-500/10 p-4 border border-yellow-500/30">
                                     {/* Header: Time and Auto-Accept */}
                                     <div className="flex justify-between items-center pb-2 border-b border-yellow-500/10">
-                                        <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
-                                            <Clock size={12} /> {t('home.auto_accept')}
-                                        </p>
-                                        <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
-                                            {t('home.match_number', { id: match.id })}
-                                        </p>
+                                        <div className="flex items-center gap-2">
+
+                                            <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
+                                                <Clock size={12} /> {t('home.auto_accept')}
+                                            </p>
+                                        </div>
+
+                                        <span className="text-[10px] text-slate-500 font-mono">{t('home.match_number', { id: match.id })}</span>
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-medium">
+                                                {new Date(match.created_at).toLocaleString()}
+                                            </p>
+                                        </div>
+
+                                    </div>
+                                    <div className="flex justify-end pb-2 border-b border-yellow-500/10">  
                                         <p className="text-[10px] text-slate-400 font-medium">
-                                            {new Date(match.created_at).toLocaleString()}
-                                        </p>
+                                        {match.creator?.username && (
+                                            <span className="mr-2 text-slate-500">
+                                                {t('home.by')} {match.creator.username}
+                                            </span>
+                                        )}
+
+                                    </p>
                                     </div>
 
                                     {/* Main Content: Teams vs Score */}

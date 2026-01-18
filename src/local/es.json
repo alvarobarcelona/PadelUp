@@ -98,7 +98,8 @@
     "reject_confirm": "¿Rechazar este partido? Será eliminado. Siempre puedes crear uno nuevo. Recuerda que rechazar para evitar bajar ELO puede resultar en suspensión.",
     "subscription_expired_alert": "Tu suscripción ha caducado. Por favor renueva para acceder a los torneos.",
     "tournaments": "Torneos",
-    "diff_of": "Dif de {{diff}}"
+    "diff_of": "Dif de {{diff}}",
+    "by": "por"
   },
   "profile": {
     "title": "Mi Perfil",

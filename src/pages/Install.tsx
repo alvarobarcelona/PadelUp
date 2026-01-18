@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import InstallPrompt from '../components/Install/InstallPrompt';
 import IOSInstallGuide from '../components/Install/IOSInstallGuide';
+import AndroidInstallGuide from '../components/Install/AndroidInstallGuide';
 import ClubQR from '../components/QRCode/ClubQR';
 import { Download, Share2 } from 'lucide-react';
 
@@ -53,7 +54,12 @@ const Install = () => {
                 <div className="w-full space-y-6">
                     {isMobile ? (
                         <div className="space-y-6">
-                            {isAndroid && <InstallPrompt />}
+                            {isAndroid && (
+                                <>
+                                    <InstallPrompt />
+                                    <AndroidInstallGuide />
+                                </>
+                            )}
                             {isIOS && <IOSInstallGuide />}
                         </div>
                     ) : (
