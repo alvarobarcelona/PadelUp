@@ -22,11 +22,18 @@ const Auth = () => {
     const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>(''); // Default empty or first club
 
+    const [isStandalone, setIsStandalone] = useState(false);
+
     useEffect(() => {
+        // Check if PWA is installed/standalone
+        const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+        if (isInStandaloneMode) {
+            setIsStandalone(true);
+        }
+
         const fetchClubs = async () => {
             const { data } = await supabase.from('clubs').select('*').order('id', { ascending: true });
             if (data) {
-                setClubs(data);
                 setClubs(data);
                 // Default to empty (no club selected)
                 // if (data.length > 0) setSelectedClubId(data[0].id);
@@ -34,6 +41,8 @@ const Auth = () => {
         };
         fetchClubs();
     }, []);
+
+
 
     const getFriendlyErrorMessage = (msg: string) => {
         if (msg.includes('Invalid login credentials')) return t('auth.errors.incorrect_credentials');
@@ -304,16 +313,18 @@ const Auth = () => {
                         <div className="text-xs text-slate-500">{t('auth.support_email')}: padeluppadeleros@gmail.com</div>
                     </div>
 
-                    <div className="pt-6 border-t border-slate-700/50">
-                        <button
-                            type="button"
-                            onClick={() => navigate('/install')}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all text-sm font-medium"
-                        >
-                            <span>📲</span>
-                            {t('auth.install_app', 'Install App')}
-                        </button>
-                    </div>
+                    {!isStandalone && (
+                        <div className="pt-6 border-t border-slate-700/50">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/install')}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all text-sm font-medium"
+                            >
+                                <span>📲</span>
+                                {t('auth.install_app', 'Install App')}
+                            </button>
+                        </div>
+                    )}
                 </form>
             </div>
         </div>
