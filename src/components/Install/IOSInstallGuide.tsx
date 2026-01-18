@@ -7,12 +7,6 @@ const IOSInstallGuide = () => {
             <div className="flex flex-col gap-6 max-w-md mx-auto">
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-white">Install PadelUp</h3>
-                    <button
-                        onClick={() => window.location.reload()} // Simple way to dismiss if needed, or could accept a prop
-                        className="text-slate-400 hover:text-white"
-                    >
-                        ✕
-                    </button>
                 </div>
 
                 <div className="space-y-4">
