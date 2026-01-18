@@ -85,7 +85,7 @@
     "reject": "Rechazar",
     "waiting_opponent": "Esperando confirmación del oponente...",
     "record_match": "Registrar Resultado",
-    "suggestions": "Sugerencias de Jugadores",
+    "suggestions": "Sugerencias Jugadores (Max 10)",
     "get_in_touch": "Contactar",
     "latest_activity": "Última Actividad",
     "match_history": "Historial",
@@ -131,6 +131,7 @@
     "record_against": "Tu récord contra {{name}}",
     "matches_total_wr": "{{count}} partidos en total ({{wr}}% Vic)",
     "current_run": "Racha Actual",
+    "streak_win": "+{{count}} Victoria",
     "streak_wins": "+{{count}} Victorias",
     "streak_wins_desc": "¡Estás en racha contra ellos!",
     "streak_losses": "{{count}} Derrota",
@@ -291,7 +292,8 @@
     "no_matches_found": "No se encontraron partidos para \"{{query}}\"",
     "match_num": "Partido Id: {{id}}",
     "unknown": "Desconocido",
-    "note": "Nota"
+    "note": "Nota",
+    "created_by": "Creado por:"
   },
   "levels": {
     "title": "Niveles ELO",

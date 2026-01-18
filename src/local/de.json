@@ -86,6 +86,7 @@
     "waiting_opponent": "Warte auf Bestätigung des Gegners...",
     "record_match": "Neues Spiel erfassen",
     "suggestions": "Spielervorschläge",
+    "suggestions_limit": "Max 10 Vorschläge",
     "get_in_touch": "Kontaktieren",
     "latest_activity": "Letzte Aktivität",
     "match_history": "Spielverlauf",
@@ -132,8 +133,8 @@
     "current_run": "Aktuelle Serie",
     "streak_wins": "+{{count}} Wins",
     "streak_wins_desc": "Du hast einen Lauf gegen sie!",
-    "streak_losses": "{{count}} Niederlage",
-    "streak_losses_plural": "{{count}} Niederlagen",
+    "streak_losses": "{{count}} Niederl",
+    "streak_losses_plural": "{{count}} Niederl",
     "streak_losses_desc": "Zeit für Revanche!",
     "no_streak": "Keine aktive Serie",
     "rivalry": {
@@ -299,9 +300,10 @@
     "no_matches_recorded": "Noch keine Spiele aufgezeichnet.",
     "record_first": "Erstes Spiel erfassen",
     "no_matches_found": "Keine Spiele gefunden für \"{{query}}\"",
-    "match_num": "Spiel #{{id}}",
+    "match_num": "Spiel Id: {{id}}",
     "unknown": "Unbekannt",
-    "note": "Notiz"
+    "note": "Notiz",
+    "created_by": "Erstellt von:"
   },
   "levels": {
     "title": "ELO-Stufen",

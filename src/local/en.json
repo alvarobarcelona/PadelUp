@@ -95,6 +95,7 @@
     "waiting_opponent": "Waiting for opponent confirmation...",
     "record_match": "Record New Match",
     "suggestions": "Player Suggestions",
+    "suggestions_limit": "Max 10 suggestions",
     "get_in_touch": "Get in\ntouch",
     "latest_activity": "Latest Activity",
     "match_history": "Match history",
@@ -288,9 +289,10 @@
     "no_matches_recorded": "No matches recorded yet.",
     "record_first": "Record first match",
     "no_matches_found": "No matches found matching \"{{query}}\"",
-    "match_num": "Match Id{{id}}",
+    "match_num": "Match Id: {{id}}",
     "unknown": "Unknown",
-    "note": "Note"
+    "note": "Note",
+    "created_by": "Created by:"
   },
   "levels": {
     "title": "ELO Levels",

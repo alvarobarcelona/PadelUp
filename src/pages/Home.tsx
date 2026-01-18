@@ -558,8 +558,9 @@ const Home = () => {
                         {t('home.suggestions')}
                         <span className="text-xs font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
                     </h2>
-                    <div className="flex flex-col gap-3">
-                        {suggestions.map(s => {
+                    <span className="text-xs font-normal text-slate-500 mb-3 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.suggestions_limit', { defaultValue: 'Max 10 suggestions' })}</span>
+                    <div className="flex flex-col gap-3 mt-3">
+                        {suggestions.slice(0, 10).map(s => {
                             const diff = s.elo - (profile?.elo || 0);
                             const diffColor = diff > 0 ? "text-green-400" : diff < 0 ? "text-red-400" : "text-slate-400";
                             const diffText = diff > 0 ? `+${diff}` : diff;
@@ -606,7 +607,7 @@ const Home = () => {
                             {t('home.no_confirmed_matches')}
                         </div>
                     ) : (
-                        recentMatches.map((match) => (
+                        recentMatches.slice(0, 10).map((match) => (
                             <div key={match.id} className="group flex flex-col gap-2 rounded-xl bg-slate-800/60 p-4 border border-slate-800 hover:border-slate-600 transition-all">
                                 <div className=" flex justify-between text-xs text-slate-500">
                                     <span className="text-[10px] text-slate-500">

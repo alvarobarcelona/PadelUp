@@ -14,6 +14,11 @@ Usando esas medias, calculamos cuántos puntos "deberías" ganar (del 0 al 1).
 Si juegas contra alguien de tu mismo nivel, la probabilidad es 0.5 (50/50).
 Si eres muy superior, tu probabilidad se acerca a 1 (ej. 0.9).
 Fórmula: 1 / (1 + 10^((EloRival - TuElo) / 400))
+
+Formula de la curva logistica del fisico húngaro-estadounidense Arpad Elo
+
+Sensibilidad al 400: El divisor "400" es una constante arbitraria elegida por Arpad Elo para que una diferencia de 200 puntos signifique un 76% de probabilidad de victoria para el fuerte, y una diferencia de 400 puntos signifique un 91%
+
 3. Factor K Dinámico (La clave de tu sistema)
 Aquí es donde PadelUp se diferencia. La cantidad de puntos que ganas o pierdes depende de cuántos partidos has jugado tú individualmente.
 
@@ -48,3 +53,43 @@ Aplicando la fórmula con K=48: Cambio = 48 * (1 - 0.5) Cambio = 48 * 0.5 Cambio
 ¿Por qué no +48? Para ganar los 48 puntos completos, el sistema tendría que haber predicho que teníais 0% de posibilidades de ganar (es decir, el Resultado Esperado hubiera sido 0). Como estabais igualados, "la mitad" de los puntos se descuentan porque la victoria entraba dentro de lo probable.
 
 Nota: El marcador (6-3 6-3) no influye en la cantidad de puntos ELO en este sistema estándar, solo importa quién ganó (1) o perdió (0).
+
+
+
+
+
+########EJEMPLO PRACTICO REAL
+
+
+Vamos a calcularlo con los datos exactos del ejemplo:
+
+1. Promedios de Equipo
+Primero definimos el nivel de cada pareja.
+
+Equipo Ganador (Álvaro & Víctor):
+(1148 + 1150) / 2 = 1149 (Promedio)
+Equipo Perdedor (Carlos & Compañero 1152):
+(1124 + 1152) / 2 = 1138 (Promedio)
+2. La Probabilidad (La Expectativa)
+El sistema compara el 1149 vs 1138. El Equipo Ganador es ligeramente favorito (+11 puntos de ventaja media).
+
+Probabilidad teórica de victoria: 51.58%
+Probabilidad de haber perdido: 48.42%
+El sistema "esperaba" que ganarais un poco más de la mitad de las veces.
+
+3. El Cálculo de Puntos
+Aplicamos el Factor K = 48.
+
+La fórmula es: K * (ResultadoReal - Probabilidad)
+Juego: 48 * (1 - 0.5158)
+Cálculo: 48 * 0.4842 = 23.24 puntos
+Resultado Final
+Al redondear (normalmente al entero más cercano):
+
+Ganadores (Álvaro y Víctor): Suman +23 puntos cada uno.
+Álvaro sube a 1171
+Víctor sube a 1173
+Perdedores (Carlos y Pareja): Restan -23 puntos cada uno.
+Carlos baja a 1101
+Pareja baja a 1129
+Resumen: Como ganasteis a un equipo teóricamente un pelín inferior (1149 vs 1138), ganáis un poco menos del máximo posible (que sería 24 puntos si fuera un empate 50/50 exacto, o más si hubierais ganado a alguien mejor). Si hubierais perdido contra ellos, el golpe habría sido mayor (aprox -25 puntos).
