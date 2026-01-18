@@ -99,8 +99,8 @@
     "latest_activity": "Latest Activity",
     "match_history": "Match history",
     "no_confirmed_matches": "No recent confirmed matches found.",
-    "match_label": "Match: {{id}}",
-    "confirm_prompt": "Confirm this match result? The match will be visible to the opponent for confirmation.",
+    "match_label": "Match Id: {{id}}",
+    "confirm_prompt": "Confirm this match result? This will update ELO ratings.",
     "reject_reason_prompt": "Please provide a reason for rejecting this match (Required):",
     "reject_reason_required": "Rejection reason is required.",
     "reject_title": "Reject Match",
@@ -108,7 +108,7 @@
     "subscription_expired_alert": "Your subscription has expired. Please renew to access tournaments.",
     "tournaments": "Tournaments",
     "diff_of": "Diff of {{diff}}",
-    "by": "by"
+    "by": "Created by:"
   },
   "profile": {
     "title": "My Profile",
@@ -287,7 +287,7 @@
     "no_matches_recorded": "No matches recorded yet.",
     "record_first": "Record first match",
     "no_matches_found": "No matches found matching \"{{query}}\"",
-    "match_num": "Match #{{id}}",
+    "match_num": "Match Id{{id}}",
     "unknown": "Unknown",
     "note": "Note"
   },

@@ -297,7 +297,7 @@ const Auth = () => {
                                 setIsLogin(!isLogin);
                                 setIsForgotPassword(false);
                             }}
-                            className="text-sm text-slate-500 hover:text-green-400 transition-colors"
+                            className="text-sm text-green-400"
                         >
                             {isLogin ? t('auth.no_account') : t('auth.has_account')}
                         </button>

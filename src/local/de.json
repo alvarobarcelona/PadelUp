@@ -90,15 +90,15 @@
     "latest_activity": "Letzte Aktivität",
     "match_history": "Spielverlauf",
     "no_confirmed_matches": "Keine kürzlich bestätigten Spiele gefunden.",
-    "match_label": "Spiel: {{id}}",
-    "confirm_prompt": "Dieses Spielergebnis bestätigen? Dies wird das Spiel für den Gegner sichtbar machen, um die Ergebnisse zu bestätigen.",
+    "match_label": "Spiel Id: {{id}}",
+    "confirm_prompt": "Dieses Spielergebnis bestätigen? Dies wird die ELO-Bewertung aktualisieren.",
     "reject_reason_prompt": "Bitte geben Sie einen Grund für die Ablehnung des Spiels an (Erforderlich):",
     "reject_reason_required": "Ablehnungsgrund ist erforderlich.",
     "reject_title": "Ablehnen",
     "reject_confirm": "Dieses Spiel ablehnen? Es wird gelöscht. Sie können immer ein neues erstellen. Bedenken Sie, dass die Ablehnung zur Vermeidung eines ELO-Abstiegs zu einer vorübergehenden Sperrung führen kann.",
     "subscription_expired_alert": "Ihr Abonnement ist abgelaufen. Bitte erneuern Sie es, um auf Turniere zugreifen zu können.",
     "diff_of": "Diff {{diff}}",
-    "by": "von"
+    "by": "Erstellt von: "
   },
   "profile": {
     "title": "Mein Profil",
