@@ -47,7 +47,7 @@ BEGIN
     LIMIT limit_count
   ),
   rejected AS (
-    SELECT
+    SELECT DISTINCT ON (id)
       -- Safe cast for ID (assuming it might be string in JSON)
       COALESCE((al.details->'match_snapshot'->>'id')::bigint, 0) as id,
       al.created_at,
@@ -68,7 +68,7 @@ BEGIN
         al.details->'match_snapshot'->>'team2_p1' = id_input::text OR
         al.details->'match_snapshot'->>'team2_p2' = id_input::text
       )
-    ORDER BY al.created_at DESC
+    ORDER BY id, al.created_at DESC
     LIMIT limit_count
   )
   SELECT * FROM confirmed

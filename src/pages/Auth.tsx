@@ -105,7 +105,7 @@ const Auth = () => {
 
         try {
             if (isLogin) {
-                const { error, data } = await supabase.auth.signInWithPassword({
+                const { error } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
@@ -117,10 +117,10 @@ const Auth = () => {
                     throw error;
                 }
 
-                // LOG LOGIN
-                if (data.user) {
+                // LOG LOGIN desactivated for the moment (a lot of logs)
+                /*if (data.user) {
                     logActivity('USER_LOGIN', data.user.id, { email });
-                }
+                }*/
 
                 navigate('/');
             } else {

@@ -11,7 +11,7 @@ DECLARE
   rejector_id uuid;
 BEGIN
   -- Get match data
-  SELECT * INTO m FROM public.matches WHERE id = match_id;
+  SELECT * INTO m FROM public.matches WHERE id = match_id FOR UPDATE;
   
   -- Validation
   IF m.status != 'pending' THEN
