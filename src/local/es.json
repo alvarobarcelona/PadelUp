@@ -293,7 +293,16 @@
     "match_num": "Partido Id: {{id}}",
     "unknown": "Desconocido",
     "note": "Nota",
-    "created_by": "Creado por:"
+    "created_by": "Creado por:",
+    "recent_activity": "Actividad Reciente",
+    "no_recent_matches": "No se encontraron partidos recientes.",
+    "rejected": "RECHAZADO",
+    "victory": "VICTORIA",
+    "defeat": "DERROTA",
+    "rejection_reason": "MOTIVO DEL RECHAZO",
+    "rejected_by": "Rechazado por:",
+    "confirmed_by": "Aceptado por:",
+    "close": "Cerrar"
   },
   "levels": {
     "title": "Niveles ELO",

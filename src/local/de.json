@@ -303,7 +303,16 @@
     "match_num": "Spiel Id: {{id}}",
     "unknown": "Unbekannt",
     "note": "Notiz",
-    "created_by": "Erstellt von:"
+    "created_by": "Erstellt von:",
+    "recent_activity": "Kürzliche Aktivität",
+    "no_recent_matches": "Keine kürzlichen Spiele gefunden.",
+    "rejected": "ABGELEHNT",
+    "victory": "SIEG",
+    "defeat": "NIEDERLAGE",
+    "rejection_reason": "GRUND FÜR ABLEHNUNG",
+    "rejected_by": "Abgelehnt von:",
+    "confirmed_by": "Bestätigt von:",
+    "close": "Schließen"
   },
   "levels": {
     "title": "ELO-Stufen",

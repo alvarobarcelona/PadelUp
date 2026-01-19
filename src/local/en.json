@@ -292,7 +292,15 @@
     "match_num": "Match Id: {{id}}",
     "unknown": "Unknown",
     "note": "Note",
-    "created_by": "Created by:"
+    "created_by": "Created by:",
+    "recent_activity": "Recent Activity",
+    "no_recent_matches": "No recent matches found.",
+    "rejected": "REJECTED",
+    "victory": "VICTORY",
+    "defeat": "DEFEAT",
+    "rejection_reason": "REJECTION REASON",
+    "rejected_by": "Rejected by:",
+    "confirmed_by": "Confirmed by:"
   },
   "levels": {
     "title": "ELO Levels",

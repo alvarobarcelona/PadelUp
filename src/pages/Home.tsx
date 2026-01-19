@@ -10,6 +10,7 @@ import { InfoModal } from '../components/Modals/InfoModal';
 import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { MatchHistoryModal } from '../components/Modals/MatchHistoryModal';
 
 interface Profile {
     id: string;
@@ -51,6 +52,7 @@ const Home = () => {
     const [, setLoading] = useState(true);
     const [showWelcome, setShowWelcome] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
 
     useEffect(() => {
         loadDashboardData();
@@ -308,6 +310,7 @@ const Home = () => {
         <div className="space-y-6 animate-fade-in relative z-10 pb-20">
             <WelcomeModal isOpen={showWelcome} onClose={handleCloseWelcome} />
             <InfoModal isOpen={showInfo} onClose={() => setShowInfo(false)} />
+            <MatchHistoryModal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} userId={profile?.id} />
             <header className="flex items-center justify-between">
                 <div>
                     <div className="flex items-center gap-2">
@@ -371,7 +374,10 @@ const Home = () => {
                     </div>
 
                     {/* Recent played */}
-                    <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">
+                    <div
+                        onClick={() => setShowHistoryModal(true)}
+                        className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg cursor-pointer hover:border-slate-500 transition-colors group"
+                    >
                         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">{t('home.recent_played')}</p>
                         <div className="flex flex-col gap-2 mt-2">
                             {recentForm.length === 0 ? (
@@ -395,7 +401,10 @@ const Home = () => {
                                 ))
                             )}
                         </div>
-                        <p className="text-[10px] text-slate-500 mt-2 font-medium">{t('home.last_5')}</p>
+                        <p className="text-[10px] text-slate-500 mt-2 font-medium group-hover:text-green-400 transition-colors flex items-center justify-between">
+                            {t('home.last_5')}
+                            <Info size={12} />
+                        </p>
                     </div>
                 </div>
 
