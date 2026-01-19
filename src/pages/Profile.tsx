@@ -528,7 +528,7 @@ const Profile = () => {
                         <BarChart3 size={16} />
                         {t('profile.performance_trend')}
                     </h3>
-                    <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] text-center bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">
                         {selectedYear === 'all' ? t('profile.last_20') : t('profile.year', { year: selectedYear })}
                     </span>
                 </div>

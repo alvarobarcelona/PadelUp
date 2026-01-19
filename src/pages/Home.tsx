@@ -565,7 +565,7 @@ const Home = () => {
                     <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                         <User size={18} className="text-blue-400" />
                         {t('home.suggestions')}
-                        <span className="text-xs font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
+                        <span className="text-xs text-center font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
                     </h2>
                     <span className="text-xs font-normal text-slate-500 mb-3 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.suggestions_limit', { defaultValue: 'Max 10 suggestions' })}</span>
                     <div className="flex flex-col gap-3 mt-3">
