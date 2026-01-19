@@ -142,6 +142,23 @@ const Settings = () => {
 
             if (!user) throw new Error('No user found');
 
+            // Check if username exists (case-insensitive)
+            const { data: existingUser } = await supabase
+                .from('profiles')
+                .select('id')
+                .ilike('username', newUsername)
+                .neq('id', user.id)
+                .maybeSingle();
+
+            if (existingUser) {
+                await alert({
+                    title: t("settings.usernameTakenTitle"),
+                    message: t("settings.usernameTakenMessage"),
+                    type: 'warning'
+                });
+                return;
+            }
+
             const { error } = await supabase
                 .from('profiles')
                 .update({
