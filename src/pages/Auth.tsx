@@ -151,16 +151,12 @@ const Auth = () => {
                             username: username,
                             email: email,
                             first_name: firstName,
-                            last_name: lastName
+                            last_name: lastName,
+                            main_club_id: selectedClubId
                         }
                     }
                 });
                 if (error) throw error;
-
-                // UPDATE PROFILE WITH CLUB
-                if (data.user && selectedClubId) {
-                    await supabase.from('profiles').update({ main_club_id: selectedClubId }).eq('id', data.user.id);
-                }
 
                 // LOG REGISTER
                 if (data.user) {
