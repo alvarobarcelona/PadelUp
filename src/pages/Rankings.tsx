@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 interface Player {
     id: string;
     username: string;
+    first_name?: string;
+    last_name?: string;
     avatar_url: string | null;
     elo: number;
     main_club_id: number | null;
@@ -88,7 +90,8 @@ const Rankings = () => {
 
 
     const filteredPlayers = players.filter(player => {
-        const matchesSearch = normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery));
+        const matchesSearch = normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery)) ||
+            normalizeForSearch(`${player.first_name || ''} ${player.last_name || ''}`).includes(normalizeForSearch(searchQuery));
         const matchesClub = selectedClubId === 'all' || player.main_club_id === Number(selectedClubId);
         return matchesSearch && matchesClub;
     });
@@ -208,17 +211,19 @@ const Rankings = () => {
                                 </div>
 
                                 {/* Crown for #1 */}
-                                {rank === 1 && (
-                                    <div className="absolute -top-2 -right-2 rotate-12 text-yellow-400">
-                                        <Crown size={24} fill="currentColor" />
-                                    </div>
-                                )}
+                                {
+                                    rank === 1 && (
+                                        <div className="absolute -top-2 -right-2 rotate-12 text-yellow-400">
+                                            <Crown size={24} fill="currentColor" />
+                                        </div>
+                                    )
+                                }
                             </Link>
                         );
                     })
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

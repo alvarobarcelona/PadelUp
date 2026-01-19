@@ -36,6 +36,8 @@ const Profile = () => {
         id: string;
         username: string;
         email: string;
+        first_name?: string;
+        last_name?: string;
         elo: number;
         avatar_url: string | null;
         is_admin?: boolean;
@@ -72,6 +74,8 @@ const Profile = () => {
                 id: profileData.id,
                 username: profileData.username,
                 email: authUser.email || '',
+                first_name: profileData.first_name,
+                last_name: profileData.last_name,
                 elo: profileData.elo,
                 avatar_url: profileData.avatar_url,
                 is_admin: profileData.is_admin
@@ -406,6 +410,11 @@ const Profile = () => {
                             </span>
                         )}
                     </h2>
+                    {(profile.first_name || profile.last_name) && (
+                        <p className="text-lg text-slate-300 font-medium">
+                            {profile.first_name} {profile.last_name}
+                        </p>
+                    )}
                     <p className="text-sm font-medium text-slate-400">{profile.email}</p>
                 </div>
                 <div className="rounded-full bg-slate-700/50 px-4 py-1.5 text-sm font-bold border border-green-500/20 text-white flex items-center gap-2">

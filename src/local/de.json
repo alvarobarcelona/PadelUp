@@ -2,6 +2,7 @@
   "settings": {
     "title": "Einstellungen",
     "account": "Konto",
+    "username": "Benutzername / Spielername",
     "security": "Sicherheit & Passwort",
     "preferences": "Einstellungen",
     "subscription": "Aboniert bis",
@@ -34,8 +35,10 @@
     "welcome_back": "Willkommen zurück, Champion",
     "join_club": "Tritt dem Club bei",
     "reset_password_title": "Passwort zurücksetzen",
-    "username": "Benutzername",
+    "username": "Benutzername / Spielername",
     "email": "E-Mail",
+    "first_name": "Vorname",
+    "last_name": "Nachname",
     "support_email": "Support E-Mail",
     "password": "Passwort",
     "forgot_password": "Vergessen?",
@@ -132,7 +135,7 @@
     "matches_total_wr": "{{count}} Spiele insgesamt ({{wr}}% Siegquote)",
     "current_run": "Aktuelle Serie",
     "streak_wins": "+{{count}} Wins",
-    "streak_wins_desc": "Du hast einen Lauf gegen sie!",
+    "streak_wins_desc": "Du hast einen Lauf!",
     "streak_losses": "{{count}} Niederl",
     "streak_losses_plural": "{{count}} Niederl",
     "streak_losses_desc": "Zeit für Revanche!",
@@ -369,7 +372,9 @@
     "new_message": "neue Nachricht",
     "loading_chat": "Lade Chat...",
     "start_conversation": "Starte eine Unterhaltung mit {{name}}!",
-    "type_message": "Nachricht eingeben..."
+    "type_message": "Nachricht eingeben...",
+    "delete_conversation": "Konversation löschen",
+    "confirm_delete_conversation": "Sind Sie sicher, dass Sie diese Konversation löschen möchten? Sie wird nur für Sie gelöscht."
   },
   "welcome_modal": {
     "title": "Willkommen bei PadelUp",

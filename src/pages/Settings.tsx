@@ -25,7 +25,7 @@ const Settings = () => {
     const { alert, confirm } = useModal();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
-    const [profile, setProfile] = useState<{ username: string, email: string, subscription_end_date: string | null, main_club_id: number | null } | null>(null);
+    const [profile, setProfile] = useState<{ username: string, first_name: string, last_name: string, email: string, subscription_end_date: string | null, main_club_id: number | null } | null>(null);
     const [clubs, setClubs] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -34,6 +34,8 @@ const Settings = () => {
     // Editing State
     const [isEditing, setIsEditing] = useState(false);
     const [newUsername, setNewUsername] = useState('');
+    const [newFirstName, setNewFirstName] = useState('');
+    const [newLastName, setNewLastName] = useState('');
     const [newDescClub, setNewDescClub] = useState<number | string>('');
 
     // Password Change State
@@ -89,17 +91,22 @@ const Settings = () => {
         if (user) {
             const { data } = await supabase
                 .from('profiles')
-                .select('username, notifications_enabled, subscription_end_date, main_club_id')
+                .select('username, first_name, last_name, notifications_enabled, subscription_end_date, main_club_id')
                 .eq('id', user.id)
                 .single();
 
             setProfile({
                 username: data?.username || '',
+                first_name: data?.first_name || '',
+                last_name: data?.last_name || '',
                 email: user.email || '',
                 subscription_end_date: data?.subscription_end_date || null,
                 main_club_id: data?.main_club_id || null
             });
             setNewDescClub(data?.main_club_id || '');
+            setNewUsername(data?.username || '');
+            setNewFirstName(data?.first_name || '');
+            setNewLastName(data?.last_name || '');
 
             /*   setNewUsername(data?.username || '');
               if (data?.notifications_enabled !== undefined) {
@@ -139,6 +146,8 @@ const Settings = () => {
                 .from('profiles')
                 .update({
                     username: newUsername,
+                    first_name: newFirstName,
+                    last_name: newLastName,
                     main_club_id: newDescClub ? Number(newDescClub) : null
                 })
                 .eq('id', user.id);
@@ -148,6 +157,8 @@ const Settings = () => {
             setProfile({
                 ...profile,
                 username: newUsername,
+                first_name: newFirstName,
+                last_name: newLastName,
                 main_club_id: newDescClub ? Number(newDescClub) : null
             });
             setIsEditing(false);
@@ -161,14 +172,14 @@ const Settings = () => {
             // Check for Postgres Unique Violation (code 23505)
             if (error?.code === '23505') {
                 await alert({
-                    title: 'Username Taken',
-                    message: 'That username is already taken. Please choose another one.',
+                    title: t("settings.usernameTakenTitle"),
+                    message: t("settings.usernameTakenMessage"),
                     type: 'warning'
                 });
             } else {
                 await alert({
-                    title: 'Error',
-                    message: `Error updating profile: ${error.message || 'Unknown error'}`,
+                    title: t("settings.error"),
+                    message: t("settings.errorUpdatingProfile"),
                     type: 'danger'
                 });
             }
@@ -320,6 +331,7 @@ const Settings = () => {
                                     ) : (
                                         <>
                                             <p className="font-medium text-white">{profile?.username || t('common.loading')}</p>
+                                            <p className="text-xs text-slate-400">{t('settings.username')}</p>
                                             <p className="text-xs text-slate-400">{profile?.email}</p>
                                         </>
                                     )}
@@ -341,6 +353,9 @@ const Settings = () => {
                                             onClick={() => {
                                                 setIsEditing(false);
                                                 setNewUsername(profile?.username || '');
+                                                setNewFirstName(profile?.first_name || '');
+                                                setNewLastName(profile?.last_name || '');
+                                                setNewDescClub(profile?.main_club_id || '');
                                             }}
                                             className="p-2 text-red-400 hover:bg-red-500/10 rounded-full transition-colors"
                                         >
@@ -355,6 +370,60 @@ const Settings = () => {
                                         {t('settings.edit')}
                                     </button>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* First Name Edit Row */}
+                        <div className="w-full flex items-center justify-between p-4 border-b border-slate-700/50">
+                            <div className="flex items-center gap-3 flex-1">
+                                <div className="p-2 rounded-full bg-blue-500/10 text-blue-400">
+                                    <User size={20} />
+                                </div>
+                                <div className="text-left flex-1">
+                                    {isEditing ? (
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase text-slate-500 font-bold">{t('auth.first_name')}</label>
+                                            <input
+                                                type="text"
+                                                value={newFirstName}
+                                                onChange={(e) => setNewFirstName(e.target.value)}
+                                                className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="font-medium text-white">{profile?.first_name || '-'}</p>
+                                            <p className="text-xs text-slate-400">{t('auth.first_name')}</p>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Last Name Edit Row */}
+                        <div className="w-full flex items-center justify-between p-4 border-b border-slate-700/50">
+                            <div className="flex items-center gap-3 flex-1">
+                                <div className="p-2 rounded-full bg-blue-500/10 text-blue-400">
+                                    <User size={20} />
+                                </div>
+                                <div className="text-left flex-1">
+                                    {isEditing ? (
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase text-slate-500 font-bold">{t('auth.last_name')}</label>
+                                            <input
+                                                type="text"
+                                                value={newLastName}
+                                                onChange={(e) => setNewLastName(e.target.value)}
+                                                className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="font-medium text-white">{profile?.last_name || '-'}</p>
+                                            <p className="text-xs text-slate-400">{t('auth.last_name')}</p>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

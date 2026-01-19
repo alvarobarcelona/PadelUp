@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, Send, Loader2, ArrowLeft, MessageSquarePlus } from 'lucide-react';
+import { X, Send, Loader2, ArrowLeft, MessageSquarePlus, Trash2 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '../ui/Button';
 import { useChat } from '../../context/ChatContext';
+import { useModal } from '../../context/ModalContext';
 import { useTranslation } from 'react-i18next';
 
 interface Message {
@@ -16,6 +17,8 @@ interface Message {
         username: string;
         avatar_url: string | null;
     };
+    deleted_by_sender?: boolean;
+    deleted_by_receiver?: boolean;
 }
 
 interface ConversationUser {
@@ -36,6 +39,7 @@ interface ChatDrawerProps {
 
 const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatDrawerProps) => {
     const { t } = useTranslation();
+    const { confirm } = useModal();
     const [view, setView] = useState<'list' | 'chat'>('list');
     const [activeChatUser, setActiveChatUser] = useState<ConversationUser | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -110,26 +114,28 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
             // 1. Get IDs of people who sent us messages
             const { data: incoming } = await supabase
                 .from('messages')
-                .select('sender_id, created_at, content, is_read')
+                .select('sender_id, created_at, content, is_read, deleted_by_receiver')
                 .eq('receiver_id', user.id)
                 .order('created_at', { ascending: false });
 
             // 2. Get IDs of people we sent messages to
             const { data: outgoing } = await supabase
                 .from('messages')
-                .select('receiver_id, created_at, content')
+                .select('receiver_id, created_at, content, deleted_by_sender')
                 .eq('sender_id', user.id)
                 .order('created_at', { ascending: false });
 
             const interactionMap = new Map<string, { last_msg: string, time: string }>();
 
             incoming?.forEach(msg => {
+                if (msg.deleted_by_receiver) return; // Skip deleted
                 if (!interactionMap.has(msg.sender_id)) {
                     interactionMap.set(msg.sender_id, { last_msg: msg.content, time: msg.created_at });
                 }
             });
 
             outgoing?.forEach(msg => {
+                if (msg.deleted_by_sender) return; // Skip deleted
                 const existing = interactionMap.get(msg.receiver_id);
                 // If no existing or this message is newer
                 if (!existing || new Date(msg.created_at) > new Date(existing.time)) {
@@ -184,7 +190,11 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
             .limit(50);
 
         if (!error && data) {
-            const mappedMessages = data.map((msg: any) => ({
+            const mappedMessages = data.filter((msg: any) => {
+                if (msg.sender_id === user.id && msg.deleted_by_sender) return false;
+                if (msg.receiver_id === user.id && msg.deleted_by_receiver) return false;
+                return true;
+            }).map((msg: any) => ({
                 ...msg,
                 sender: msg.sender
             }));
@@ -279,6 +289,42 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         fetchConversations();
     };
 
+    const deleteConversation = async (e: React.MouseEvent, otherUserId: string) => {
+        e.stopPropagation();
+
+        const confirmed = await confirm({
+            title: t('chat.delete_conversation'),
+            message: t('chat.confirm_delete_conversation'),
+            type: 'danger',
+            confirmText: t('common.confirm'),
+            cancelText: t('common.cancel')
+        });
+
+        if (!confirmed) return;
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Mark sent messages as deleted
+        await supabase
+            .from('messages')
+            .update({ deleted_by_sender: true })
+            .eq('sender_id', user.id)
+            .eq('receiver_id', otherUserId);
+
+        // Mark received messages as deleted
+        await supabase
+            .from('messages')
+            .update({ deleted_by_receiver: true })
+            .eq('receiver_id', user.id)
+            .eq('sender_id', otherUserId);
+
+        fetchConversations();
+        if (activeChatUser?.id === otherUserId) {
+            handleBackToList();
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -328,8 +374,8 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
 
                                 <div
                                     key={conv.id}
+                                    className="group relative flex items-center gap-4 p-4 rounded-xl bg-slate-800/30 border border-transparent hover:border-slate-700 hover:bg-slate-800/80 cursor-pointer transition-all"
                                     onClick={() => loadUserForChat(conv.id)}
-                                    className="flex items-center gap-4 p-4 rounded-xl bg-slate-800/30 border border-transparent hover:border-slate-700 hover:bg-slate-800/80 cursor-pointer transition-all"
                                 >
                                     <Avatar src={conv.avatar_url} fallback={conv.username} />
                                     <div className="flex-1 min-w-0">
@@ -344,6 +390,14 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                         <p className="text-sm text-slate-400 truncate">{conv.last_message}</p>
 
                                     </div>
+
+                                    <button
+                                        onClick={(e) => deleteConversation(e, conv.id)}
+                                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                                        title={t('chat.delete_conversation')}
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
                                 </div>
                             ))
                         )}
@@ -425,7 +479,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                     </>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

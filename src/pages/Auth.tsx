@@ -17,6 +17,8 @@ const Auth = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [clubs, setClubs] = useState<any[]>([]);
@@ -147,7 +149,9 @@ const Auth = () => {
                         emailRedirectTo: window.location.origin,
                         data: {
                             username: username,
-                            email: email
+                            email: email,
+                            first_name: firstName,
+                            last_name: lastName
                         }
                     }
                 });
@@ -210,6 +214,32 @@ const Auth = () => {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                             />
+                        </div>
+                    )}
+
+                    {/* Name Fields */}
+                    {!isLogin && !isForgotPassword && (
+                        <div className="flex gap-2 mb-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-slate-400">{t('auth.first_name')}</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="mt-1 block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 transition-colors"
+                                    value={firstName}
+                                    onChange={(e) => setFirstName(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-slate-400">{t('auth.last_name')}</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="mt-1 block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 transition-colors"
+                                    value={lastName}
+                                    onChange={(e) => setLastName(e.target.value)}
+                                />
+                            </div>
                         </div>
                     )}
 
