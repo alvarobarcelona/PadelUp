@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { getMatchPointsFromHistory } from '../lib/elo';
 import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
 import { logActivity, ACTIVITY_ACTIONS, type ActivityAction } from '../lib/logger';
+import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
 
@@ -22,8 +23,9 @@ const Admin = () => {
     const [loading, setLoading] = useState(true);
     const [players, setPlayers] = useState<any[]>([]);
     const [matches, setMatches] = useState<any[]>([]);
+    const [clubs, setClubs] = useState<any[]>([]);
     const [logs, setLogs] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'direct_match' | 'activity'>('pending');
+    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity'>('pending');
 
     // Search State
     const [memberSearch, setMemberSearch] = useState('');
@@ -32,6 +34,11 @@ const Admin = () => {
 
     // Edit State
     const [editingPlayer, setEditingPlayer] = useState<any | null>(null);
+
+    // Create Club State
+    const [newClubName, setNewClubName] = useState('');
+    const [newClubLocation, setNewClubLocation] = useState('');
+    const [editingClub, setEditingClub] = useState<any | null>(null);
 
     // Activity Filter State
     const [selectedActions, setSelectedActions] = useState<ActivityAction[]>([...ACTIVITY_ACTIONS]);
@@ -61,6 +68,7 @@ const Admin = () => {
         // Fetch all profiles
         const { data: p } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
         const { data: m } = await supabase.from('matches').select('*').order('created_at', { ascending: false });
+        const { data: c } = await supabase.from('clubs').select('*').order('id', { ascending: true });
 
         // Fetch Logs (last 50)
         const { data: l } = await supabase
@@ -74,6 +82,7 @@ const Admin = () => {
 
         if (p) setPlayers(p);
         if (m) setMatches(m);
+        if (c) setClubs(c);
         if (l) setLogs(l);
         setLoading(false);
     };
@@ -87,11 +96,24 @@ const Admin = () => {
         });
         if (!confirmed) return;
 
-        const { error } = await supabase.from('profiles').delete().eq('id', id);
-        if (error) {
-            await alert({ title: 'Error', message: error.message, type: 'danger' });
-        } else {
+        setLoading(true);
+        try {
+            const { error }: any = await supabase.functions.invoke('delete-user', {
+                body: { user_id: id }
+            });
+
+            if (error) throw new Error(error.message || 'Failed to delete user');
+
+            // LOG ADMIN DELETE USER
+            logActivity('ADMIN_DELETE_USER', id, { deleted_id: id });
+
+            await alert({ title: 'Success', message: 'User deleted permanently.', type: 'success' });
             fetchData();
+        } catch (error: any) {
+            console.error(error);
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -115,11 +137,29 @@ const Admin = () => {
 
             if (matchError) throw matchError;
 
-            await revertEloForMatch(match);
+            if (match.status === 'confirmed') {
+                await revertEloForMatch(match);
+            }
 
             // 4. Delete the match path
             const { error: deleteError } = await supabase.from('matches').delete().eq('id', id);
             if (deleteError) throw deleteError;
+
+            // 5. Sync Achievements for all involved players (Reverts if needed)
+            if (match.status === 'confirmed') {
+                const { syncAchievements } = await import('../lib/achievements');
+                const players = [match.team1_p1, match.team1_p2, match.team2_p1, match.team2_p2];
+                try {
+                    await Promise.all(players.map(pid => syncAchievements(pid)));
+                } catch (syncError: any) {
+                    console.error("Achievement Sync Failed:", syncError);
+                    await alert({
+                        title: 'Warning',
+                        message: 'Match deleted but Achievement sync failed (likely permission error). Points reverted correctly.',
+                        type: 'danger'
+                    });
+                }
+            }
 
             // LOG ADMIN DELETE MATCH
             logActivity('ADMIN_DELETE_MATCH', id.toString(), {
@@ -144,6 +184,73 @@ const Admin = () => {
         }
     };
 
+    const handleCreateClub = async () => {
+        if (!newClubName.trim()) return;
+        setLoading(true);
+        try {
+            const { error } = await supabase.from('clubs').insert({
+                name: newClubName,
+                location: newClubLocation
+            });
+            if (error) throw error;
+
+            await alert({ title: 'Success', message: 'Club created!', type: 'success' });
+            setNewClubName('');
+            setNewClubLocation('');
+            fetchData();
+        } catch (error: any) {
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteClub = async (id: number) => {
+        const confirmed = await confirm({
+            title: t('admin.delete_club_confirm') || 'Delete Club?',
+            message: 'This cannot be undone.',
+            type: 'danger',
+            confirmText: 'Delete'
+        });
+        if (!confirmed) return;
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.from('clubs').delete().eq('id', id);
+            if (error) throw error;
+            await alert({ title: 'Success', message: 'Club deleted', type: 'success' });
+            fetchData();
+        } catch (error: any) {
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateClub = async () => {
+        if (!editingClub || !editingClub.name.trim()) return;
+        setLoading(true);
+        try {
+            const { error } = await supabase
+                .from('clubs')
+                .update({
+                    name: editingClub.name,
+                    location: editingClub.location
+                })
+                .eq('id', editingClub.id);
+
+            if (error) throw error;
+
+            await alert({ title: 'Success', message: 'Club updated!', type: 'success' });
+            setEditingClub(null);
+            fetchData();
+        } catch (error: any) {
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const revertEloForMatch = async (match: any) => {
         // Use History Replay to find exact points exchanged
         const replayData = getMatchPointsFromHistory(matches, match.id);
@@ -152,7 +259,7 @@ const Admin = () => {
             throw new Error('Could not calculate historic match points. Aborting.');
         }
 
-        const { points } = replayData;
+        const { diffs } = replayData; // Expecting { p1: number, p2: number... }
 
         // Fetch CURRENT profiles to update
         const playerIds = [match.team1_p1, match.team1_p2, match.team2_p1, match.team2_p2];
@@ -170,26 +277,16 @@ const Admin = () => {
 
         if (!p1 || !p2 || !p3 || !p4) throw new Error('Could not find all players to revert ELO.');
 
-        if (match.winner_team === 1) {
-            // T1 won, so they gained points. We must SUBTRACT.
-            // T2 lost, so they lost points. We must ADD.
-            await Promise.all([
-                supabase.from('profiles').update({ elo: p1.elo - points }).eq('id', p1.id),
-                supabase.from('profiles').update({ elo: p2.elo - points }).eq('id', p2.id),
-                supabase.from('profiles').update({ elo: p3.elo + points }).eq('id', p3.id),
-                supabase.from('profiles').update({ elo: p4.elo + points }).eq('id', p4.id)
-            ]);
-        } else {
-            // T2 won, gained points. SUBTRACT.
-            // T1 lost, lost points. ADD.
-            await Promise.all([
-                supabase.from('profiles').update({ elo: p1.elo + points }).eq('id', p1.id),
-                supabase.from('profiles').update({ elo: p2.elo + points }).eq('id', p2.id),
-                supabase.from('profiles').update({ elo: p3.elo - points }).eq('id', p3.id),
-                supabase.from('profiles').update({ elo: p4.elo - points }).eq('id', p4.id)
-            ]);
-        }
-        return points;
+        // Revert: Subtract the diff that was applied.
+        // If p1 gained +20, we subtract 20. If p1 lost -10, we subtract -10 (add 10).
+        // The replay calculates the actual CHANGE applied.
+
+        await Promise.all([
+            supabase.from('profiles').update({ elo: p1.elo - diffs.p1 }).eq('id', p1.id),
+            supabase.from('profiles').update({ elo: p2.elo - diffs.p2 }).eq('id', p2.id),
+            supabase.from('profiles').update({ elo: p3.elo - diffs.p3 }).eq('id', p3.id),
+            supabase.from('profiles').update({ elo: p4.elo - diffs.p4 }).eq('id', p4.id)
+        ]);
     };
 
     const handleApprovePlayer = async (id: string, username: string) => {
@@ -224,8 +321,8 @@ const Admin = () => {
     const activeUsers = players.filter(p => {
         if (!p.approved) return false;
         if (!memberSearch) return true;
-        const search = memberSearch.toLowerCase();
-        return p.username.toLowerCase().includes(search) || p.id.includes(search);
+        const search = normalizeForSearch(memberSearch);
+        return normalizeForSearch(p.username).includes(search) || p.id.includes(search);
     });
 
     // Filter Matches
@@ -308,6 +405,12 @@ const Admin = () => {
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'players' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                 >
                     {t('admin.tab_members')} ({activeUsers.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('clubs')}
+                    className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'clubs' ? 'text-white border-b-2 border-indigo-500' : 'text-slate-500'}`}
+                >
+                    {t('admin.tab_clubs')}
                 </button>
                 <button
                     onClick={() => setActiveTab('matches')}
@@ -427,6 +530,63 @@ const Admin = () => {
                             );
                         })}
                         {activeUsers.length === 0 && <p className="text-center text-slate-500 py-4">{t('admin.no_members')}</p>}
+                    </div>
+                </div>
+            )}
+
+
+
+            {/* CLUBS TAB */}
+            {activeTab === 'clubs' && (
+                <div className="space-y-6">
+                    {/* Create Club Form */}
+                    <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                        <h3 className="text-white font-bold mb-4">{t('admin.add_club')}</h3>
+                        <div className="flex flex-col sm:flex-row gap-4 items-center">
+                            <input
+                                type="text"
+                                placeholder={t('admin.club_name')}
+                                className="flex-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all"
+                                value={newClubName}
+                                onChange={(e) => setNewClubName(e.target.value)}
+                            />
+                            <input
+                                type="text"
+                                placeholder={t('admin.club_location')}
+                                className="flex-1 w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all"
+                                value={newClubLocation}
+                                onChange={(e) => setNewClubLocation(e.target.value)}
+                            />
+                            <Button onClick={handleCreateClub} disabled={!newClubName.trim()} className="w-full sm:w-auto whitespace-nowrap">
+                                {t('admin.create_club')}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Clubs List */}
+                    <div className="space-y-2">
+                        {clubs.map((c) => (
+                            <div key={c.id} className="flex justify-between items-center bg-slate-800 p-4 rounded-lg border border-slate-700">
+                                <div>
+                                    <p className="font-bold text-white flex items-center gap-2">
+                                        {c.name}
+                                        <span className="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">ID: {c.id}</span>
+                                    </p>
+                                    <p className="text-sm text-slate-500">{c.location || 'No location'}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10" onClick={() => setEditingClub(c)}>
+                                        <Pencil size={16} />
+                                    </Button>
+                                    <Button size="sm" variant="danger" onClick={() => handleDeleteClub(c.id)}>
+                                        <Trash2 size={16} />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                        {clubs.length === 0 && (
+                            <p className="text-center text-slate-500 py-10">{t('admin.no_clubs')}</p>
+                        )}
                     </div>
                 </div>
             )}
@@ -584,7 +744,7 @@ const Admin = () => {
                     <div className="space-y-2">
                         {logs
                             .filter(l => selectedActions.includes(l.action as ActivityAction))
-                            .filter(l => JSON.stringify(l).toLowerCase().includes(logSearch.toLowerCase()))
+                            .filter(l => normalizeForSearch(JSON.stringify(l)).includes(normalizeForSearch(logSearch)))
                             .map(log => {
                                 const isError = log.action.includes('REJECT') || log.action.includes('DELETE');
                                 const isCreate = log.action.includes('CREATE') || log.action.includes('REGISTER');
@@ -678,6 +838,7 @@ const Admin = () => {
                                     onChange={(e) => setEditingPlayer({ ...editingPlayer, approved: e.target.checked })}
                                 />
                             </div>
+
                             <div className="flex flex-col gap-3 py-2 border-t border-slate-800 bg-red-500/5 p-3 rounded">
                                 <label className="text-sm text-red-400 font-bold">Ban Status</label>
                                 <div className="flex gap-2">
@@ -738,13 +899,48 @@ const Admin = () => {
                                 {t('admin.save_changes')}
                             </Button>
                         </div>
+                    </div >
+                </div >
+            )}
+
+            {/* EDIT CLUB MODAL */}
+            {editingClub && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative">
+                        <button onClick={() => setEditingClub(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
+                            <X size={24} />
+                        </button>
+                        <h2 className="text-xl font-bold text-white mb-6">{t('admin.edit_club') || 'Edit Club'}</h2>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">{t('admin.club_name')}</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                    value={editingClub.name}
+                                    onChange={(e) => setEditingClub({ ...editingClub, name: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">{t('admin.club_location')}</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                    value={editingClub.location || ''}
+                                    onChange={(e) => setEditingClub({ ...editingClub, location: e.target.value })}
+                                />
+                            </div>
+                            <Button onClick={handleUpdateClub} className="w-full mt-4">
+                                {t('common.save')}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}
 
 
 
-        </div>
+        </div >
     );
 };
 

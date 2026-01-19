@@ -12,13 +12,14 @@ export const ACTIVITY_ACTIONS = [
   "ADMIN_REJECT_USER",
   "ADMIN_DELETE_MATCH",
   "ADMIN_EDIT_USER",
+  "ADMIN_DELETE_USER",
   "ADMIN_MATCH_CREATE",
 ] as const;
 
 export type ActivityAction = (typeof ACTIVITY_ACTIONS)[number];
 
 // Set to false to pause logging during development/testing
-const LOGGING_ENABLED = false; // PAUSED
+const LOGGING_ENABLED = true; // PAUSED
 
 export const logActivity = async (
   action: ActivityAction,

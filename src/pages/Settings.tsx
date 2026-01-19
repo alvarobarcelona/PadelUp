@@ -14,6 +14,7 @@ import {
     Loader2,
     Globe,
     ShoppingCart,
+    MapPin,
 } from 'lucide-react';
 import { logActivity } from '../lib/logger';
 import { APP_FULL_VERSION } from '../lib/constants';
@@ -24,7 +25,8 @@ const Settings = () => {
     const { alert, confirm } = useModal();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
-    const [profile, setProfile] = useState<{ username: string, email: string, subscription_end_date: string | null } | null>(null);
+    const [profile, setProfile] = useState<{ username: string, email: string, subscription_end_date: string | null, main_club_id: number | null } | null>(null);
+    const [clubs, setClubs] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
     const currentYear = new Date().getFullYear();
@@ -32,6 +34,7 @@ const Settings = () => {
     // Editing State
     const [isEditing, setIsEditing] = useState(false);
     const [newUsername, setNewUsername] = useState('');
+    const [newDescClub, setNewDescClub] = useState<number | string>('');
 
     // Password Change State
     const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -44,7 +47,14 @@ const Settings = () => {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
     useEffect(() => {
+        const fetchClubs = async () => {
+            const { data } = await supabase.from('clubs').select('*').order('id', { ascending: true });
+            if (data) setClubs(data);
+        };
+
         getProfile();
+        fetchClubs();
+
 
         const handleBeforeInstallPrompt = (e: any) => {
             // Prevent Chrome 67 and earlier from automatically showing the prompt
@@ -79,40 +89,42 @@ const Settings = () => {
         if (user) {
             const { data } = await supabase
                 .from('profiles')
-                .select('username, notifications_enabled, subscription_end_date')
+                .select('username, notifications_enabled, subscription_end_date, main_club_id')
                 .eq('id', user.id)
                 .single();
 
             setProfile({
                 username: data?.username || '',
                 email: user.email || '',
-                subscription_end_date: data?.subscription_end_date || null
+                subscription_end_date: data?.subscription_end_date || null,
+                main_club_id: data?.main_club_id || null
             });
+            setNewDescClub(data?.main_club_id || '');
 
-          /*   setNewUsername(data?.username || '');
-            if (data?.notifications_enabled !== undefined) {
-                setNotifications(data.notifications_enabled);
-            } */
+            /*   setNewUsername(data?.username || '');
+              if (data?.notifications_enabled !== undefined) {
+                  setNotifications(data.notifications_enabled);
+              } */
         }
     };
 
-   /*  const handleNotificationToggle = async () => {
-        const newState = !notifications;
-        setNotifications(newState); // Optimistic update
-
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                await supabase
-                    .from('profiles')
-                    .update({ notifications_enabled: newState })
-                    .eq('id', user.id);
-            }
-        } catch (error) {
-            console.error('Failed to save notification preference', error);
-            // Revert on error? For now, keep optimistic.
-        }
-    }; */
+    /*  const handleNotificationToggle = async () => {
+         const newState = !notifications;
+         setNotifications(newState); // Optimistic update
+ 
+         try {
+             const { data: { user } } = await supabase.auth.getUser();
+             if (user) {
+                 await supabase
+                     .from('profiles')
+                     .update({ notifications_enabled: newState })
+                     .eq('id', user.id);
+             }
+         } catch (error) {
+             console.error('Failed to save notification preference', error);
+             // Revert on error? For now, keep optimistic.
+         }
+     }; */
 
     const handleUpdateProfile = async () => {
         if (!profile || !newUsername.trim()) return;
@@ -125,12 +137,19 @@ const Settings = () => {
 
             const { error } = await supabase
                 .from('profiles')
-                .update({ username: newUsername })
+                .update({
+                    username: newUsername,
+                    main_club_id: newDescClub ? Number(newDescClub) : null
+                })
                 .eq('id', user.id);
 
             if (error) throw error;
 
-            setProfile({ ...profile, username: newUsername });
+            setProfile({
+                ...profile,
+                username: newUsername,
+                main_club_id: newDescClub ? Number(newDescClub) : null
+            });
             setIsEditing(false);
 
             // LOG PROFILE UPDATE
@@ -339,6 +358,39 @@ const Settings = () => {
                             </div>
                         </div>
 
+                        {/* Club Row */}
+                        <div className="w-full flex items-center justify-between p-4 bg-slate-800/50">
+                            <div className="flex items-center gap-3 flex-1">
+                                <div className="p-2 rounded-full bg-green-500/10 text-green-400">
+                                    <MapPin size={20} />
+                                </div>
+                                <div className="text-left flex-1">
+                                    {isEditing ? (
+                                        <select
+                                            value={newDescClub}
+                                            onChange={(e) => setNewDescClub(e.target.value)}
+                                            className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-green-500 transition-colors"
+                                        >
+                                            <option value="">{t('clubs.select_club_if_you_wish') || 'Select Club'}</option>
+                                            {clubs.map(c => (
+                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <>
+                                            <p className="font-medium text-white">
+                                                {profile?.main_club_id
+                                                    ? clubs.find(c => c.id === profile.main_club_id)?.name || 'Unknown Club'
+                                                    : (t('clubs.no_club_selected') || 'No Club Selected')
+                                                }
+                                            </p>
+                                            <p className="text-xs text-slate-400">{t('clubs.main_club') || 'Main Club'}</p>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Security Section */}
                         <div className="border-t border-slate-700/50">
                             <button
@@ -502,7 +554,7 @@ const Settings = () => {
                     <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">{t('settings.support')}</h2>
                     <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden shadow-none transition-colors duration-300">
                         <button
-                            onClick={() => window.location.href = 'mailto:support@padelup.com?subject=Feedback and support%20for%20PadelUp'}
+                            onClick={() => window.location.href = 'mailto:padeluppadeleros@gmail.com?subject=Feedback and support%20for%20PadelUp'}
                             className="w-full flex items-center justify-between p-4 hover:bg-slate-700/50 transition-colors"
                         >
                             <div className="flex items-center gap-3">
@@ -515,7 +567,7 @@ const Settings = () => {
                         </button>
                     </div>
                     <p className="text-[10px] text-slate-500 px-2 leading-relaxed">
-                        Use support for disputes (e.g. opponent refuses result). An admin will intervene and ensure a fair outcome. You can also request longer subscription plans here.
+                        {t('settings.support_desc')}
                     </p>
                 </div>
 

@@ -2,7 +2,7 @@
 
 **PadelUp** is a modern, mobile-first web application designed for amateur padel groups to track matches, maintain competitive ELO rankings, and foster community through social features and gamification.
 
-![PadelUp Banner](https://images.unsplash.com/photo-1554068865-24cecd4e34b8?q=80&w=2670&auto=format&fit=crop)
+
 
 ## 🚀 Features
 

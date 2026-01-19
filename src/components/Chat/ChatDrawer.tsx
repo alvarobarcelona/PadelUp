@@ -406,12 +406,12 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                         {/* Input Area */}
                         <form onSubmit={handleSend} className="p-4 border-t border-slate-800 bg-slate-900/95 backdrop-blur">
                             <div className="relative">
-                                <input
-                                    type="text"
+                                <textarea
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
                                     placeholder={t('chat.type_message')}
-                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-4 pr-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                                    rows={1}
+                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-4 pr-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all resize-none min-h-[50px] max-h-[150px]"
                                 />
                                 <button
                                     type="submit"

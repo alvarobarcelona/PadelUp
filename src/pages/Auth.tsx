@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +19,30 @@ const Auth = () => {
     const [username, setUsername] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [clubs, setClubs] = useState<any[]>([]);
+    const [selectedClubId, setSelectedClubId] = useState<number | string>(''); // Default empty or first club
+
+    const [isStandalone, setIsStandalone] = useState(false);
+
+    useEffect(() => {
+        // Check if PWA is installed/standalone
+        const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+        if (isInStandaloneMode) {
+            setIsStandalone(true);
+        }
+
+        const fetchClubs = async () => {
+            const { data } = await supabase.from('clubs').select('*').order('id', { ascending: true });
+            if (data) {
+                setClubs(data);
+                // Default to empty (no club selected)
+                // if (data.length > 0) setSelectedClubId(data[0].id);
+            }
+        };
+        fetchClubs();
+    }, []);
+
+
 
     const getFriendlyErrorMessage = (msg: string) => {
         if (msg.includes('Invalid login credentials')) return t('auth.errors.incorrect_credentials');
@@ -81,24 +105,12 @@ const Auth = () => {
 
         try {
             if (isLogin) {
-                // Pre-check for email existence to provide specific error message
-                const { data: userExists } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('email', email)
-                    .maybeSingle();
-
-                if (!userExists) {
-                    throw new Error(t('auth.errors.email_not_found_signup'));
-                }
-
                 const { error, data } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
 
                 if (error) {
-                    // Since email exists, this is likely a password error
                     if (error.message.includes('Invalid login credentials')) {
                         throw new Error(t('auth.errors.incorrect_password'));
                     }
@@ -141,9 +153,27 @@ const Auth = () => {
                 });
                 if (error) throw error;
 
+                // UPDATE PROFILE WITH CLUB
+                if (data.user && selectedClubId) {
+                    await supabase.from('profiles').update({ main_club_id: selectedClubId }).eq('id', data.user.id);
+                }
+
                 // LOG REGISTER
                 if (data.user) {
                     logActivity('USER_REGISTER', data.user.id, { username, email });
+
+                    // Notify Admin
+                    supabase.functions.invoke('notify-admin', {
+                        body: {
+                            record: {
+                                username: username,
+                                id: data.user.id,
+                                email: email
+                            }
+                        }
+                    }).then(({ error }) => {
+                        if (error) console.error('Failed to notify admin:', error);
+                    });
                 }
 
                 await alert({
@@ -193,6 +223,25 @@ const Auth = () => {
                             onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
+
+                    {/* Club Selection */}
+                    {!isLogin && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-400">{t('clubs.select_club_if_you_wish')}</label>
+                            <select
+                                className="mt-1 block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 transition-colors"
+                                value={selectedClubId}
+                                onChange={(e) => setSelectedClubId(Number(e.target.value))}
+                            >
+                                <option value="">{t('clubs.no_club_selected')}</option>
+                                {clubs.map(club => (
+                                    <option key={club.id} value={club.id}>
+                                        {club.name} ({club.location})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Password Field - Hide in Forgot Password Mode */}
                     {!isForgotPassword && (
@@ -257,11 +306,25 @@ const Auth = () => {
                                 setIsLogin(!isLogin);
                                 setIsForgotPassword(false);
                             }}
-                            className="text-sm text-slate-500 hover:text-green-400 transition-colors"
+                            className="text-sm text-green-400"
                         >
                             {isLogin ? t('auth.no_account') : t('auth.has_account')}
                         </button>
+                        <div className="text-xs text-slate-500">{t('auth.support_email')}: padeluppadeleros@gmail.com</div>
                     </div>
+
+                    {!isStandalone && (
+                        <div className="pt-6 border-t border-slate-700/50">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/install')}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all text-sm font-medium"
+                            >
+                                <span>📲</span>
+                                {t('auth.install_app', 'Install App')}
+                            </button>
+                        </div>
+                    )}
                 </form>
             </div>
         </div>

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, UserPlus, MessageCircle } from 'lucide-react';
 import { getLevelFromElo } from '../lib/elo';
+import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
 
@@ -12,6 +13,7 @@ interface Player {
     username: string;
     elo: number;
     avatar_url: string | null;
+    main_club_id: number | null;
 }
 
 const Players = () => {
@@ -24,6 +26,8 @@ const Players = () => {
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'community' | 'friends'>('community');
     const [searchQuery, setSearchQuery] = useState('');
+    const [clubs, setClubs] = useState<any[]>([]);
+    const [selectedClubId, setSelectedClubId] = useState<number | string>('all');
 
     useEffect(() => {
         loadData();
@@ -45,6 +49,10 @@ const Players = () => {
                 .order('username');
 
             if (allPlayers) setPlayers(allPlayers);
+
+            // Fetch Clubs
+            const { data: c } = await supabase.from('clubs').select('*').order('name');
+            if (c) setClubs(c);
 
             // 3. Fetch Friendships if logged in
             if (user) {
@@ -139,11 +147,12 @@ const Players = () => {
         }
 
         // Search Filtering
-        if (searchQuery.trim()) {
-            return player.username.toLowerCase().includes(searchQuery.toLowerCase());
-        }
+        const matchesSearch = !searchQuery.trim() || normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery));
 
-        return true;
+        // Club Filtering
+        const matchesClub = selectedClubId === 'all' || player.main_club_id === Number(selectedClubId);
+
+        return matchesSearch && matchesClub;
     });
 
     return (
@@ -154,14 +163,33 @@ const Players = () => {
                     <p className="text-slate-400">{t('community.subtitle')}</p>
                 </div>
 
-                {/* Search Input */}
-                <input
-                    type="text"
-                    placeholder={t('community.search_placeholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
-                />
+                {/* Search Bar & Club Filter - Matches Rankings.tsx style */}
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder={t('community.search_placeholder')}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                        />
+                    </div>
+                    {clubs.length > 0 && (
+                        <select
+                            value={selectedClubId}
+                            onChange={(e) => setSelectedClubId(e.target.value)}
+                            className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                        >
+                            <option value="all">{t('clubs.all_clubs') || 'All Clubs'}</option>
+                            {clubs.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    )}
+                </div>
 
                 <div className="flex p-1 bg-slate-800/50 rounded-xl border border-slate-700/50">
                     <button

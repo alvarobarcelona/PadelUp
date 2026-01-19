@@ -17,6 +17,7 @@ import PendingApproval from './pages/PendingApproval';
 import Subscription from './pages/Subscription';
 import Banned from './pages/Banned';
 import ResetPassword from './pages/ResetPassword';
+import Install from './pages/Install';
 
 import { useEffect } from 'react';
 import { supabase } from './lib/supabase';
@@ -45,6 +46,7 @@ function AppRoutes() {
     <ChatProvider>
       <Routes>
         <Route path="/auth" element={<Auth />} />
+        <Route path="/install" element={<Install />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/pending" element={<PendingApproval />} />
         <Route path="/subscription" element={<Subscription />} />

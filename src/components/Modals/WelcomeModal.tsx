@@ -12,14 +12,14 @@ export const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed  z-50 flex justify-center p-5 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 animate-fade-in">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity"
             />
 
             {/* Modal Content */}
-            <div className="relative w-full max-w-lg transform overflow-hidden rounded-3xl bg-slate-900 border border-slate-700 shadow-2xl transition-all animate-scale-in">
+            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto transform rounded-3xl bg-slate-900 border border-slate-700 shadow-2xl transition-all animate-scale-in [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
 
                 {/* Header Image / Pattern */}
                 <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-center relative overflow-hidden">

@@ -67,7 +67,7 @@ const Subscription = () => {
                 <div className="bg-slate-900/50 rounded-xl p-6 mb-8 text-left border border-slate-700">
                     <div className="flex items-center gap-3 mb-4">
                         <CreditCard className="text-green-400" size={20} />
-                        <span className="text-white font-medium">{t('subscription.monthly_fee')}: <span className="text-green-400 font-bold">3.00€</span></span>
+                        <span className="text-white font-medium">{t('subscription.monthly_fee')}: <span className="text-green-400 font-bold">4.00€</span></span>
                     </div>
 
                     <div className="space-y-2 text-sm text-slate-400">

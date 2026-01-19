@@ -1,20 +1,24 @@
 import { useEffect, useState } from 'react';
-import { Plus, History as HistoryIcon, User, Check, X, Clock } from 'lucide-react';
+import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
 import { WelcomeModal } from '../components/Modals/WelcomeModal';
+import { InfoModal } from '../components/Modals/InfoModal';
 import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { MatchHistoryModal } from '../components/Modals/MatchHistoryModal';
 
 interface Profile {
     id: string;
     username: string;
     elo: number;
     avatar_url: string | null;
+    subscription_end_date?: string;
+    is_admin?: boolean;
 }
 
 interface MatchPreview {
@@ -24,6 +28,7 @@ interface MatchPreview {
     commentary?: string | null;
     status: 'pending' | 'confirmed' | 'rejected';
     created_by?: string | null;
+    creator?: { username: string } | null;
     score?: any[];
     // We only need basic info for the feed
     t1p1: { username: string };
@@ -46,6 +51,8 @@ const Home = () => {
     const [recentForm, setRecentForm] = useState<{ id: number, won: boolean, points: number | null }[]>([]);
     const [, setLoading] = useState(true);
     const [showWelcome, setShowWelcome] = useState(false);
+    const [showInfo, setShowInfo] = useState(false);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
 
     useEffect(() => {
         loadDashboardData();
@@ -137,6 +144,9 @@ const Home = () => {
 
                                 if (currentElo !== undefined && prevElo !== undefined) {
                                     points = currentElo - prevElo;
+                                    // Visual Fix: Clamp points based on result to handle out-of-order confirmation anomalies
+                                    if (won && points < 0) points = 0;
+                                    if (!won && points > 0) points = 0;
                                 }
                             }
                             form.push({ id: m.id, won, points });
@@ -182,7 +192,34 @@ const Home = () => {
                         .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
                         .order('created_at', { ascending: false });
 
-                    if (pending) setPendingMatches(pending as any);
+                    let pendingWithCreators: MatchPreview[] = [];
+
+                    if (pending) {
+                        // Manual fetch for creators to avoid FK issues
+                        const creatorIds = [...new Set(pending.map(m => m.created_by).filter(Boolean))];
+
+                        let creatorsMap: Record<string, string> = {};
+
+                        if (creatorIds.length > 0) {
+                            const { data: creators } = await supabase
+                                .from('profiles')
+                                .select('id, username')
+                                .in('id', creatorIds);
+
+                            if (creators) {
+                                creators.forEach(c => {
+                                    creatorsMap[c.id] = c.username;
+                                });
+                            }
+                        }
+
+                        pendingWithCreators = pending.map((m: any) => ({
+                            ...m,
+                            creator: m.created_by ? { username: creatorsMap[m.created_by] || 'Unknown' } : null
+                        }));
+                    }
+
+                    setPendingMatches(pendingWithCreators);
                 }
             }
 
@@ -254,7 +291,7 @@ const Home = () => {
             // 2. Find Match Details for Logging (before it's deleted)
             const match = pendingMatches.find(m => m.id === matchId);
 
-            const { error } = await supabase.rpc('reject_match', { match_id: matchId });
+            const { error } = await supabase.rpc('reject_match', { match_id: matchId, reason: reason });
             if (error) throw error;
 
             // LOG MATCH REJECT with Reason and Snapshot
@@ -272,9 +309,19 @@ const Home = () => {
     return (
         <div className="space-y-6 animate-fade-in relative z-10 pb-20">
             <WelcomeModal isOpen={showWelcome} onClose={handleCloseWelcome} />
+            <InfoModal isOpen={showInfo} onClose={() => setShowInfo(false)} />
+            <MatchHistoryModal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} userId={profile?.id} />
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">PadelUp</h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-3xl font-bold text-white tracking-tight">PadelUp</h1>
+                        <button
+                            onClick={() => setShowInfo(true)}
+                            className="p-1 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-800"
+                        >
+                            <Info size={20} />
+                        </button>
+                    </div>
                     <p className="text-slate-400 font-medium">
                         {profile ? t('home.welcome_user', { name: profile.username }) : t('home.welcome_guest')}
                     </p>
@@ -288,7 +335,7 @@ const Home = () => {
             {/* Profile */}
             {profile && (
                 <div className="grid grid-cols-2 gap-4">
-                    <Link to="/levels" className="block rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg hover:border-slate-500 transition-colors">
+                    <div className="relative block rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg hover:border-slate-500 transition-colors">
                         <div className="flex justify-between items-start mb-2">
                             <div>
                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">{t('home.current_level')}</p>
@@ -306,7 +353,7 @@ const Home = () => {
 
                         </div>
                         <div>
-                            <span className="text-sm font-normal text-slate-400 ml-2">{t(`levels.names.${getLevelFromElo(profile.elo).key}`)}</span>
+                            <span className="text-sm font-normal text-slate-400 ">{t(`levels.names.${getLevelFromElo(profile.elo).key}`)}</span>
                         </div>
 
                         {/* Progress Bar (Visual flair) */}
@@ -319,10 +366,18 @@ const Home = () => {
                         <p className="text-[10px] text-green-500/80 mt-1.5 font-medium text-right">
                             {t('home.pts_next_level', { points: getLevelFromElo(profile.elo).max - profile.elo })}
                         </p>
-                    </Link>
+
+                        {/* Info Button - Bottom Left */}
+                        <Link to="/levels" className="absolute bottom-2 left-3 p-1 text-slate-500 hover:text-white transition-colors bg-slate-800/50 rounded-full">
+                            <Info size={20} />
+                        </Link>
+                    </div>
 
                     {/* Recent played */}
-                    <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg">
+                    <div
+                        onClick={() => setShowHistoryModal(true)}
+                        className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg cursor-pointer hover:border-slate-500 transition-colors group"
+                    >
                         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">{t('home.recent_played')}</p>
                         <div className="flex flex-col gap-2 mt-2">
                             {recentForm.length === 0 ? (
@@ -346,7 +401,10 @@ const Home = () => {
                                 ))
                             )}
                         </div>
-                        <p className="text-[10px] text-slate-500 mt-2 font-medium">{t('home.last_5')}</p>
+                        <p className="text-[10px] text-slate-500 mt-2 font-medium group-hover:text-green-400 transition-colors flex items-center justify-between">
+                            {t('home.last_5')}
+                            <Info size={12} />
+                        </p>
                     </div>
                 </div>
 
@@ -380,13 +438,24 @@ const Home = () => {
                             return (
                                 <div key={match.id} className="relative flex flex-col gap-1 rounded-xl bg-yellow-500/10 p-4 border border-yellow-500/30">
                                     {/* Header: Time and Auto-Accept */}
-                                    <div className="flex justify-between items-center pb-2 border-b border-yellow-500/10">
-                                        <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
+                                    <div className="flex justify-between pb-1 border-b border-yellow-500/10">
+
+                                        <span className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
                                             <Clock size={12} /> {t('home.auto_accept')}
+                                        </span>
+
+                                        <span className="text-[10px] text-slate-500 font-mono">{t('home.match_number', { id: match.id })}</span>
+                                    </div>
+                                    <div className="flex justify-end pb-2 border-b border-yellow-500/10">
+
+                                        <p className="text-[10px] text-slate-400 font-medium">
+                                            {match.creator?.username && (
+                                                <span className="mr-2 text-slate-500">
+                                                    {t('home.by')} {match.creator.username}
+                                                </span>
+                                            )}
                                         </p>
-                                        <p className="text-[10px] text-yellow-500 flex items-center gap-1 font-medium">
-                                            {t('home.match_number', { id: match.id })}
-                                        </p>
+
                                         <p className="text-[10px] text-slate-400 font-medium">
                                             {new Date(match.created_at).toLocaleString()}
                                         </p>
@@ -460,6 +529,36 @@ const Home = () => {
                 <span className="text-lg tracking-tight">{t('home.record_match')}</span>
             </Link>
 
+            {/* Tournaments Link */}
+            <button
+                onClick={() => {
+                    const isAdmin = profile?.is_admin;
+
+                    if (isAdmin) {
+                        window.open("https://padel-tournaments-sepia.vercel.app", "_blank", "noopener,noreferrer");
+                        return;
+                    }
+
+                    const isExpired = !profile?.subscription_end_date || new Date(profile.subscription_end_date) < new Date();
+
+                    if (isExpired) {
+                        confirm({
+                            title: t('subscription.title'),
+                            message: t('home.subscription_expired_alert'),
+                            type: 'warning'
+                        });
+                        return;
+                    }
+
+                    window.open("https://padel-tournaments-sepia.vercel.app", "_blank", "noopener,noreferrer");
+                }}
+                className="w-full group relative flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 py-4 font-bold text-white shadow-xl shadow-orange-500/20 active:scale-95 transition-all hover:from-amber-400 hover:to-orange-500 overflow-hidden"
+            >
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                <Trophy size={24} strokeWidth={2} />
+                <span className="text-lg tracking-tight">{t('home.tournaments')}</span>
+            </button>
+
             {/* Player Suggestions */}
             {suggestions.length > 0 && (
                 <div>
@@ -468,8 +567,9 @@ const Home = () => {
                         {t('home.suggestions')}
                         <span className="text-xs font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
                     </h2>
-                    <div className="flex flex-col gap-3">
-                        {suggestions.map(s => {
+                    <span className="text-xs font-normal text-slate-500 mb-3 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.suggestions_limit', { defaultValue: 'Max 10 suggestions' })}</span>
+                    <div className="flex flex-col gap-3 mt-3">
+                        {suggestions.slice(0, 10).map(s => {
                             const diff = s.elo - (profile?.elo || 0);
                             const diffColor = diff > 0 ? "text-green-400" : diff < 0 ? "text-red-400" : "text-slate-400";
                             const diffText = diff > 0 ? `+${diff}` : diff;
@@ -516,7 +616,7 @@ const Home = () => {
                             {t('home.no_confirmed_matches')}
                         </div>
                     ) : (
-                        recentMatches.map((match) => (
+                        recentMatches.slice(0, 10).map((match) => (
                             <div key={match.id} className="group flex flex-col gap-2 rounded-xl bg-slate-800/60 p-4 border border-slate-800 hover:border-slate-600 transition-all">
                                 <div className=" flex justify-between text-xs text-slate-500">
                                     <span className="text-[10px] text-slate-500">

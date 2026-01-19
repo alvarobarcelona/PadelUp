@@ -5,6 +5,7 @@ import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
 import { Crown, TrendingUp, Loader2, Search } from 'lucide-react';
+import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 
 interface Player {
@@ -12,17 +13,25 @@ interface Player {
     username: string;
     avatar_url: string | null;
     elo: number;
+    main_club_id: number | null;
 }
 
 const Rankings = () => {
     const { t } = useTranslation();
     const [players, setPlayers] = useState<Player[]>([]);
     const [loading, setLoading] = useState(true);
-    const [view, setView] = useState<'global' | 'friends'>('global');
+    const [view, setView] = useState<'global' | 'friends'>('friends');
     const [searchQuery, setSearchQuery] = useState('');
+    const [clubs, setClubs] = useState<any[]>([]);
+    const [selectedClubId, setSelectedClubId] = useState<number | string>('all');
 
     useEffect(() => {
-        fetchRankings();
+        const init = async () => {
+            await fetchRankings();
+            const { data: c } = await supabase.from('clubs').select('*').order('name');
+            if (c) setClubs(c);
+        };
+        init();
     }, [view]);
 
     const fetchRankings = async () => {
@@ -77,9 +86,12 @@ const Rankings = () => {
         }
     };
 
-    const filteredPlayers = players.filter(player =>
-        player.username.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+
+    const filteredPlayers = players.filter(player => {
+        const matchesSearch = normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery));
+        const matchesClub = selectedClubId === 'all' || player.main_club_id === Number(selectedClubId);
+        return matchesSearch && matchesClub;
+    });
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -108,16 +120,30 @@ const Rankings = () => {
                     </button>
                 </div>
 
-                {/* Search Bar */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder={t('rankings.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
-                    />
+                {/* Search Bar & Club Filter */}
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder={t('rankings.search_placeholder')}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                        />
+                    </div>
+                    {clubs.length > 0 && (
+                        <select
+                            value={selectedClubId}
+                            onChange={(e) => setSelectedClubId(e.target.value)}
+                            className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                        >
+                            <option value="all">{t('clubs.all_clubs') || 'All Clubs'}</option>
+                            {clubs.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
             </header>
 
@@ -160,7 +186,7 @@ const Rankings = () => {
                                     {rank}
                                 </div>
 
-                                {/* Player Info */}
+                                {/* Player Info  head to head*/}
                                 <Avatar src={player.avatar_url} fallback={player.username} />
 
                                 <div className="flex-1 min-w-0">

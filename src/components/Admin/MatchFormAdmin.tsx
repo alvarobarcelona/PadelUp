@@ -4,6 +4,7 @@ import { Avatar } from '../../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor, getLevelFromElo } from '../../lib/elo';
+import { normalizeForSearch } from '../../lib/utils';
 import { logActivity } from '../../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../../context/ModalContext';
@@ -91,17 +92,50 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
     const updateScore = (setIndex: number, team: 't1' | 't2', value: number) => {
         const newSets = [...sets];
-        newSets[setIndex][team] = Math.max(0, Math.min(7, value));
+        const val = Math.max(0, Math.min(7, value));
+
+        // Prevent 7-7
+        const otherTeam = team === 't1' ? 't2' : 't1';
+        if (val === 7 && newSets[setIndex][otherTeam] === 7) {
+            return;
+        }
+
+        newSets[setIndex][team] = val;
         setSets(newSets);
+    };
+
+    const validateScore = () => {
+        for (let i = 0; i < sets.length; i++) {
+            const { t1, t2 } = sets[i];
+            const total = t1 + t2;
+            if (total === 0) continue;
+
+            if (t1 < 6 && t2 < 6) return t('new_match.invalid_set_score') || `Set ${i + 1}: Someone must reach 6 or 7.`;
+
+            if (t1 === 7 && t2 < 5) return t('new_match.invalid_7_score') || `Set ${i + 1}: 7-${t2} is not valid. Need 5 or 6.`;
+            if (t2 === 7 && t1 < 5) return t('new_match.invalid_7_score') || `Set ${i + 1}: ${t1}-7 is not valid. Need 5 or 6.`;
+
+            if (t1 === 6 && t2 >= 5) return t('new_match.invalid_6_score') || `Set ${i + 1}: 6-${t2} is not valid. Play to 7.`;
+            if (t2 === 6 && t1 >= 5) return t('new_match.invalid_6_score') || `Set ${i + 1}: ${t1}-6 is not valid. Play to 7.`;
+
+            if (t1 === 7 && t2 === 7) return t('new_match.invalid_7_7') || `Set ${i + 1}: 7-7 is not valid.`;
+        }
+        return null;
     };
 
     const handleSave = async () => {
         if (!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2) return;
 
-        // Validation: Check if at least one game has been played
+        // Validation
         const totalGames = sets.reduce((acc, s) => acc + s.t1 + s.t2, 0);
         if (totalGames === 0) {
             await alert({ title: 'Error', message: t('new_match.enter_valid_result'), type: 'danger' });
+            return;
+        }
+
+        const scoreError = validateScore();
+        if (scoreError) {
+            await alert({ title: 'Invalid Score', message: scoreError, type: 'danger' });
             return;
         }
 
@@ -114,6 +148,12 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 if (s.t1 > s.t2) t1Sets++;
                 if (s.t2 > s.t1) t2Sets++;
             });
+
+            if (t1Sets === t2Sets) {
+                await alert({ title: 'Error', message: t('new_match.cannot_be_draw') || "Match cannot end in a draw.", type: 'danger' });
+                setLoading(false);
+                return;
+            }
 
             const winnerTeam = t1Sets > t2Sets ? 1 : 2;
 
@@ -196,7 +236,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 });
             }
 
-            await alert({ title: 'Success', message: t('new_match.success_alert'), type: 'success' }); // Using existing key for success
+            await alert({ title: 'Success', message: t('admin.match_created_success'), type: 'success' });
 
             onSuccess();
 
@@ -214,7 +254,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
     if (isSelectionModalOpen) {
         const filteredPlayers = availablePlayers.filter(p =>
-            p.username.toLowerCase().includes(searchQuery.toLowerCase())
+            normalizeForSearch(p.username).includes(normalizeForSearch(searchQuery))
         );
 
         return (
@@ -313,9 +353,10 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                         <Avatar fallback={selectedPlayers.t1p1?.username || ''} src={selectedPlayers.t1p1?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
                         <Avatar fallback={selectedPlayers.t1p2?.username || ''} src={selectedPlayers.t1p2?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
                     </div>
-                    <span className="text-xs font-semibold text-slate-300 truncate block">
-                        {selectedPlayers.t1p1?.username} & {selectedPlayers.t1p2?.username}
-                    </span>
+                    <div className="flex flex-col mt-1">
+                        <span className="text-sm font-bold text-white truncate">{selectedPlayers.t1p1?.username}</span>
+                        <span className="text-sm font-bold text-white truncate">{selectedPlayers.t1p2?.username}</span>
+                    </div>
                 </div>
                 <div className="text-slate-500 font-bold text-lg">VS</div>
                 <div className="text-center w-5/12">
@@ -324,9 +365,10 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                         <Avatar fallback={selectedPlayers.t2p1?.username || ''} src={selectedPlayers.t2p1?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
                         <Avatar fallback={selectedPlayers.t2p2?.username || ''} src={selectedPlayers.t2p2?.avatar_url} size="sm" className="ring-2 ring-slate-800" />
                     </div>
-                    <span className="text-xs font-semibold text-slate-300 truncate block">
-                        {selectedPlayers.t2p1?.username} & {selectedPlayers.t2p2?.username}
-                    </span>
+                    <div className="flex flex-col mt-1">
+                        <span className="text-sm font-bold text-white truncate">{selectedPlayers.t2p1?.username}</span>
+                        <span className="text-sm font-bold text-white truncate">{selectedPlayers.t2p2?.username}</span>
+                    </div>
                 </div>
             </div>
 
@@ -373,7 +415,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
             </div>
 
             <div className="pt-8 space-y-3">
-                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm={t('common.confirm_prompt') || "Are you sure?"}>
+                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm={t('admin.confirm_prompt') || "Are you sure?"}>
                     <Trophy size={20} />
                     {t('admin.save_changes')}
                 </Button>
@@ -387,13 +429,13 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
 const PlayerSelector = ({ label, player, onClick }: { label: string, player: Player | null, onClick: () => void }) => {
     return (
-        <div onClick={onClick} className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/30 p-4 transition-all hover:bg-slate-800 hover:border-slate-500 cursor-pointer active:scale-95 h-32">
+        <div onClick={onClick} className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/30 p-4 transition-all hover:bg-slate-800 hover:border-slate-500 cursor-pointer active:scale-95 min-h-[140px] h-auto">
             {player ? (
                 <>
                     <Avatar fallback={player.username} src={player.avatar_url} className="bg-green-500/20 text-green-400" />
-                    <span className="text-xs font-medium text-slate-300 truncate w-full text-center">{player.username}</span>
-                    <span className="text-[10px] text-slate-500">ELO {player.elo}</span>
-                    <span className="text-[10px] text-slate-500">Level {getLevelFromElo(player.elo).level}</span>
+                    <p className="text-sm font-bold text-white truncate w-full text-center mt-1">{player.username}</p>
+                    <span className="text-[10px] text-slate-400">ELO {player.elo}</span>
+                    <span className="text-[10px] text-slate-400">Level {getLevelFromElo(player.elo).level}</span>
                 </>
             ) : (
                 <>

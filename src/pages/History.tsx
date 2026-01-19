@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { normalizeForSearch } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, Calendar, AlertCircle, Search, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -17,6 +18,8 @@ interface Match {
     team1_p2: { username: string, avatar_url: string | null } | null;
     team2_p1: { username: string, avatar_url: string | null } | null;
     team2_p2: { username: string, avatar_url: string | null } | null;
+    created_by?: string;
+    creator_username?: string;
 }
 
 const History = () => {
@@ -48,6 +51,7 @@ const History = () => {
           score,
           winner_team,
           commentary,
+          created_by,
           team1_p1(username, avatar_url),
           team1_p2(username, avatar_url),
           team2_p1(username, avatar_url),
@@ -58,9 +62,32 @@ const History = () => {
 
             if (error) throw error;
 
-            // Map the data to our interface if needed, but the structure 
-            // team1_p1: { username: '...' } is what Supabase returns by default.
-            setMatches(data as any || []);
+            let matchesWithCreators = data || [];
+
+            // Manual fetch for creators to avoid FK issues if they are not properly set up
+            if (matchesWithCreators.length > 0) {
+                const creatorIds = [...new Set(matchesWithCreators.map((m: any) => m.created_by).filter(Boolean))];
+
+                if (creatorIds.length > 0) {
+                    const { data: creators } = await supabase
+                        .from('profiles')
+                        .select('id, username')
+                        .in('id', creatorIds);
+
+                    const creatorsMap: Record<string, string> = {};
+                    creators?.forEach((c: any) => {
+                        creatorsMap[c.id] = c.username;
+                    });
+
+                    matchesWithCreators = matchesWithCreators.map((m: any) => ({
+                        ...m,
+                        creator_username: m.created_by ? creatorsMap[m.created_by] : undefined
+                    }));
+                }
+            }
+
+            // Map the data to our interface if needed
+            setMatches(matchesWithCreators as any || []);
 
         } catch (error: any) {
             console.error('Error fetching matches:', error);
@@ -71,12 +98,13 @@ const History = () => {
     };
 
     const filteredMatches = matches.filter(match => {
-        const lowerQuery = searchQuery.toLowerCase();
-        const idMatch = match.id.toString().includes(lowerQuery);
+        const normalizedQuery = normalizeForSearch(searchQuery);
+        const idMatch = match.id.toString().includes(normalizedQuery);
+        const creatorMatch = match.creator_username && normalizeForSearch(match.creator_username).includes(normalizedQuery);
 
-        const checkPlayer = (player: any) => player?.username?.toLowerCase().includes(lowerQuery);
+        const checkPlayer = (player: any) => player?.username && normalizeForSearch(player.username).includes(normalizedQuery);
 
-        return idMatch ||
+        return idMatch || creatorMatch ||
             checkPlayer(match.team1_p1) ||
             checkPlayer(match.team1_p2) ||
             checkPlayer(match.team2_p1) ||
@@ -151,7 +179,15 @@ const MatchCard = ({ match }: { match: Match }) => {
                     <Calendar size={12} />
                     {date}
                 </div>
-                <span>{t('history.match_num', { id: match.id })}</span>
+                {match.creator_username && (
+                    <div className="text-slate-500 flex items-center gap-1">
+                        <span className="opacity-60 text-[10px]">{t('history.created_by')}</span>
+                        <span className="font-medium text-slate-400 text-[10px]">{match.creator_username}</span>
+                    </div>
+                )}
+                <div>
+                    <span>{t('history.match_num', { id: match.id })}</span>
+                </div>
             </div>
 
             <div className="flex items-center justify-between p-4">

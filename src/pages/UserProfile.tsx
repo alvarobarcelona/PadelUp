@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { User, Trophy, Flame, Shield, Swords, Award, TrendingUp, TrendingDown } from 'lucide-react';
+import { User, Trophy, Flame, Shield, Swords, Award, TrendingUp, TrendingDown, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getLevelFromElo } from '../lib/elo';
 
@@ -28,6 +28,7 @@ interface Match {
 
 export default function UserProfile() {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [currentUser, setCurrentUser] = useState<string | null>(null);
@@ -148,8 +149,12 @@ export default function UserProfile() {
     return (
         <div className="max-w-4xl mx-auto pb-20">
             {/* Header Profile */}
+            <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white">
+                <ArrowLeft className="w-6 h-6" />
+            </button>
             <div className="bg-slate-800/50 backdrop-blur-md p-8 rounded-2xl border border-slate-700/50 flex flex-col items-center shadow-xl">
                 <div className="relative">
+
                     <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-600 bg-slate-700 shadow-2xl">
                         {profile.avatar_url ? (
                             <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
@@ -227,21 +232,21 @@ export default function UserProfile() {
                         <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700/50 backdrop-blur-sm flex flex-col justify-center">
                             <div className="text-slate-400 text-sm mb-2">{t('profile.current_run')} </div>
                             {stats.streak > 0 ? (
-                                
-                                <div className="flex items-center">
-                                    <TrendingUp className="w-4 h-4 text-green-500 shrink-0" />
-                                    <div>
-                                        <div className="text-2xl font-bold text-green-400">{t('profile.streak_wins', { count: stats.streak })}</div>
-                                        <div className="text-xs text-green-500/80">{t('profile.streak_wins_desc')}</div>
+
+                                <div className="flex flex-col items-center">
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-2xl font-bold text-green-400">{t('profile.streak_wins', { count: Math.abs(stats.streak <= 1 ? 1 : stats.streak) })}</div>
+                                        <TrendingUp className="w-5 h-5 text-green-500 shrink-0" />
                                     </div>
+                                    <div className="text-xs text-green-500/80">{t('profile.streak_wins_desc')}</div>
                                 </div>
                             ) : stats.streak < 0 ? (
-                                <div className="flex items-center">
-                                    
-                                    <div>
-                                            <div className="text-2xl font-bold text-red-400">{t('profile.streak_losses', { count: Math.abs(stats.streak) })}<TrendingDown className="w-4 h-4 text-red-500 shrink-0" /></div>
-                                        <div className="text-xs text-red-500/80">{t('profile.streak_losses_desc')}</div>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-2xl font-bold text-red-400">{t('profile.streak_losses', { count: Math.abs(stats.streak <= 1 ? 1 : stats.streak) })}</div>
+                                        <TrendingDown className="w-5 h-5 text-red-500 shrink-0" />
                                     </div>
+                                    <div className="text-xs text-red-500/80">{t('profile.streak_losses_desc')}</div>
                                 </div>
                             ) : (
                                 <div className="text-slate-500">{t('profile.no_streak')}</div>
