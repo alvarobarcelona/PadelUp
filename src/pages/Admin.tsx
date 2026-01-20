@@ -608,10 +608,10 @@ const Admin = () => {
 
                     <div className="space-y-2">
                         {filteredMatches.map(m => {
-                            const p1 = players.find(p => p.id === m.team1_p1)?.username || 'Unknown';
-                            const p2 = players.find(p => p.id === m.team1_p2)?.username || 'Unknown';
-                            const p3 = players.find(p => p.id === m.team2_p1)?.username || 'Unknown';
-                            const p4 = players.find(p => p.id === m.team2_p2)?.username || 'Unknown';
+                            const p1 = players.find(p => p.id === m.team1_p1)?.username || t('common.deleted_user');
+                            const p2 = players.find(p => p.id === m.team1_p2)?.username || t('common.deleted_user');
+                            const p3 = players.find(p => p.id === m.team2_p1)?.username || t('common.deleted_user');
+                            const p4 = players.find(p => p.id === m.team2_p2)?.username || t('common.deleted_user');
 
                             const scoreList = Array.isArray(m.score) ? m.score : [];
 
@@ -766,7 +766,7 @@ const Admin = () => {
                                             </div>
                                             {log.actor && (
                                                 <span className="text-xs text-slate-500 font-mono">
-                                                    By: {log.actor?.username || 'Unknown'}
+                                                    By: {log.actor?.username || t('common.deleted_user')}
                                                 </span>
                                             )}
                                         </div>

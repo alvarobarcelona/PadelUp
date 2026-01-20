@@ -186,7 +186,8 @@
     "validation_error": "Error de Validación",
     "invalid_score": "Puntuación Inválida",
     "draw": "Empate",
-    "duplicate": "Partido Duplicado"
+    "duplicate": "Partido Duplicado",
+    "deleted_user": "Usuario Eliminado"
   },
   "new_match": {
     "title": "Seleccionar Jugadores",

@@ -215,7 +215,7 @@ const Home = () => {
 
                         pendingWithCreators = pending.map((m: any) => ({
                             ...m,
-                            creator: m.created_by ? { username: creatorsMap[m.created_by] || 'Unknown' } : null
+                            creator: m.created_by ? { username: creatorsMap[m.created_by] || t('common.deleted_user') } : null
                         }));
                     }
 
