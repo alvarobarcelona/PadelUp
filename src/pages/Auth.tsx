@@ -152,7 +152,7 @@ const Auth = () => {
                             email: email,
                             first_name: firstName,
                             last_name: lastName,
-                            main_club_id: selectedClubId
+                            main_club_id: selectedClubId || null
                         }
                     }
                 });
