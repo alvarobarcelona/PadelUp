@@ -133,8 +133,27 @@ const Settings = () => {
          }
      }; */
 
+    const normalizeUsername = (str: string) => {
+        // Basic normalization: lowercase and remove accents
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    };
+
     const handleUpdateProfile = async () => {
         if (!profile || !newUsername.trim()) return;
+
+        if (normalizeUsername(newUsername) === normalizeUsername(profile.username) &&
+            newFirstName === profile.first_name &&
+            newLastName === profile.last_name &&
+            (newDescClub ? Number(newDescClub) : null) === profile.main_club_id) {
+
+            await alert({
+                title: t("settings.no_changes"),
+                message: t("settings.no_changes_desc") || "This name is already taken.",
+                type: 'info'
+            });
+            return;
+        }
+
 
         try {
             setLoading(true);

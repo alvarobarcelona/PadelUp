@@ -32,7 +32,9 @@
     "elo_placement": "Inicio entre(0-10) partidos: K=48 (Ajuste rápido para encontrar tu nivel real).",
     "elo_standard": "Estándar entre(10-30) partidos: K=32.",
     "elo_stable": "Veterano (+30) partidos: K=24 (Mayor estabilidad).",
-    "elo_note": "Nota: Los puntos se asignan **individualmente**. En un mismo partido, un jugador nuevo puede sumar +40 puntos mientras su compañero veterano suma +20."
+    "elo_note": "Nota: Los puntos se asignan **individualmente**. En un mismo partido, un jugador nuevo puede sumar +40 puntos mientras su compañero veterano suma +20.",
+    "no_changes": "No se hicieron cambios.",
+    "no_changes_desc": "El nombre ya está en uso."
   },
   "auth": {
     "welcome_back": "Bienvenido de nuevo, Campeón",

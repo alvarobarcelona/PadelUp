@@ -29,7 +29,9 @@
     "elo_placement": "Start zwischen(0-10) Spielen: K=48 (Schnelle Anpassung, um das wahre Level zu finden).",
     "elo_standard": "Standard zwischen(10-30) Spielen: K=32.",
     "elo_stable": "Veteran (+30) Spielen: K=24 (Höhere Stabilität).",
-    "elo_note": "Hinweis: Punkte werden **individuell** vergeben. In einem Spiel kann ein neuer Spieler +40 Punkte sammeln, während sein Veteranen-Partner +20 erhält."
+    "elo_note": "Hinweis: Punkte werden **individuell** vergeben. In einem Spiel kann ein neuer Spieler +40 Punkte sammeln, während sein Veteranen-Partner +20 erhält.",
+    "no_changes": "Keine Änderungen vorgenommen.",
+    "no_changes_desc": "dieser name ist bereits vergeben."
   },
   "auth": {
     "welcome_back": "Willkommen zurück, Champion",

@@ -31,7 +31,9 @@
     "elo_placement": "Start between(0-10) games: K=48 (Fast adjustment to find real level).",
     "elo_standard": "Standard between(10-30) games: K=32.",
     "elo_stable": "Veteran (+30) games: K=24 (Higher stability).",
-    "elo_note": "Note: Points are assigned **individually**. In the same match, a new player might gain +40 pts while their veteran partner gains +20."
+    "elo_note": "Note: Points are assigned **individually**. In the same match, a new player might gain +40 pts while their veteran partner gains +20.",
+    "no_changes": "No changes made.",
+    "no_changes_desc": "This name is already taken."
   },
   "auth": {
     "welcome_back": "Welcome back, Champion",

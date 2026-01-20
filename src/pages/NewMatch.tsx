@@ -341,6 +341,10 @@ const NewMatch = () => {
                 t2p2: newRatings.t2p2
             };
 
+            // Calculate auto-confirm time (24 hours from now) from Client to ensure it matches user expectation
+            const autoConfirmDate = new Date();
+            autoConfirmDate.setHours(autoConfirmDate.getHours() + 24);
+
             const { data: newMatch, error: matchError } = await supabase.from('matches').insert({
                 team1_p1: selectedPlayers.t1p1.id,
                 team1_p2: selectedPlayers.t1p2.id,
@@ -351,6 +355,7 @@ const NewMatch = () => {
                 winner_team: winnerTeam,
                 commentary: commentary.trim() || null,
                 status: 'pending', // Explicitly pending
+                auto_confirm_at: autoConfirmDate.toISOString(),
                 elo_snapshot: eloSnapshot,
                 created_by: user?.id
             }).select().single();
