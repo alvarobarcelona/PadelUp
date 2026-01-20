@@ -17,7 +17,9 @@ interface Player {
     elo: number;
     subscription_end_date?: string | null;
 }
-
+//Este elo_snapshot se guarda en la tabla matches al crearlo, pero no afecta a los perfiles todavía.
+//Cuando se confirma el partido, la función confirm_match (en supabase/functions) vuelve a calcular todo desde cero.
+//Esto es así para evitar que se pueda hacer trampa con el elo y que el calculo sea con el ultimo partido actualizado.
 const NewMatch = () => {
     const { alert, confirm } = useModal();
     const { t } = useTranslation();

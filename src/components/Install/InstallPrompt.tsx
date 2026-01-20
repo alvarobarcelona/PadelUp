@@ -1,44 +1,11 @@
+import { usePWA } from "../../context/PWAContext";
 
-import { useEffect, useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface BeforeInstallPromptEvent extends Event {
-    prompt: () => Promise<void>;
-    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
+
+
 
 const InstallPrompt = () => {
-    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-    const [isInstalled, setIsInstalled] = useState(false);
-
-    useEffect(() => {
-        const handleBeforeInstallPrompt = (e: Event) => {
-            e.preventDefault();
-            setDeferredPrompt(e as BeforeInstallPromptEvent);
-        };
-
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-        // Check if already installed
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            setIsInstalled(true);
-        }
-
-        return () => {
-            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        };
-    }, []);
-
-    const handleInstallClick = async () => {
-        if (!deferredPrompt) return;
-
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-
-        if (outcome === 'accepted') {
-            setDeferredPrompt(null);
-        }
-    };
+    const { deferredPrompt, isInstalled, install } = usePWA();
 
     if (isInstalled) {
         return (
@@ -49,16 +16,16 @@ const InstallPrompt = () => {
     }
 
     if (!deferredPrompt) {
-        return null; // Don't show anything if prompt not available (e.g. already installed or not supported)
+        return null;
     }
 
     return (
         <button
-            onClick={handleInstallClick}
+            onClick={install}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3"
         >
             <span>📲</span>
-            Install App 
+            Install App
         </button>
     );
 };

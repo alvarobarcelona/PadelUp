@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import './lib/i18n';
 import { ModalProvider } from './context/ModalContext';
+import { PWAProvider } from './context/PWAContext';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -18,7 +19,9 @@ if ('serviceWorker' in navigator) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ModalProvider>
-      <App />
+      <PWAProvider>
+        <App />
+      </PWAProvider>
     </ModalProvider>
   </StrictMode>,
 )
