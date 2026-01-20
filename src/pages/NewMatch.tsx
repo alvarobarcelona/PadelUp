@@ -180,7 +180,7 @@ const NewMatch = () => {
         return null;
     };
 
-    const handleSave = async () => {
+    const handleNextStep = async () => {
         if (!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2) return;
 
         // Validation: Verify User is participating
@@ -201,6 +201,12 @@ const NewMatch = () => {
                 return;
             }
         }
+
+        setStep(2);
+    };
+
+    const handleSave = async () => {
+        if (!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2) return;
 
         // Validation: Check if at least one game has been played
         const totalGames = sets.reduce((acc, s) => acc + s.t1 + s.t2, 0);
@@ -249,6 +255,9 @@ const NewMatch = () => {
 
         setLoading(true);
         try {
+            // Get user for created_by
+            const { data: { user } } = await supabase.auth.getUser();
+
             // 0. Check for duplicates (last 2 hours)
             const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
             const { data: recentMatches } = await supabase
@@ -502,7 +511,7 @@ const NewMatch = () => {
                         className="w-full"
                         size="lg"
                         disabled={!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2}
-                        onClick={() => setStep(2)}
+                        onClick={handleNextStep}
                     >
                         {t('new_match.next_step')}
                     </Button>
