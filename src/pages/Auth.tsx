@@ -147,19 +147,30 @@ const Auth = () => {
                     password,
                     options: {
                         emailRedirectTo: window.location.origin,
-                        data: {
-                            username: username,
-                            email: email,
-                            first_name: firstName,
-                            last_name: lastName,
-                            main_club_id: selectedClubId || null
-                        }
                     }
                 });
                 if (error) throw error;
 
-                // LOG REGISTER
+                // Create Profile Manually
                 if (data.user) {
+                    const { error: profileError } = await supabase.from('profiles').insert({
+                        id: data.user.id,
+                        username: username,
+                        email: email,
+                        first_name: firstName,
+                        last_name: lastName,
+                        main_club_id: selectedClubId || null,
+                        elo: 1150
+                    });
+
+                    if (profileError) {
+                        console.error('Profile creation failed:', profileError);
+                        // Optional: Delete the auth user if profile creation fails? 
+                        // For now just throw so user knows.
+                        throw new Error(`Profile creation failed: ${profileError.message}`);
+                    }
+
+                    // Log Activity
                     logActivity('USER_REGISTER', data.user.id, { username, email });
 
                     // Notify Admin
@@ -181,6 +192,8 @@ const Auth = () => {
                     message: t('auth.success.signup_confirm'),
                     type: 'success'
                 });
+                setIsLogin(true);
+                setPassword('');
             }
         } catch (err: any) {
             setError(getFriendlyErrorMessage(err.message));
