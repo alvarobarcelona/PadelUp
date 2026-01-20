@@ -237,7 +237,7 @@ export default function UserProfile() {
                         </div>
 
                         {/* Streak Card */}
-                        <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700/50 backdrop-blur-sm flex flex-col justify-center">
+                        <div className="bg-slate-800/50 flex items-center justify-center p-6 rounded-xl border border-slate-700/50 backdrop-blur-sm flex flex-col justify-center">
                             <div className="text-slate-400 text-sm mb-2">{t('profile.current_run')} </div>
                             {stats.streak > 0 ? (
 
