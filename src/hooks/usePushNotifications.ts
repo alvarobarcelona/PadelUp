@@ -53,7 +53,8 @@ export const usePushNotifications = () => {
         throw new Error("Notification permission denied");
       }
 
-      const convertedVapidKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      const cleanKey = VAPID_PUBLIC_KEY.trim().replace(/['"]/g, "");
+      const convertedVapidKey = urlBase64ToUint8Array(cleanKey);
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -88,5 +89,39 @@ export const usePushNotifications = () => {
     }
   }, []);
 
-  return { subscribeToPush, loading, error };
+  const unsubscribeFromPush = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (!("serviceWorker" in navigator)) return;
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (subscription) {
+        await subscription.unsubscribe();
+
+        // Remove from Supabase
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          // We match by the subscription object structure in JSON
+          // Ideally we would delete by endpoint, but let's try strict match or just endpoint
+          // For now, let's just ignore the DB error if it fails to find exact match
+          await supabase
+            .from("push_subscriptions")
+            .delete()
+            .eq("user_id", user.id)
+            .contains("subscription", { endpoint: subscription.endpoint });
+        }
+      }
+    } catch (err: any) {
+      console.error("Error unsubscribing", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { subscribeToPush, unsubscribeFromPush, loading, error };
 };

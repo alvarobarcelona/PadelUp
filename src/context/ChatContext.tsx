@@ -96,34 +96,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         setPermission(result);
     };
 
-    const [isBadgeEnabled, setIsBadgeEnabled] = useState<boolean>(() => {
-        const stored = localStorage.getItem('isBadgeEnabled');
-        return stored !== null ? JSON.parse(stored) : true;
-    });
-
-    const toggleBadgeEnabled = () => {
-        setIsBadgeEnabled(prev => {
-            const newValue = !prev;
-            localStorage.setItem('isBadgeEnabled', JSON.stringify(newValue));
-            return newValue;
-        });
-    };
-
-    // We can import the hook logic here or just use it inside the settings component.
-    // However, to make it globally accessible via useChat(), we can lift it here or just recommend using the hook separately.
-    // For simplicity, let's keep it separate or just clear the badge here.
-
     // Update App Badge
     useEffect(() => {
         if ('setAppBadge' in navigator) {
-            // Badging API requires permission on some platforms, or at least doesn't hurt to check
-            // Actually, Badging API works without notification permission on some installs, 
-            // but for consistent behavior especially with notifications, it's good to have.
-            // However, the core requirement is just calling it.
-            // If we have unread messages, try to set it.
-            if (isBadgeEnabled && unreadCount > 0) {
+            // Badging API: Set if we have unread messages
+            if (unreadCount > 0) {
                 navigator.setAppBadge(unreadCount).catch(err => {
-                    // Fail silently, possibly due to lack of permission or document visibility
                     console.debug('Error setting app badge:', err);
                 });
             } else {
@@ -132,7 +110,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
                 });
             }
         }
-    }, [unreadCount, isBadgeEnabled]);
+    }, [unreadCount]);
 
     return (
         <ChatContext.Provider value={{
@@ -141,8 +119,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             refreshUnreadCount: fetchUnreadCount,
             notificationPermission: permission,
             requestNotificationPermission,
-            isBadgeEnabled,
-            toggleBadgeEnabled
+            isBadgeEnabled: true, // Deprecated, always true now
+            toggleBadgeEnabled: () => { } // Deprecated, no-op
         }}>
             {children}
         </ChatContext.Provider>

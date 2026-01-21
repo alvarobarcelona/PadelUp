@@ -7,9 +7,13 @@
     "preferences": "Einstellungen",
     "subscription": "Aboniert bis",
     "notifications": "Benachrichtigungen",
-    "notifications_enabled": "Aktiviert (Symbol-Badge)",
-    "notifications_disabled": "Aktivieren für Symbol-Badge",
+    "notifications_enabled": "Aktiviert",
+    "notifications_disabled": "Deaktiviert",
     "notifications_off": "Aus",
+    "push_notifications": "Push-Benachrichtigungen",
+    "test": "Testen",
+    "test_notification_msg": "Dies ist eine Testbenachrichtigung!",
+    "test_notification_sent": "Testbenachrichtigung gesendet",
     "support": "Support",
     "support_desc": "Nutzen Sie den Support für Streitigkeiten (z.B. Der Gegner lehnt das Ergebnis wiederholt ohne gerechtfertigten Grund ab). Ein Admin wird eingreifen und ein faires und korrektes Ergebnis sicherstellen. Sie können hier auch längere Abonnementpläne anfragen.",
     "help": "Hilfe & Feedback",
@@ -194,7 +198,9 @@
     "duplicate": "Doppeltes Spiel",
     "deleted_user": "Gelöschter Benutzer",
     "enable": "Aktivieren",
-    "on": "Ein"
+    "on": "Ein",
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
   },
   "new_match": {
     "title": "Spieler auswählen",

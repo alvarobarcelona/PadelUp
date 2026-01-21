@@ -26,10 +26,23 @@ import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const Settings = () => {
     const { alert, confirm } = useModal();
-    const { notificationPermission, requestNotificationPermission, isBadgeEnabled, toggleBadgeEnabled } = useChat();
-    const { subscribeToPush, loading: pushLoading } = usePushNotifications();
+
+    const { requestNotificationPermission } = useChat();
+    const { subscribeToPush, unsubscribeFromPush, loading: pushLoading } = usePushNotifications();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
+    const [isPushEnabled, setIsPushEnabled] = useState(false);
+
+    useEffect(() => {
+        // Check if push is actually enabled (service worker subscription exists)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.pushManager.getSubscription().then(subscription => {
+                    setIsPushEnabled(!!subscription);
+                });
+            });
+        }
+    }, [pushLoading]);
     const [profile, setProfile] = useState<{ username: string, first_name: string, last_name: string, email: string, subscription_end_date: string | null, main_club_id: number | null } | null>(null);
     const [clubs, setClubs] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -142,6 +155,7 @@ const Settings = () => {
         // Basic normalization: lowercase and remove accents
         return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     };
+
 
     const handleUpdateProfile = async () => {
         if (!profile || !newUsername.trim()) return;
@@ -643,45 +657,51 @@ const Settings = () => {
 
                         {/* Notifications */}
                         {/* Notifications */}
-                        <div className="flex items-center justify-between p-4">
+                        {/* Push Notifications Toggle */}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-full bg-purple-500/10 text-purple-400">
                                     <Bell size={20} />
                                 </div>
                                 <div className="flex flex-col text-left">
-                                    <span className="font-medium text-white">{t('settings.notifications') || 'Notifications'}</span>
-                                    <span className="text-[10px] text-slate-500">
-                                        {notificationPermission === 'granted'
-                                            ? (t('settings.notifications_enabled') || 'Push Notifications Active')
-                                            : (t('settings.notifications_disabled') || 'Enable for Push Notifications')}
-                                    </span>
+                                    <span className="font-medium text-white">{t('settings.push_notifications') || 'Push Notifications'}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-slate-500">
+                                            {isPushEnabled ? (t('common.active') || 'Active') : (t('common.inactive') || 'Inactive')}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {notificationPermission === 'granted' ? (
-                                <button
-                                    onClick={toggleBadgeEnabled}
-                                    className={`text-xs px-3 py-1.5 rounded-full transition-colors font-medium ${isBadgeEnabled
-                                        ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
-                                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                        }`}
-                                >
-                                    {isBadgeEnabled ? (t('common.on') || 'On') : (t('settings.notifications_off') || 'Off')}
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={async () => {
-                                        await subscribeToPush();
-                                        // Also request permission via context to update state
-                                        await requestNotificationPermission();
-                                    }}
-                                    disabled={pushLoading}
-                                    className="text-xs bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 px-3 py-1.5 rounded-full transition-colors flex items-center gap-2"
-                                >
-                                    {pushLoading && <Loader2 size={12} className="animate-spin" />}
-                                    {t('common.enable') || 'Enable'}
-                                </button>
-                            )}
+                            <button
+                                onClick={async () => {
+                                    if (isPushEnabled) {
+                                        await unsubscribeFromPush();
+                                    } else {
+                                        try {
+                                            await subscribeToPush();
+                                            // Sync permission state
+                                            await requestNotificationPermission();
+                                        } catch (error) {
+                                            console.error("Failed to enable push:", error);
+                                        }
+                                    }
+
+                                    // Update state after action
+                                    if ('serviceWorker' in navigator) {
+                                        const registration = await navigator.serviceWorker.ready;
+                                        const subscription = await registration.pushManager.getSubscription();
+                                        setIsPushEnabled(!!subscription);
+                                    }
+                                }}
+                                disabled={pushLoading}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${isPushEnabled ? 'bg-purple-600' : 'bg-slate-700'}`}
+                            >
+                                <span
+                                    className={`${isPushEnabled ? 'translate-x-6' : 'translate-x-1'
+                                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                                />
+                            </button>
                         </div>
                     </div>
                 </div>

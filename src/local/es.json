@@ -6,9 +6,13 @@
     "preferences": "Preferencias",
     "subscription": "Suscripción hasta",
     "notifications": "Notificaciones",
-    "notifications_enabled": "Activadas (Globo icono)",
-    "notifications_disabled": "Activar para Globo icono",
+    "notifications_enabled": "Activadas",
+    "notifications_disabled": "Desactivadas",
     "notifications_off": "Desactivado",
+    "push_notifications": "Notificaciones Push",
+    "test": "Probar",
+    "test_notification_msg": "¡Esta es una notificación de prueba!",
+    "test_notification_sent": "Notificación de prueba enviada",
     "support": "Soporte",
     "support_desc": "Usa el soporte para disputas (ej. El oponente rechaza el resultado repetidamente sin razón justificada). Un administrador intervendrá para asegurar un resultado correcto y justo. También puedes solicitar planes de suscripción más largos aquí.",
     "help": "Ayuda y Comentarios",
@@ -197,7 +201,9 @@
     "duplicate": "Partido Duplicado",
     "deleted_user": "Usuario Eliminado",
     "enable": "Activar",
-    "on": "Activo"
+    "on": "Activo",
+    "active": "Activo",
+    "inactive": "Inactivo"
   },
   "new_match": {
     "title": "Seleccionar Jugadores",
