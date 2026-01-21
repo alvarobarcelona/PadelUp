@@ -560,7 +560,7 @@ const Profile = () => {
                     </h3>
                     <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
                         {stats.clubStats.map((club, i) => (
-                            <div key={i} className="flex-shrink-0 w-40 bg-slate-700/50 rounded-lg p-4 flex flex-col items-center justify-center text-center border border-slate-700">
+                            <div key={i} className="flex-shrink-0 auto-width bg-slate-700/50 rounded-lg p-3 flex flex-col items-center justify-center text-center border border-slate-700">
                                 <div className="p-3 rounded-full bg-slate-800 mb-3 shadow-sm">
                                     <span className="text-2xl">🏟️</span>
                                 </div>
