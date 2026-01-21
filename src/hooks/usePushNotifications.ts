@@ -1,7 +1,9 @@
 import { useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+//Debe tener 87 caracteres
+const VAPID_PUBLIC_KEY =
+  "BPCiPSkmsbkXH_pgl_vV3mjB1YOYSCbeZkzOu2D2CAjDEux22_T38WPFH7AYmmi8iqaFBF9DXqRg6DXew0FMeHg";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -27,8 +29,15 @@ export const usePushNotifications = () => {
     setError(null);
 
     try {
-      if (!VAPID_PUBLIC_KEY) {
-        throw new Error("VAPID Public Key not found in env");
+      if (
+        !VAPID_PUBLIC_KEY ||
+        VAPID_PUBLIC_KEY.includes(
+          "BPCiPSkmsbkXH_pgl_vV3mjB1YOYSCbeZkzOu2D2CAjDEux22_T38WPFH7AYmmi8iqaFBF9DXqRg6DXew0FMeHg",
+        )
+      ) {
+        throw new Error(
+          "Falta configurar la VAPID Public Key en usePushNotifications.ts",
+        );
       }
 
       if (!("serviceWorker" in navigator)) {
@@ -58,14 +67,9 @@ export const usePushNotifications = () => {
       // VAPID keys must be exactly 87 characters (uncompressed P-256 point in base64url)
       if (cleanKey.length !== 87) {
         throw new Error(
-          `Invalid Key Length: ${cleanKey.length} chars. Check env var.`,
+          `Invalid Key Length: ${cleanKey.length} chars (Should be 87). Check code string.`,
         );
       }
-
-      // DEBUG: Verify key content on screen
-      alert(
-        `Debug: Key using: ${cleanKey.substring(0, 10)}...${cleanKey.substring(cleanKey.length - 10)}`,
-      );
 
       const convertedVapidKey = urlBase64ToUint8Array(cleanKey);
 
