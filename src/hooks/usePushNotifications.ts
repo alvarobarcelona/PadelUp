@@ -2,8 +2,8 @@ import { useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
 //Debe tener 87 caracteres
-const VAPID_PUBLIC_KEY =
-  "BPCiPSkmsbkXH_pgl_vV3mjB1YOYSCbeZkzOu2D2CAjDEux22_T38WPFH7AYmmi8iqaFBF9DXqRg6DXew0FMeHg";
+// Clave pública VAPID (Debe tener 87 caracteres exactos)
+const VAPID_PUBLIC_KEY ="BPCiPSkmsbkXH_pgl_vV3mjB1YOYSCbeZkzOu2D2CAjDEux22_T38WPFH7AYmmi8iqaFBF9DXqRg6DXew0FMeHg";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -57,7 +57,8 @@ export const usePushNotifications = () => {
         throw new Error("Notification permission denied");
       }
 
-      const cleanKey = VAPID_PUBLIC_KEY.trim().replace(/['"]/g, "");
+      // LIMPIEZA AGRESIVA: Quitamos cualquier cosa que no sea letra, número, guión o guión bajo
+      const cleanKey = VAPID_PUBLIC_KEY.replace(/[^A-Za-z0-9\-_]/g, "");
 
       // VAPID keys must be exactly 87 characters (uncompressed P-256 point in base64url)
       if (cleanKey.length !== 87) {
