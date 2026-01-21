@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 
 //Debe tener 87 caracteres
 // Clave pública VAPID (Debe tener 87 caracteres exactos)
-const VAPID_PUBLIC_KEY ="BPCiPSkmsbkXH_pgl_vV3mjB1YOYSCbeZkzOu2D2CAjDEux22_T38WPFH7AYmmi8iqaFBF9DXqRg6DXew0FMeHg";
+const VAPID_PUBLIC_KEY ="BNMLaWzK4NeOqM65aT3dcQQgpfZPRjooBmrImpAc9rDiJjMJs8SPj_S1gEbL7oJUzsDud0qfdKd3ijijw9gDzA4";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
