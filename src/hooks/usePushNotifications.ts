@@ -54,6 +54,19 @@ export const usePushNotifications = () => {
       }
 
       const cleanKey = VAPID_PUBLIC_KEY.trim().replace(/['"]/g, "");
+
+      // VAPID keys must be exactly 87 characters (uncompressed P-256 point in base64url)
+      if (cleanKey.length !== 87) {
+        throw new Error(
+          `Invalid Key Length: ${cleanKey.length} chars. Check env var.`,
+        );
+      }
+
+      // DEBUG: Verify key content on screen
+      alert(
+        `Debug: Key using: ${cleanKey.substring(0, 10)}...${cleanKey.substring(cleanKey.length - 10)}`,
+      );
+
       const convertedVapidKey = urlBase64ToUint8Array(cleanKey);
 
       const subscription = await registration.pushManager.subscribe({
