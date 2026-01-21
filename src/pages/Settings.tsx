@@ -21,13 +21,12 @@ import { logActivity } from '../lib/logger';
 import { APP_FULL_VERSION } from '../lib/constants';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
-import { useChat } from '../context/ChatContext';
+
 import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const Settings = () => {
     const { alert, confirm } = useModal();
 
-    const { requestNotificationPermission } = useChat();
     const { subscribeToPush, unsubscribeFromPush, loading: pushLoading } = usePushNotifications();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
@@ -680,18 +679,12 @@ const Settings = () => {
                                     } else {
                                         try {
                                             await subscribeToPush();
-                                            // Sync permission state
-                                            await requestNotificationPermission();
-                                        } catch (error) {
+                                            setIsPushEnabled(true);
+                                        } catch (error: any) {
                                             console.error("Failed to enable push:", error);
+                                            window.alert("Failed to enable push: " + (error.message || error));
+                                            setIsPushEnabled(false);
                                         }
-                                    }
-
-                                    // Update state after action
-                                    if ('serviceWorker' in navigator) {
-                                        const registration = await navigator.serviceWorker.ready;
-                                        const subscription = await registration.pushManager.getSubscription();
-                                        setIsPushEnabled(!!subscription);
                                     }
                                 }}
                                 disabled={pushLoading}

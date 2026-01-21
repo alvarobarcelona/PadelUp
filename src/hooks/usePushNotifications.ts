@@ -84,6 +84,8 @@ export const usePushNotifications = () => {
     } catch (err: any) {
       console.error("Error subscribing to push:", err);
       setError(err.message || "Error subscribing");
+      alert("Push Error: " + (err.message || JSON.stringify(err)));
+      throw err;
     } finally {
       setLoading(false);
     }
