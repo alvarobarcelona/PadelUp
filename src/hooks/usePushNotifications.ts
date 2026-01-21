@@ -29,12 +29,7 @@ export const usePushNotifications = () => {
     setError(null);
 
     try {
-      if (
-        !VAPID_PUBLIC_KEY ||
-        VAPID_PUBLIC_KEY.includes(
-          "BPCiPSkmsbkXH_pgl_vV3mjB1YOYSCbeZkzOu2D2CAjDEux22_T38WPFH7AYmmi8iqaFBF9DXqRg6DXew0FMeHg",
-        )
-      ) {
+      if (!VAPID_PUBLIC_KEY) {
         throw new Error(
           "Falta configurar la VAPID Public Key en usePushNotifications.ts",
         );
