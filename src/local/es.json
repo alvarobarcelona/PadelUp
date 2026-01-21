@@ -46,7 +46,7 @@
     "first_name": "Nombre",
     "last_name": "Apellidos",
     "password": "Contraseña",
-    "forgot_password": "¿Olvidaste?",
+    "forgot_password": "¿Lo olvidaste?",
     "send_reset_link": "Enviar Enlace",
     "sign_in": "Iniciar Sesión",
     "create_account": "Crear Cuenta",
@@ -129,6 +129,8 @@
     "year": "Año {{year}}",
     "achievements": "Logros",
     "no_achievements": "No hay logros disponibles.",
+    "my_clubs": "Mis Clubes",
+    "club_matches": "{{count}} Partidos",
     "sign_out": "Cerrar Sesión",
     "built_with": "Hecho con ❤️ para Amantes del Pádel",
     "by_author": "{{year}} Por Alvaro Barcelona Peralta",
@@ -156,16 +158,17 @@
       "nemesis_desc": "Te tienen la medida tomada... por ahora",
       "even_title": "Partido Igualado",
       "even_desc": "Una rivalidad verdaderamente equilibrada"
-    }
+    },
+    "subscription_expired": "Usuario inactivo"
   },
   "clubs": {
     "all_clubs": "Todos los clubs",
     "search_club": "Buscar Club",
     "select_club": "Seleccionar Club",
     "select_club_if_you_wish": "Seleccionar Club (Opcional)",
-    "no_club": "Sin Club (Amistoso)",
+    "no_club": "Sin Club",
     "main_club": "Club Principal",
-    "no_club_selected": "No club seleccionado",
+    "no_club_selected": "Sin Club",
     "select_club_prompt": "Por favor selecciona un club",
     "select_club_prompt_desc": "Esto es necesario para que puedas jugar partidos con otros usuarios."
   },

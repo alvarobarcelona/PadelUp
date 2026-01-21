@@ -11,6 +11,8 @@ import { useModal } from '../context/ModalContext';
 interface Player {
     id: string;
     username: string;
+    first_name: string;
+    last_name: string;
     elo: number;
     avatar_url: string | null;
     main_club_id: number | null;
@@ -147,7 +149,8 @@ const Players = () => {
         }
 
         // Search Filtering
-        const matchesSearch = !searchQuery.trim() || normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery));
+        const matchesSearch = !searchQuery.trim() || normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery)) ||
+            normalizeForSearch(`${player.first_name || ''} ${player.last_name || ''}`).includes(normalizeForSearch(searchQuery));
 
         // Club Filtering
         const matchesClub = selectedClubId === 'all' || player.main_club_id === Number(selectedClubId);

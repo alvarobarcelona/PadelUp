@@ -71,6 +71,7 @@ const NewMatch = () => {
 
     const fetchPlayers = async () => {
         try {
+            const { data: { user } } = await supabase.auth.getUser();
             const { data, error } = await supabase
                 .from('profiles')
                 .select('id, username, avatar_url, elo, subscription_end_date')
@@ -86,6 +87,26 @@ const NewMatch = () => {
             }) || [];
 
             setAvailablePlayers(validPlayers);
+
+            if (user) {
+                let currentUserPlayer = validPlayers.find(p => p.id === user.id);
+
+                // If not found in list (e.g. admin), fetch explicitly
+                if (!currentUserPlayer) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('id, username, avatar_url, elo, subscription_end_date')
+                        .eq('id', user.id)
+                        .single();
+                    if (profile) {
+                        currentUserPlayer = profile;
+                    }
+                }
+
+                if (currentUserPlayer) {
+                    setSelectedPlayers(prev => ({ ...prev, t1p1: currentUserPlayer }));
+                }
+            }
         } catch (error) {
             console.error('Error fetching players:', error);
         } finally {

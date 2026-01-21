@@ -101,13 +101,20 @@ const Profile = () => {
             // 3. Fetch Matches
             const { data: matches } = await supabase
                 .from('matches')
-                .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2, created_at, score, elo_snapshot')
+                .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2, created_at, score, elo_snapshot, club_id')
                 .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
                 .eq('status', 'confirmed')
                 .order('created_at', { ascending: false }); // Newest first
 
+            // 3b. Fetch Clubs
+            let clubsMap: Record<number, string> = {};
+            const { data: clubs } = await supabase.from('clubs').select('id, name');
+            if (clubs) {
+                clubs.forEach(c => clubsMap[c.id] = c.name);
+            }
+
             if (matches) {
-                setAllMatches(matches);
+                setAllMatches(matches.map(m => ({ ...m, club_name: m.club_id ? clubsMap[m.club_id] : null })));
                 // Extract unique years
                 const uniqueYears = Array.from(new Set(matches.map(m => new Date(m.created_at).getFullYear()))).sort((a, b) => b - a);
                 setYears(uniqueYears);
@@ -133,7 +140,8 @@ const Profile = () => {
             setsWon: 0,
             gamesWon: 0,
             eloHistory: [] as any[],
-            bestStreak: 0
+            bestStreak: 0,
+            clubStats: [] as { name: string, count: number }[]
         };
 
         if (allMatches.length === 0) return defaultStats;
@@ -191,6 +199,9 @@ const Profile = () => {
         let totalSetsWon = 0;
         let totalGamesWon = 0;
 
+        // Matches per Club Stats
+        const clubCounts: Record<string, number> = {};
+
         // Calculate stats on the filtered set (Newest -> Oldest for structure, but Streak usually calc'd chronologically or reverse-check)
         // Let's iterate Filtered Reverse (Chronological) for stats like Streak
         const filteredChronological = [...filteredMatches].reverse();
@@ -216,7 +227,16 @@ const Profile = () => {
                     if (myScore > oppScore) totalSetsWon++;
                 });
             }
+
+            // Club Stats
+            // Use club name or fallback to "No Club"
+            const clubName = m.club_name || t('clubs.no_club');
+            clubCounts[clubName] = (clubCounts[clubName] || 0) + 1;
         });
+
+        const sortedClubStats = Object.entries(clubCounts)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count);
 
         const totalMatchesCount = filteredMatches.length;
         const winRate = totalMatchesCount > 0 ? Math.round((wins / totalMatchesCount) * 100) : 0;
@@ -229,7 +249,8 @@ const Profile = () => {
             setsWon: totalSetsWon,
             gamesWon: totalGamesWon,
             eloHistory: filteredEloHistory,
-            bestStreak // Note: 'Current Streak' is tricky in historical view. Let's just show Best Streak for that period.
+            bestStreak, // Note: 'Current Streak' is tricky in historical view. Let's just show Best Streak for that period.
+            clubStats: sortedClubStats
         };
 
     }, [profile, allMatches, selectedYear]);
@@ -526,6 +547,29 @@ const Profile = () => {
                         </div>
                         <p className="text-3xl font-bold text-white">{stats.gamesWon}</p>
                         <p className="text-xs text-slate-500 mt-1">{t('profile.games_won')}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Club Stats Section */}
+            {stats && stats.clubStats.length > 0 && (
+                <div className="rounded-xl bg-slate-800 p-5 border border-slate-700/50">
+                    <h3 className="mb-4 text-sm font-semibold uppercase text-slate-400 tracking-wider flex items-center gap-2">
+                        {t('profile.my_clubs')}
+                        <span className="text-xs bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">{stats.clubStats.length}</span>
+                    </h3>
+                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        {stats.clubStats.map((club, i) => (
+                            <div key={i} className="flex-shrink-0 w-40 bg-slate-700/50 rounded-lg p-4 flex flex-col items-center justify-center text-center border border-slate-700">
+                                <div className="p-3 rounded-full bg-slate-800 mb-3 shadow-sm">
+                                    <span className="text-2xl">🏟️</span>
+                                </div>
+                                <h4 className="font-bold text-white text-sm line-clamp-2 min-h-[2.5em] flex items-center justify-center">{club.name}</h4>
+                                <div className="mt-2 text-xs font-medium text-green-400 bg-green-900/20 px-2 py-1 rounded-full">
+                                    {t('profile.club_matches', { count: club.count })}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}

@@ -78,6 +78,17 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         fetchUnreadCount();
     }, [location.pathname]);
 
+    // Update App Badge
+    useEffect(() => {
+        if ('setAppBadge' in navigator) {
+            if (unreadCount > 0) {
+                navigator.setAppBadge(unreadCount).catch(err => console.error('Error setting app badge:', err));
+            } else {
+                navigator.clearAppBadge().catch(err => console.error('Error clearing app badge:', err));
+            }
+        }
+    }, [unreadCount]);
+
     return (
         <ChatContext.Provider value={{ unreadCount, markAsRead, refreshUnreadCount: fetchUnreadCount }}>
             {children}

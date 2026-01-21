@@ -49,6 +49,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
     const [loadingConversations, setLoadingConversations] = useState(true);
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
 
     // Scroll to bottom
@@ -262,6 +263,11 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         e.preventDefault();
         if (!newMessage.trim() || !currentUser || !activeChatUser) return;
 
+        // Reset height
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+        }
+
         setSending(true);
         try {
             const { error } = await supabase
@@ -461,12 +467,22 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                         <form onSubmit={handleSend} className="p-4 border-t border-slate-800 bg-slate-900/95 backdrop-blur">
                             <div className="relative">
                                 <textarea
+                                    name='message'
+                                    ref={textareaRef}
                                     value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onChange={(e) => {
+                                        setNewMessage(e.target.value);
+                                        // Auto resize
+                                        if (textareaRef.current) {
+                                            textareaRef.current.style.height = 'auto'; // Reset to recalc
+                                            textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 150) + 'px';
+                                        }
+                                    }}
                                     placeholder={t('chat.type_message')}
                                     rows={1}
-                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-4 pr-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all resize-none min-h-[50px] max-h-[150px]"
+                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-4 pr-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all resize-none min-h-[50px] overflow-hidden"
                                 />
+
                                 <button
                                     type="submit"
                                     disabled={sending || !newMessage.trim()}

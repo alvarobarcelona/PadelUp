@@ -13,6 +13,7 @@ interface Profile {
     first_name?: string;
     last_name?: string;
     elo: number;
+    subscription_end_date?: string;
     level: number;
     created_at: string;
 }
@@ -147,6 +148,7 @@ export default function UserProfile() {
     if (!profile) return <div className="p-8 text-center text-red-500">{t('profile.not_found')}</div>;
 
     const isMe = currentUser === profile.id;
+    const subscriptionExpired = !profile.subscription_end_date || profile.subscription_end_date < new Date().toISOString();
 
     return (
         <div className="max-w-4xl mx-auto pb-20">
@@ -182,6 +184,9 @@ export default function UserProfile() {
                 )}
                 <p className="text-slate-400 text-sm mt-1">{t('profile.level')} {getLevelFromElo(profile.elo).level}</p>
                 <p className="text-slate-400 text-sm mt-1">{t('profile.joined', { date: new Date(profile.created_at).toLocaleDateString() })}</p>
+                {subscriptionExpired && (
+                    <p className="text-red-500 text-sm mt-1">{t('profile.subscription_expired')}</p>
+                )}
             </div>
 
             {/* Rivalry Section (Only if not viewing own profile) */}

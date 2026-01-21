@@ -20,6 +20,7 @@
     "cancel": "Cancel",
     "edit": "Edit",
     "save": "Save",
+    "username": "Username / Player Name",
     "usernameTakenTitle": "Username Taken",
     "usernameTakenMessage": "That username is already taken. Please choose another one.",
     "errorUpdatingProfile": "Error updating profile",
@@ -79,9 +80,9 @@
     "search_club": "Search Club",
     "select_club": "Select Club",
     "select_club_if_you_wish": "Select Club (Optional)",
-    "no_club": "No Club (Friendly Match)",
+    "no_club": "No Club",
     "main_club": "Main Club",
-    "no_club_selected": "No club selected"
+    "no_club_selected": "No club "
   },
   "home": {
     "welcome_user": "Welcome back, {{name}}",
@@ -133,6 +134,8 @@
     "sets_won": "Sets Won",
     "games": "Games",
     "games_won": "Games Won",
+    "club_matches": "{{count}} Matches",
+    "my_clubs": "My Clubs",
     "performance_trend": "Performance Trend",
     "last_20": "Last 20 Matches",
     "year": "Year {{year}}",
@@ -165,7 +168,8 @@
       "nemesis_desc": "They have your number... for now",
       "even_title": "Even Match",
       "even_desc": "A truly balanced rivalry"
-    }
+    },
+    "subscription_expired": "Inactive user"
   },
   "nav": {
     "home": "Home",
