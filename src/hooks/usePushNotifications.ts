@@ -57,7 +57,7 @@ export const usePushNotifications = () => {
         throw new Error("Notification permission denied");
       }
 
-      // LIMPIEZA AGRESIVA: Quitamos cualquier cosa que no sea letra, número, guión o guión bajo
+     /*  // LIMPIEZA AGRESIVA: Quitamos cualquier cosa que no sea letra, número, guión o guión bajo
       const cleanKey = VAPID_PUBLIC_KEY.replace(/[^A-Za-z0-9\-_]/g, "");
 
       // VAPID keys must be exactly 87 characters (uncompressed P-256 point in base64url)
@@ -65,9 +65,9 @@ export const usePushNotifications = () => {
         throw new Error(
           `Invalid Key Length: ${cleanKey.length} chars (Should be 87). Check code string.`,
         );
-      }
+      } */
 
-      const convertedVapidKey = urlBase64ToUint8Array(cleanKey);
+      const convertedVapidKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
