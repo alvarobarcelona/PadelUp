@@ -6,6 +6,9 @@
     "preferences": "Preferences",
     "subscription": "Subscribed until",
     "notifications": "Notifications",
+    "notifications_enabled": "Enabled (Icon Badge)",
+    "notifications_disabled": "Enable for Icon Badge",
+    "notifications_off": "Off",
     "support": "Support",
     "support_desc": "Use support for disputes (e.g. The opponent rejects the result repeatedly without justified reason). An admin will intervene and ensure a fair outcome and correct result. You can also request longer subscription plans here.",
     "help": "Help & Feedback",
@@ -191,7 +194,9 @@
     "invalid_score": "Invalid Score",
     "draw": "Draw",
     "duplicate": "Duplicate Match",
-    "deleted_user": "Deleted User"
+    "deleted_user": "Deleted User",
+    "enable": "Enable",
+    "on": "On"
   },
   "new_match": {
     "title": "Select Players",

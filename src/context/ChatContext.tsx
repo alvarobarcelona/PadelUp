@@ -6,6 +6,10 @@ interface ChatContextType {
     unreadCount: number;
     markAsRead: (senderId: string) => Promise<void>;
     refreshUnreadCount: () => Promise<void>;
+    notificationPermission: NotificationPermission;
+    requestNotificationPermission: () => Promise<void>;
+    isBadgeEnabled: boolean;
+    toggleBadgeEnabled: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -78,19 +82,64 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         fetchUnreadCount();
     }, [location.pathname]);
 
+    const [permission, setPermission] = useState<NotificationPermission>('default');
+
+    useEffect(() => {
+        if ('Notification' in window) {
+            setPermission(Notification.permission);
+        }
+    }, []);
+
+    const requestNotificationPermission = async () => {
+        if (!('Notification' in window)) return;
+        const result = await Notification.requestPermission();
+        setPermission(result);
+    };
+
+    const [isBadgeEnabled, setIsBadgeEnabled] = useState<boolean>(() => {
+        const stored = localStorage.getItem('isBadgeEnabled');
+        return stored !== null ? JSON.parse(stored) : true;
+    });
+
+    const toggleBadgeEnabled = () => {
+        setIsBadgeEnabled(prev => {
+            const newValue = !prev;
+            localStorage.setItem('isBadgeEnabled', JSON.stringify(newValue));
+            return newValue;
+        });
+    };
+
     // Update App Badge
     useEffect(() => {
         if ('setAppBadge' in navigator) {
-            if (unreadCount > 0) {
-                navigator.setAppBadge(unreadCount).catch(err => console.error('Error setting app badge:', err));
+            // Badging API requires permission on some platforms, or at least doesn't hurt to check
+            // Actually, Badging API works without notification permission on some installs, 
+            // but for consistent behavior especially with notifications, it's good to have.
+            // However, the core requirement is just calling it.
+            // If we have unread messages, try to set it.
+            if (isBadgeEnabled && unreadCount > 0) {
+                navigator.setAppBadge(unreadCount).catch(err => {
+                    // Fail silently, possibly due to lack of permission or document visibility
+                    console.debug('Error setting app badge:', err);
+                });
             } else {
-                navigator.clearAppBadge().catch(err => console.error('Error clearing app badge:', err));
+                navigator.clearAppBadge().catch(err => {
+                    console.debug('Error clearing app badge:', err);
+                });
             }
         }
-    }, [unreadCount]);
+    }, [unreadCount, isBadgeEnabled]);
 
     return (
-        <ChatContext.Provider value={{ unreadCount, markAsRead, refreshUnreadCount: fetchUnreadCount }}>
+        <ChatContext.Provider value={{
+            unreadCount,
+            markAsRead,
+            refreshUnreadCount: fetchUnreadCount,
+            notificationPermission: permission,
+            requestNotificationPermission,
+            isBadgeEnabled,
+            toggleBadgeEnabled
+        }}>
             {children}
         </ChatContext.Provider>
     );

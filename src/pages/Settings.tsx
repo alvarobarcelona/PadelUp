@@ -15,14 +15,17 @@ import {
     Globe,
     ShoppingCart,
     MapPin,
+    Bell,
 } from 'lucide-react';
 import { logActivity } from '../lib/logger';
 import { APP_FULL_VERSION } from '../lib/constants';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { useChat } from '../context/ChatContext';
 
 const Settings = () => {
     const { alert, confirm } = useModal();
+    const { notificationPermission, requestNotificationPermission, isBadgeEnabled, toggleBadgeEnabled } = useChat();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const [profile, setProfile] = useState<{ username: string, first_name: string, last_name: string, email: string, subscription_end_date: string | null, main_club_id: number | null } | null>(null);
@@ -637,20 +640,41 @@ const Settings = () => {
                         Posible desarrollo futuro. */}
 
                         {/* Notifications */}
-                        {/* <div className="flex items-center justify-between p-4">
+                        {/* Notifications */}
+                        <div className="flex items-center justify-between p-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-full bg-purple-500/10 text-purple-400">
                                     <Bell size={20} />
                                 </div>
-                                <span className="font-medium text-white">{t('settings.notifications')}</span>
+                                <div className="flex flex-col text-left">
+                                    <span className="font-medium text-white">{t('settings.notifications') || 'Notifications'}</span>
+                                    <span className="text-[10px] text-slate-500">
+                                        {notificationPermission === 'granted'
+                                            ? (t('settings.notifications_enabled') || 'Enabled (Icon Badge)')
+                                            : (t('settings.notifications_disabled') || 'Enable for Icon Badge')}
+                                    </span>
+                                </div>
                             </div>
-                            <div
-                                onClick={handleNotificationToggle}
-                                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${notifications ? 'bg-green-500' : 'bg-slate-600'}`}
-                            >
-                                <div className={`absolute top-1 left-1 bg-white h-4 w-4 rounded-full transition-transform ${notifications ? 'translate-x-5' : ''}`} />
-                            </div>
-                        </div> */}
+
+                            {notificationPermission === 'granted' ? (
+                                <button
+                                    onClick={toggleBadgeEnabled}
+                                    className={`text-xs px-3 py-1.5 rounded-full transition-colors font-medium ${isBadgeEnabled
+                                            ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
+                                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                        }`}
+                                >
+                                    {isBadgeEnabled ? (t('common.on') || 'On') : (t('settings.notifications_off') || 'Off')}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={requestNotificationPermission}
+                                    className="text-xs bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 px-3 py-1.5 rounded-full transition-colors"
+                                >
+                                    {t('common.enable') || 'Enable'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 

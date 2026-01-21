@@ -7,6 +7,9 @@
     "preferences": "Einstellungen",
     "subscription": "Aboniert bis",
     "notifications": "Benachrichtigungen",
+    "notifications_enabled": "Aktiviert (Symbol-Badge)",
+    "notifications_disabled": "Aktivieren für Symbol-Badge",
+    "notifications_off": "Aus",
     "support": "Support",
     "support_desc": "Nutzen Sie den Support für Streitigkeiten (z.B. Der Gegner lehnt das Ergebnis wiederholt ohne gerechtfertigten Grund ab). Ein Admin wird eingreifen und ein faires und korrektes Ergebnis sicherstellen. Sie können hier auch längere Abonnementpläne anfragen.",
     "help": "Hilfe & Feedback",
@@ -43,7 +46,7 @@
     "last_name": "Nachname",
     "support_email": "Support E-Mail",
     "password": "Passwort",
-  "forgot_password": "Vergessen?",
+    "forgot_password": "Vergessen?",
     "send_reset_link": "Link senden",
     "sign_in": "Anmelden",
     "create_account": "Konto erstellen",
@@ -189,7 +192,9 @@
     "invalid_score": "Ungültiger Punktestand",
     "draw": "Unentschieden",
     "duplicate": "Doppeltes Spiel",
-    "deleted_user": "Gelöschter Benutzer"
+    "deleted_user": "Gelöschter Benutzer",
+    "enable": "Aktivieren",
+    "on": "Ein"
   },
   "new_match": {
     "title": "Spieler auswählen",
