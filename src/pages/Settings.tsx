@@ -22,10 +22,12 @@ import { APP_FULL_VERSION } from '../lib/constants';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
 import { useChat } from '../context/ChatContext';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const Settings = () => {
     const { alert, confirm } = useModal();
     const { notificationPermission, requestNotificationPermission, isBadgeEnabled, toggleBadgeEnabled } = useChat();
+    const { subscribeToPush, loading: pushLoading } = usePushNotifications();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const [profile, setProfile] = useState<{ username: string, first_name: string, last_name: string, email: string, subscription_end_date: string | null, main_club_id: number | null } | null>(null);
@@ -650,8 +652,8 @@ const Settings = () => {
                                     <span className="font-medium text-white">{t('settings.notifications') || 'Notifications'}</span>
                                     <span className="text-[10px] text-slate-500">
                                         {notificationPermission === 'granted'
-                                            ? (t('settings.notifications_enabled') || 'Enabled (Icon Badge)')
-                                            : (t('settings.notifications_disabled') || 'Enable for Icon Badge')}
+                                            ? (t('settings.notifications_enabled') || 'Push Notifications Active')
+                                            : (t('settings.notifications_disabled') || 'Enable for Push Notifications')}
                                     </span>
                                 </div>
                             </div>
@@ -660,17 +662,23 @@ const Settings = () => {
                                 <button
                                     onClick={toggleBadgeEnabled}
                                     className={`text-xs px-3 py-1.5 rounded-full transition-colors font-medium ${isBadgeEnabled
-                                            ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
-                                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                        ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
+                                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                                         }`}
                                 >
                                     {isBadgeEnabled ? (t('common.on') || 'On') : (t('settings.notifications_off') || 'Off')}
                                 </button>
                             ) : (
                                 <button
-                                    onClick={requestNotificationPermission}
-                                    className="text-xs bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 px-3 py-1.5 rounded-full transition-colors"
+                                    onClick={async () => {
+                                        await subscribeToPush();
+                                        // Also request permission via context to update state
+                                        await requestNotificationPermission();
+                                    }}
+                                    disabled={pushLoading}
+                                    className="text-xs bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 px-3 py-1.5 rounded-full transition-colors flex items-center gap-2"
                                 >
+                                    {pushLoading && <Loader2 size={12} className="animate-spin" />}
                                     {t('common.enable') || 'Enable'}
                                 </button>
                             )}

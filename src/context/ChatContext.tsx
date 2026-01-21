@@ -109,6 +109,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         });
     };
 
+    // We can import the hook logic here or just use it inside the settings component.
+    // However, to make it globally accessible via useChat(), we can lift it here or just recommend using the hook separately.
+    // For simplicity, let's keep it separate or just clear the badge here.
+
     // Update App Badge
     useEffect(() => {
         if ('setAppBadge' in navigator) {
