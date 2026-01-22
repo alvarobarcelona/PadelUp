@@ -385,16 +385,27 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                 >
                                     <Avatar src={conv.avatar_url} fallback={conv.username} />
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-baseline mb-1">
-                                            <h3 className="font-semibold text-white truncate">{conv.username}</h3>
-                                            {conv.has_unread && conv.last_message_time && <span className="text-[10px] text-green-400 font-medium">
-                                                {t('chat.new_message')}
-                                            </span>
-                                            }
-                                            {conv.last_message_time && <span className="ml-2 text-slate-500 text-[10px]">{new Date(conv.last_message_time).toLocaleString()}</span>}
+                                        <div className="flex justify-between items-center mb-1">
+                                            <h3 className="font-semibold text-white truncate pr-2">{conv.username}</h3>
+                                            {conv.last_message_time && (
+                                                <span className="text-slate-500 text-[10px] whitespace-nowrap flex-shrink-0">
+                                                    {new Date(conv.last_message_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            )}
                                         </div>
-                                        <p className="text-sm text-slate-400 truncate">{conv.last_message}</p>
-
+                                        <div className="flex justify-between items-center gap-2">
+                                            <p className={cn(
+                                                "text-sm truncate",
+                                                conv.has_unread ? "text-white font-medium" : "text-slate-400"
+                                            )}>
+                                                {conv.last_message}
+                                            </p>
+                                            {conv.has_unread && (
+                                                <span className="bg-green-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-sm flex-shrink-0">
+                                                    {t('chat.new_message')}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <button
