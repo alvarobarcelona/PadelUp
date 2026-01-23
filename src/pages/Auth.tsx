@@ -6,6 +6,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { padelUpSupportMail } from '../lib/constants';
 
 const Auth = () => {
     const navigate = useNavigate();
@@ -392,7 +393,7 @@ const Auth = () => {
                         >
                             {isLogin ? t('auth.no_account') : t('auth.has_account')}
                         </button>
-                        <div className="text-xs text-slate-500">{t('auth.support_email')}: padeluppadeleros@gmail.com</div>
+                        <div className="text-xs text-slate-500">{t('auth.support_email')}: {padelUpSupportMail}</div>
                     </div>
 
                     {!isStandalone && (

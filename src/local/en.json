@@ -372,8 +372,9 @@
     "reason_1": "-Attempt to cheat the system",
     "reason_2": "-Symbolic non-payment to help the community",
     "reason_3": "-Mismanagement",
-    "contact_admin": "Please contact an administrator or send your case to support in the settings area.",
-    "sign_out": "Sign Out"
+    "contact_admin": "Please contact an administrator or send your case to support",
+    "sign_out": "Sign Out",
+    "support_email": "Support email"
   },
   "chat": {
     "open_chat": "Open Chat",

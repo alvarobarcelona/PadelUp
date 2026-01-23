@@ -379,8 +379,9 @@
     "reason_1": "-Versuch, das System zu betrügen",
     "reason_2": "-Symbolische Nichtzahlung zur Unterstützung der Community",
     "reason_3": "-Missmanagement",
-    "contact_admin": "Bitte kontaktiere einen Administrator oder sende deinen Fall an den Support im Einstellungsbereich.",
-    "sign_out": "Abmelden"
+    "contact_admin": "Bitte kontaktiere einen Administrator oder sende deinen Fall an den Support",
+    "sign_out": "Abmelden",
+    "support_email": "Support E-Mail"
   },
   "chat": {
     "open_chat": "Chat öffnen",

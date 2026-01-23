@@ -369,11 +369,12 @@
   },
   "banned": {
     "title": "Cuenta temporalmente suspendida",
-    "message": "Tu cuenta ha sido bloqueada por varias razones posibles:",
-    "reason_1": "-Intento de engañar al sistema",
-    "reason_2": "-Impago simbólico para ayudar a la comunidad",
-    "reason_3": "-Mala gestión",
-    "contact_admin": "Por favor contacta a un administrador o envía tu caso a soporte en el área de ajustes.",
+    "message": "Tu cuenta ha sido bloqueada por varias posibles razones:",
+    "reason_1": "-Intento de engañar al sistema.",
+    "reason_2": "-Impago simbólico para ayudar a la comunidad.",
+    "reason_3": "-Mala gestión.",
+    "contact_admin": "Por favor contacta a un administrador o envía tu caso a soporte.",
+    "support_email": "Correo de Soporte",
     "sign_out": "Cerrar Sesión"
   },
   "chat": {
