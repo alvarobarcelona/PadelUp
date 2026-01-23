@@ -16,7 +16,7 @@ const vapidKeys = {
 };
 
 const vapidSubject =
-  Deno.env.get("VAPID_SUBJECT") || "mailto:admin@example.com";
+  Deno.env.get("VAPID_SUBJECT") || "mailto:padeluppadelerosqgmail.com";
 
 webpush.setVapidDetails(
   vapidSubject,
@@ -60,9 +60,9 @@ Deno.serve(async (req) => {
     const notificationPayload = JSON.stringify({
       title: "New Message",
       body: record.content || "You have a new message!",
-      url: "/chat", // Or specific chat URL
+      url: `/?chatUser=${record.sender_id}`, // specific chat URL
       data: {
-        url: "/chat",
+        url: `/?chatUser=${record.sender_id}`,
       },
     });
 

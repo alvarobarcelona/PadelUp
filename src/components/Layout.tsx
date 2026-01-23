@@ -30,6 +30,18 @@ const Layout = () => {
         return () => window.removeEventListener('openChat' as any, handleOpenChat);
     }, []);
 
+    // Deep link handling (Push Notifications)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const chatUserParam = params.get('chatUser');
+        if (chatUserParam) {
+            setChatActiveUser(chatUserParam);
+            setIsChatOpen(true);
+            // Clean URL
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, []);
+
     useEffect(() => {
         const checkAccess = async () => {
             const { data: { user } } = await supabase.auth.getUser();
