@@ -206,27 +206,30 @@ const MatchCard = ({ match }: { match: Match }) => {
                         {date}
                     </div>
 
-                    {/* Center: Creator (Conditional) */}
-                    {match.creator_username && (
-                        <div className="flex items-center gap-1 mx-2 overflow-hidden">
-                            <span className="opacity-60 text-[10px]">{t('history.created_by')}</span>
-                            <span className="font-medium text-slate-400 text-[10px] truncate">{match.creator_username}</span>
-                        </div>
-                    )}
+
 
                     {/* Right: Match ID */}
                     <div className="shrink-0">
                         <span>{t('history.match_num', { id: match.id })}</span>
                     </div>
                 </div>
+                <div className="flex items-center justify-between w-full">
+                    {/* Bottom Row: Club Location */}
+                    {match.club_name && (
+                        <div className="flex items-center gap-1 text-slate-400">
+                            <MapPin size={12} />
+                            <span className="font-medium">{match.club_name}</span>
+                        </div>
+                    )}
 
-                {/* Bottom Row: Club Location */}
-                {match.club_name && (
-                    <div className="flex items-center gap-1 text-slate-400">
-                        <MapPin size={12} />
-                        <span className="font-medium">{match.club_name}</span>
-                    </div>
-                )}
+                    {/* Center: Creator (Conditional) */}
+                    {match.creator_username && (
+                        <div className="flex items-center gap-1  overflow-hidden">
+                            <span className="opacity-60 text-[10px]">{t('history.created_by')}</span>
+                            <span className="font-medium text-slate-400 text-[10px] truncate">{match.creator_username}</span>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="flex items-center justify-between p-4">

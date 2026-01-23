@@ -10,16 +10,18 @@ import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
 
+// Update Player interface
 interface Player {
     id: string;
     username: string;
     avatar_url: string | null;
     elo: number;
     subscription_end_date?: string | null;
+    banned?: boolean | null;
 }
 //Este elo_snapshot se guarda en la tabla matches al crearlo, pero no afecta a los perfiles todavía.
 //Cuando se confirma el partido, la función confirm_match (en supabase/functions) vuelve a calcular todo desde cero.
-//Esto es así para evitar que se pueda hacer trampa con el elo y que el calculo sea con el ultimo partido actualizado.
+//Esto es así para evitar que no se pueda hacer trampa con el elo y que el calculo sea con el ultimo partido actualizado.
 const NewMatch = () => {
     const { alert, confirm } = useModal();
     const { t } = useTranslation();
@@ -74,7 +76,7 @@ const NewMatch = () => {
             const { data: { user } } = await supabase.auth.getUser();
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, username, avatar_url, elo, subscription_end_date')
+                .select('id, username, avatar_url, elo, subscription_end_date, banned')
                 .eq('approved', true) // Only select approved players
                 .eq('is_admin', false)
                 .order('username');
@@ -82,7 +84,7 @@ const NewMatch = () => {
 
             // Filter Expired Subscriptions
             const validPlayers = data?.filter(p => {
-                if (!p.subscription_end_date) return false;
+                if (!p.subscription_end_date || p.banned) return false;
                 return new Date(p.subscription_end_date) >= new Date();
             }) || [];
 
@@ -95,7 +97,7 @@ const NewMatch = () => {
                 if (!currentUserPlayer) {
                     const { data: profile } = await supabase
                         .from('profiles')
-                        .select('id, username, avatar_url, elo, subscription_end_date')
+                        .select('id, username, avatar_url, elo, subscription_end_date, banned')
                         .eq('id', user.id)
                         .single();
                     if (profile) {
