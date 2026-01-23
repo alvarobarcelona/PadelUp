@@ -72,11 +72,13 @@
       "email_not_found_signup": "E-Mail nicht gefunden. Bitte registrieren Sie sich zuerst.",
       "incorrect_password": "Falsches Passwort.",
       "user_registered": "Benutzer bereits registriert",
-      "username_taken": "Benutzername bereits vergeben"
+      "username_taken": "Benutzername bereits vergeben",
+      "email_not_confirmed": "E-Mail nicht bestätigt"
     },
     "success": {
       "reset_sent": "Link gesendet! Überprüfen Sie Ihre E-Mail.",
-      "signup_confirm": "Erfolg! Überprüfen Sie Ihre E-Mail auf den Bestätigungslink."
+      "signup_confirm": "Erfolg! Überprüfen Sie Ihre E-Mail auf den Bestätigungslink.",
+      "resend_confirmation": "Bestätigungs-E-Mail erneut senden"
     }
   },
   "home": {

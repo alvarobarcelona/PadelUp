@@ -23,6 +23,7 @@ const Auth = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>(''); // Default empty or first club
+    const [showResend, setShowResend] = useState(false);
 
     const [isStandalone, setIsStandalone] = useState(false);
 
@@ -50,7 +51,32 @@ const Auth = () => {
         if (msg.includes('Invalid login credentials')) return t('auth.errors.incorrect_credentials');
         if (msg.includes('Password should be at least')) return t('auth.errors.password_short');
         if (msg.includes('User already registered')) return t('auth.errors.user_registered');
+        if (msg.includes('Email not confirmed')) return t('auth.errors.email_not_confirmed');
         return msg;
+    };
+
+    const handleResendConfirmation = async () => {
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.resend({
+                type: 'signup',
+                email: email,
+                options: {
+                    emailRedirectTo: window.location.origin
+                }
+            });
+            if (error) throw error;
+            await alert({
+                title: 'Success',
+                message: t('auth.success.signup_confirm'),
+                type: 'success'
+            });
+            setShowResend(false);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleResetPassword = async (e: React.FormEvent) => {
@@ -103,7 +129,9 @@ const Auth = () => {
         }
 
         setLoading(true);
+        setLoading(true);
         setError(null);
+        setShowResend(false);
 
         try {
             if (isLogin) {
@@ -115,6 +143,10 @@ const Auth = () => {
                 if (error) {
                     if (error.message.includes('Invalid login credentials')) {
                         throw new Error(t('auth.errors.incorrect_password'));
+                    }
+                    if (error.message.includes('Email not confirmed')) {
+                        setShowResend(true);
+                        throw new Error(t('auth.errors.email_not_confirmed'));
                     }
                     throw error;
                 }
@@ -196,6 +228,9 @@ const Auth = () => {
                 setPassword('');
             }
         } catch (err: any) {
+            if (err.message.includes('Email not confirmed')) {
+                setShowResend(true);
+            }
             setError(getFriendlyErrorMessage(err.message));
         } finally {
             setLoading(false);
@@ -319,6 +354,14 @@ const Auth = () => {
                     {error && (
                         <div className="p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">
                             {error}
+                            {showResend && (
+                                <button
+                                    onClick={handleResendConfirmation}
+                                    className="block mt-2 text-xs text-red-500 hover:text-red-400 underline"
+                                >
+                                    {t('auth.success.resend_confirmation')}
+                                </button>
+                            )}
                         </div>
                     )}
 

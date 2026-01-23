@@ -75,11 +75,13 @@
       "email_not_found_signup": "Correo no encontrado. Por favor regístrate primero.",
       "incorrect_password": "Contraseña incorrecta.",
       "user_registered": "Usuario ya registrado",
-      "username_taken": "Nombre de usuario ya en uso"
+      "username_taken": "Nombre de usuario ya en uso",
+      "email_not_confirmed": "Email no confirmado"
     },
     "success": {
       "reset_sent": "¡Enlace enviado! Revisa tu correo.",
-      "signup_confirm": "¡Éxito! Revisa tu correo para el enlace de confirmación. A veces puede tardar unos minutos."
+      "signup_confirm": "¡Éxito! Revisa tu correo para el enlace de confirmación. A veces puede tardar unos minutos.",
+      "resend_confirmation": "Reenviar email de confirmación"
     }
   },
   "home": {

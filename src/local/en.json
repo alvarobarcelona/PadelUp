@@ -75,11 +75,13 @@
       "email_not_found_signup": "Email not found. Please sign up first.",
       "incorrect_password": "Incorrect password.",
       "user_registered": "User already registered",
-      "username_taken": "Username already taken"
+      "username_taken": "Username already taken",
+      "email_not_confirmed": "Email not confirmed"
     },
     "success": {
       "reset_sent": "Password reset link sent! Check your email.",
-      "signup_confirm": "Success! Check your email for the confirmation link! Some times it can take a few minutes to arrive."
+      "signup_confirm": "Success! Check your email for the confirmation link! Some times it can take a few minutes to arrive.",
+      "resend_confirmation": "Resend confirmation email"
     }
   },
   "clubs": {
