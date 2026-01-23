@@ -34,6 +34,7 @@ const Admin = () => {
 
     // Edit State
     const [editingPlayer, setEditingPlayer] = useState<any | null>(null);
+    const [newPassword, setNewPassword] = useState('');
 
     // Create Club State
     const [newClubName, setNewClubName] = useState('');
@@ -108,6 +109,7 @@ const Admin = () => {
             logActivity('ADMIN_DELETE_USER', id, { deleted_id: id });
 
             await alert({ title: 'Success', message: 'User deleted permanently.', type: 'success' });
+            setNewPassword('');
             fetchData();
         } catch (error: any) {
             console.error(error);
@@ -351,6 +353,19 @@ const Admin = () => {
 
             if (error) throw error;
 
+            // Update Password if provided
+            if (newPassword.trim()) {
+                const { error: passwordError } = await supabase.functions.invoke('admin-update-user', {
+                    body: {
+                        user_id: editingPlayer.id,
+                        password: newPassword
+                    }
+                });
+
+                if (passwordError) throw new Error(`Password update failed: ${passwordError.message}`);
+                // Verify response ok? invoke wraps it but good to know.
+            }
+
             // LOG ADMIN EDIT
             logActivity('ADMIN_EDIT_USER', editingPlayer.id, {
                 changes: {
@@ -363,7 +378,9 @@ const Admin = () => {
             });
 
             await alert({ title: 'Success', message: 'Player updated successfully!', type: 'success' });
+            await alert({ title: 'Success', message: 'Player updated successfully!', type: 'success' });
             setEditingPlayer(null);
+            setNewPassword('');
             fetchData();
         } catch (error: any) {
             console.error(error);
@@ -608,10 +625,10 @@ const Admin = () => {
 
                     <div className="space-y-2">
                         {filteredMatches.map(m => {
-                            const p1 = players.find(p => p.id === m.team1_p1)?.username || 'Unknown';
-                            const p2 = players.find(p => p.id === m.team1_p2)?.username || 'Unknown';
-                            const p3 = players.find(p => p.id === m.team2_p1)?.username || 'Unknown';
-                            const p4 = players.find(p => p.id === m.team2_p2)?.username || 'Unknown';
+                            const p1 = players.find(p => p.id === m.team1_p1)?.username || t('common.deleted_user');
+                            const p2 = players.find(p => p.id === m.team1_p2)?.username || t('common.deleted_user');
+                            const p3 = players.find(p => p.id === m.team2_p1)?.username || t('common.deleted_user');
+                            const p4 = players.find(p => p.id === m.team2_p2)?.username || t('common.deleted_user');
 
                             const scoreList = Array.isArray(m.score) ? m.score : [];
 
@@ -766,7 +783,7 @@ const Admin = () => {
                                             </div>
                                             {log.actor && (
                                                 <span className="text-xs text-slate-500 font-mono">
-                                                    By: {log.actor?.username || 'Unknown'}
+                                                    By: {log.actor?.username || t('common.deleted_user')}
                                                 </span>
                                             )}
                                         </div>
@@ -788,7 +805,7 @@ const Admin = () => {
             {editingPlayer && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative">
-                        <button onClick={() => setEditingPlayer(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
+                        <button onClick={() => { setEditingPlayer(null); setNewPassword(''); }} className="absolute top-4 right-4 text-slate-500 hover:text-white">
                             <X size={24} />
                         </button>
                         <h2 className="text-xl font-bold text-white mb-6">{t('admin.edit_player')}</h2>
@@ -800,6 +817,16 @@ const Admin = () => {
                                     className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
                                     value={editingPlayer.username}
                                     onChange={(e) => setEditingPlayer({ ...editingPlayer, username: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">New Password (Optional)</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white placeholder-slate-600"
+                                    placeholder="Leave empty to keep current"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
                                 />
                             </div>
                             <div>

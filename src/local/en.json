@@ -6,6 +6,13 @@
     "preferences": "Preferences",
     "subscription": "Subscribed until",
     "notifications": "Notifications",
+    "notifications_enabled": "Enabled",
+    "notifications_disabled": "Disabled",
+    "notifications_off": "Off",
+    "push_notifications": "Push Notifications",
+    "test": "Test",
+    "test_notification_msg": "This is a test notification!",
+    "test_notification_sent": "Test notification sent",
     "support": "Support",
     "support_desc": "Use support for disputes (e.g. The opponent rejects the result repeatedly without justified reason). An admin will intervene and ensure a fair outcome and correct result. You can also request longer subscription plans here.",
     "help": "Help & Feedback",
@@ -20,6 +27,10 @@
     "cancel": "Cancel",
     "edit": "Edit",
     "save": "Save",
+    "username": "Username / Player Name",
+    "usernameTakenTitle": "Username Taken",
+    "usernameTakenMessage": "That username is already taken. Please choose another one.",
+    "errorUpdatingProfile": "Error updating profile",
     "how_it_works": "How it works",
     "dynamic_elo": "Dynamic ELO System",
     "install_app": "Install App",
@@ -28,14 +39,18 @@
     "elo_placement": "Start between(0-10) games: K=48 (Fast adjustment to find real level).",
     "elo_standard": "Standard between(10-30) games: K=32.",
     "elo_stable": "Veteran (+30) games: K=24 (Higher stability).",
-    "elo_note": "Note: Points are assigned **individually**. In the same match, a new player might gain +40 pts while their veteran partner gains +20."
+    "elo_note": "Note: Points are assigned **individually**. In the same match, a new player might gain +40 pts while their veteran partner gains +20.",
+    "no_changes": "No changes made.",
+    "no_changes_desc": "This name is already taken."
   },
   "auth": {
     "welcome_back": "Welcome back, Champion",
     "join_club": "Join the Club",
     "reset_password_title": "Reset Password",
-    "username": "Username",
+    "username": "Username / Player Name",
     "email": "Email",
+    "first_name": "First Name",
+    "last_name": "Last Name",
     "support_email": "Support email",
     "password": "Password",
     "forgot_password": "Forgot?",
@@ -60,11 +75,13 @@
       "email_not_found_signup": "Email not found. Please sign up first.",
       "incorrect_password": "Incorrect password.",
       "user_registered": "User already registered",
-      "username_taken": "Username already taken"
+      "username_taken": "Username already taken",
+      "email_not_confirmed": "Email not confirmed"
     },
     "success": {
       "reset_sent": "Password reset link sent! Check your email.",
-      "signup_confirm": "Success! Check your email for the confirmation link! Some times it can take a few minutes to arrive."
+      "signup_confirm": "Success! Check your email for the confirmation link! Some times it can take a few minutes to arrive.",
+      "resend_confirmation": "Resend confirmation email"
     }
   },
   "clubs": {
@@ -72,9 +89,9 @@
     "search_club": "Search Club",
     "select_club": "Select Club",
     "select_club_if_you_wish": "Select Club (Optional)",
-    "no_club": "No Club (Friendly Match)",
+    "no_club": "No Club",
     "main_club": "Main Club",
-    "no_club_selected": "No club selected"
+    "no_club_selected": "No club "
   },
   "home": {
     "welcome_user": "Welcome back, {{name}}",
@@ -126,6 +143,8 @@
     "sets_won": "Sets Won",
     "games": "Games",
     "games_won": "Games Won",
+    "club_matches": "{{count}} Matches",
+    "my_clubs": "My Clubs",
     "performance_trend": "Performance Trend",
     "last_20": "Last 20 Matches",
     "year": "Year {{year}}",
@@ -139,10 +158,12 @@
     "joined": "Joined {{date}}",
     "head_to_head": "Head-to-Head",
     "record_against": "Your Record against {{name}}",
+    "matches_total_wr_singular": "{{count}} match total ({{wr}}% WR)",
     "matches_total_wr": "{{count}} matches total ({{wr}}% WR)",
     "current_run": "Current Run",
+    "streak_win": "+{{count}} Win",
     "streak_wins": "+{{count}} Wins",
-    "streak_wins_desc": "You're on a roll against them!",
+    "streak_wins_desc": "You're on a roll!",
     "streak_losses": "{{count}} Loss",
     "streak_losses_plural": "{{count}} Losses",
     "streak_losses_desc": "Time for revenge!",
@@ -156,7 +177,8 @@
       "nemesis_desc": "They have your number... for now",
       "even_title": "Even Match",
       "even_desc": "A truly balanced rivalry"
-    }
+    },
+    "subscription_expired": "Inactive user"
   },
   "nav": {
     "home": "Home",
@@ -177,7 +199,12 @@
     "validation_error": "Validation Error",
     "invalid_score": "Invalid Score",
     "draw": "Draw",
-    "duplicate": "Duplicate Match"
+    "duplicate": "Duplicate Match",
+    "deleted_user": "Deleted User",
+    "enable": "Enable",
+    "on": "On",
+    "active": "Active",
+    "inactive": "Inactive"
   },
   "new_match": {
     "title": "Select Players",
@@ -357,7 +384,9 @@
     "new_message": "new message",
     "loading_chat": "Loading chat...",
     "start_conversation": "Start a conversation with {{name}}!",
-    "type_message": "Type a message..."
+    "type_message": "Type a message...",
+    "delete_conversation": "Delete conversation",
+    "confirm_delete_conversation": "Are you sure you want to delete this conversation? It will only be deleted for you."
   },
   "welcome_modal": {
     "title": "Welcome to PadelUp",

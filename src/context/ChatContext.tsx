@@ -6,6 +6,10 @@ interface ChatContextType {
     unreadCount: number;
     markAsRead: (senderId: string) => Promise<void>;
     refreshUnreadCount: () => Promise<void>;
+    notificationPermission: NotificationPermission;
+    requestNotificationPermission: () => Promise<void>;
+    isBadgeEnabled: boolean;
+    toggleBadgeEnabled: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -78,8 +82,46 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         fetchUnreadCount();
     }, [location.pathname]);
 
+    const [permission, setPermission] = useState<NotificationPermission>('default');
+
+    useEffect(() => {
+        if ('Notification' in window) {
+            setPermission(Notification.permission);
+        }
+    }, []);
+
+    const requestNotificationPermission = async () => {
+        if (!('Notification' in window)) return;
+        const result = await Notification.requestPermission();
+        setPermission(result);
+    };
+
+    // Update App Badge
+    useEffect(() => {
+        if ('setAppBadge' in navigator) {
+            // Badging API: Set if we have unread messages
+            if (unreadCount > 0) {
+                navigator.setAppBadge(unreadCount).catch(err => {
+                    console.debug('Error setting app badge:', err);
+                });
+            } else {
+                navigator.clearAppBadge().catch(err => {
+                    console.debug('Error clearing app badge:', err);
+                });
+            }
+        }
+    }, [unreadCount]);
+
     return (
-        <ChatContext.Provider value={{ unreadCount, markAsRead, refreshUnreadCount: fetchUnreadCount }}>
+        <ChatContext.Provider value={{
+            unreadCount,
+            markAsRead,
+            refreshUnreadCount: fetchUnreadCount,
+            notificationPermission: permission,
+            requestNotificationPermission,
+            isBadgeEnabled: true, // Deprecated, always true now
+            toggleBadgeEnabled: () => { } // Deprecated, no-op
+        }}>
             {children}
         </ChatContext.Provider>
     );

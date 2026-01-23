@@ -6,6 +6,13 @@
     "preferences": "Preferencias",
     "subscription": "Suscripción hasta",
     "notifications": "Notificaciones",
+    "notifications_enabled": "Activadas",
+    "notifications_disabled": "Desactivadas",
+    "notifications_off": "Desactivado",
+    "push_notifications": "Notificaciones Push",
+    "test": "Probar",
+    "test_notification_msg": "¡Esta es una notificación de prueba!",
+    "test_notification_sent": "Notificación de prueba enviada",
     "support": "Soporte",
     "support_desc": "Usa el soporte para disputas (ej. El oponente rechaza el resultado repetidamente sin razón justificada). Un administrador intervendrá para asegurar un resultado correcto y justo. También puedes solicitar planes de suscripción más largos aquí.",
     "help": "Ayuda y Comentarios",
@@ -20,6 +27,10 @@
     "cancel": "Cancelar",
     "edit": "Editar",
     "save": "Guardar",
+    "username": "Nombre de usuario / Jugador",
+    "usernameTakenTitle": "Nombre de usuario ya en uso",
+    "usernameTakenMessage": "Por favor elige otro.",
+    "errorUpdatingProfile": "Error al actualizar el perfil",
     "how_it_works": "Cómo funciona",
     "dynamic_elo": "Sistema ELO Dinámico",
     "install_app": "Instalar App",
@@ -28,17 +39,21 @@
     "elo_placement": "Inicio entre(0-10) partidos: K=48 (Ajuste rápido para encontrar tu nivel real).",
     "elo_standard": "Estándar entre(10-30) partidos: K=32.",
     "elo_stable": "Veterano (+30) partidos: K=24 (Mayor estabilidad).",
-    "elo_note": "Nota: Los puntos se asignan **individualmente**. En un mismo partido, un jugador nuevo puede sumar +40 puntos mientras su compañero veterano suma +20."
+    "elo_note": "Nota: Los puntos se asignan **individualmente**. En un mismo partido, un jugador nuevo puede sumar +40 puntos mientras su compañero veterano suma +20.",
+    "no_changes": "No se hicieron cambios.",
+    "no_changes_desc": "El nombre ya está en uso."
   },
   "auth": {
     "welcome_back": "Bienvenido de nuevo, Campeón",
     "join_club": "Únete al Club",
     "reset_password_title": "Restablecer Contraseña",
-    "username": "Nombre de usuario",
+    "username": "Nombre de usuario / Jugador",
     "support_email": "Correo de Soporte",
     "email": "Correo electrónico",
+    "first_name": "Nombre",
+    "last_name": "Apellidos",
     "password": "Contraseña",
-    "forgot_password": "¿Olvidaste?",
+    "forgot_password": "¿Lo olvidaste?",
     "send_reset_link": "Enviar Enlace",
     "sign_in": "Iniciar Sesión",
     "create_account": "Crear Cuenta",
@@ -60,11 +75,13 @@
       "email_not_found_signup": "Correo no encontrado. Por favor regístrate primero.",
       "incorrect_password": "Contraseña incorrecta.",
       "user_registered": "Usuario ya registrado",
-      "username_taken": "Nombre de usuario ya en uso"
+      "username_taken": "Nombre de usuario ya en uso",
+      "email_not_confirmed": "Email no confirmado"
     },
     "success": {
       "reset_sent": "¡Enlace enviado! Revisa tu correo.",
-      "signup_confirm": "¡Éxito! Revisa tu correo para el enlace de confirmación. A veces puede tardar unos minutos."
+      "signup_confirm": "¡Éxito! Revisa tu correo para el enlace de confirmación. A veces puede tardar unos minutos.",
+      "resend_confirmation": "Reenviar email de confirmación"
     }
   },
   "home": {
@@ -85,7 +102,7 @@
     "reject": "Rechazar",
     "waiting_opponent": "Esperando confirmación del oponente...",
     "record_match": "Registrar Resultado",
-    "suggestions": "Sugerencias Jugadores (Max 10)",
+    "suggestions": "Sugerencias Jugadores",
     "get_in_touch": "Contactar",
     "latest_activity": "Última Actividad",
     "match_history": "Historial",
@@ -121,6 +138,8 @@
     "year": "Año {{year}}",
     "achievements": "Logros",
     "no_achievements": "No hay logros disponibles.",
+    "my_clubs": "Mis Clubes",
+    "club_matches": "{{count}} Partidos",
     "sign_out": "Cerrar Sesión",
     "built_with": "Hecho con ❤️ para Amantes del Pádel",
     "by_author": "{{year}} Por Alvaro Barcelona Peralta",
@@ -129,11 +148,12 @@
     "joined": "Unido el {{date}}",
     "head_to_head": "Cara a Cara",
     "record_against": "Tu récord contra {{name}}",
+    "matches_total_wr_singular": "{{count}} partido en total ({{wr}}% Vic)",
     "matches_total_wr": "{{count}} partidos en total ({{wr}}% Vic)",
     "current_run": "Racha Actual",
     "streak_win": "+{{count}} Victoria",
     "streak_wins": "+{{count}} Victorias",
-    "streak_wins_desc": "¡Estás en racha contra ellos!",
+    "streak_wins_desc": "¡Estás en racha!",
     "streak_losses": "{{count}} Derrota",
     "streak_losses_plural": "{{count}} Derrotas",
     "streak_losses_desc": "¡Hora de la revancha!",
@@ -147,16 +167,17 @@
       "nemesis_desc": "Te tienen la medida tomada... por ahora",
       "even_title": "Partido Igualado",
       "even_desc": "Una rivalidad verdaderamente equilibrada"
-    }
+    },
+    "subscription_expired": "Usuario inactivo"
   },
   "clubs": {
     "all_clubs": "Todos los clubs",
     "search_club": "Buscar Club",
     "select_club": "Seleccionar Club",
     "select_club_if_you_wish": "Seleccionar Club (Opcional)",
-    "no_club": "Sin Club (Amistoso)",
+    "no_club": "Sin Club",
     "main_club": "Club Principal",
-    "no_club_selected": "No club seleccionado",
+    "no_club_selected": "Sin Club",
     "select_club_prompt": "Por favor selecciona un club",
     "select_club_prompt_desc": "Esto es necesario para que puedas jugar partidos con otros usuarios."
   },
@@ -179,7 +200,12 @@
     "validation_error": "Error de Validación",
     "invalid_score": "Puntuación Inválida",
     "draw": "Empate",
-    "duplicate": "Partido Duplicado"
+    "duplicate": "Partido Duplicado",
+    "deleted_user": "Usuario Eliminado",
+    "enable": "Activar",
+    "on": "Activo",
+    "active": "Activo",
+    "inactive": "Inactivo"
   },
   "new_match": {
     "title": "Seleccionar Jugadores",
@@ -359,7 +385,9 @@
     "new_message": "nuevo mensaje",
     "loading_chat": "Cargando chat...",
     "start_conversation": "¡Empieza una conversación con {{name}}!",
-    "type_message": "Escribe un mensaje..."
+    "type_message": "Escribe un mensaje...",
+    "delete_conversation": "Eliminar conversación",
+    "confirm_delete_conversation": "¿Estás seguro de querer eliminar esta conversación? Solo se eliminará para ti."
   },
   "welcome_modal": {
     "title": "Bienvenido a PadelUp",

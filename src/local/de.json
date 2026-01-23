@@ -2,10 +2,18 @@
   "settings": {
     "title": "Einstellungen",
     "account": "Konto",
+    "username": "Benutzername / Spielername",
     "security": "Sicherheit & Passwort",
     "preferences": "Einstellungen",
     "subscription": "Aboniert bis",
     "notifications": "Benachrichtigungen",
+    "notifications_enabled": "Aktiviert",
+    "notifications_disabled": "Deaktiviert",
+    "notifications_off": "Aus",
+    "push_notifications": "Push-Benachrichtigungen",
+    "test": "Testen",
+    "test_notification_msg": "Dies ist eine Testbenachrichtigung!",
+    "test_notification_sent": "Testbenachrichtigung gesendet",
     "support": "Support",
     "support_desc": "Nutzen Sie den Support für Streitigkeiten (z.B. Der Gegner lehnt das Ergebnis wiederholt ohne gerechtfertigten Grund ab). Ein Admin wird eingreifen und ein faires und korrektes Ergebnis sicherstellen. Sie können hier auch längere Abonnementpläne anfragen.",
     "help": "Hilfe & Feedback",
@@ -28,14 +36,18 @@
     "elo_placement": "Start zwischen(0-10) Spielen: K=48 (Schnelle Anpassung, um das wahre Level zu finden).",
     "elo_standard": "Standard zwischen(10-30) Spielen: K=32.",
     "elo_stable": "Veteran (+30) Spielen: K=24 (Höhere Stabilität).",
-    "elo_note": "Hinweis: Punkte werden **individuell** vergeben. In einem Spiel kann ein neuer Spieler +40 Punkte sammeln, während sein Veteranen-Partner +20 erhält."
+    "elo_note": "Hinweis: Punkte werden **individuell** vergeben. In einem Spiel kann ein neuer Spieler +40 Punkte sammeln, während sein Veteranen-Partner +20 erhält.",
+    "no_changes": "Keine Änderungen vorgenommen.",
+    "no_changes_desc": "dieser name ist bereits vergeben."
   },
   "auth": {
     "welcome_back": "Willkommen zurück, Champion",
     "join_club": "Tritt dem Club bei",
     "reset_password_title": "Passwort zurücksetzen",
-    "username": "Benutzername",
+    "username": "Benutzername / Spielername",
     "email": "E-Mail",
+    "first_name": "Vorname",
+    "last_name": "Nachname",
     "support_email": "Support E-Mail",
     "password": "Passwort",
     "forgot_password": "Vergessen?",
@@ -60,11 +72,13 @@
       "email_not_found_signup": "E-Mail nicht gefunden. Bitte registrieren Sie sich zuerst.",
       "incorrect_password": "Falsches Passwort.",
       "user_registered": "Benutzer bereits registriert",
-      "username_taken": "Benutzername bereits vergeben"
+      "username_taken": "Benutzername bereits vergeben",
+      "email_not_confirmed": "E-Mail nicht bestätigt"
     },
     "success": {
       "reset_sent": "Link gesendet! Überprüfen Sie Ihre E-Mail.",
-      "signup_confirm": "Erfolg! Überprüfen Sie Ihre E-Mail auf den Bestätigungslink."
+      "signup_confirm": "Erfolg! Überprüfen Sie Ihre E-Mail auf den Bestätigungslink.",
+      "resend_confirmation": "Bestätigungs-E-Mail erneut senden"
     }
   },
   "home": {
@@ -116,6 +130,8 @@
     "sets_won": "Gewonnene Sätze",
     "games": "Spiele",
     "games_won": "Gewonnene Spiele",
+    "club_matches": "{{count}} Spiele",
+    "my_clubs": "Meine Clubs",
     "performance_trend": "Leistungstrend",
     "last_20": "Letzte 20 Spiele",
     "year": "Jahr {{year}}",
@@ -132,7 +148,7 @@
     "matches_total_wr": "{{count}} Spiele insgesamt ({{wr}}% Siegquote)",
     "current_run": "Aktuelle Serie",
     "streak_wins": "+{{count}} Wins",
-    "streak_wins_desc": "Du hast einen Lauf gegen sie!",
+    "streak_wins_desc": "Du hast einen Lauf!",
     "streak_losses": "{{count}} Niederl",
     "streak_losses_plural": "{{count}} Niederl",
     "streak_losses_desc": "Zeit für Revanche!",
@@ -146,16 +162,17 @@
       "nemesis_desc": "Sie haben dich im Griff... vorerst",
       "even_title": "Ausgeglichenes Match",
       "even_desc": "Eine wirklich ausgeglichene Rivalität"
-    }
+    },
+    "subscription_expired": "Inaktiver Benutzer"
   },
   "clubs": {
     "all_clubs": "Alle Clubs",
     "search_club": "Suche Club",
     "select_club": "Wähle Club",
-    "no_club": "Kein Club (Freundschaftsspiel)",
+    "no_club": "Kein Club",
     "main_club": "HauptClub",
     "select_club_if_you_wish": "Wähle Club (optional)",
-    "no_club_selected": "Kein Club ausgewählt",
+    "no_club_selected": "Kein Club",
     "no_club_selected_desc": "Du kannst später einen Club auswählen",
     "select_club_desc": "Wähle deinen Club aus, um deine Spiele in der Rangliste zu verfolgen",
     "select_club_desc_2": "Du kannst später einen Club auswählen",
@@ -180,7 +197,12 @@
     "validation_error": "Validierungsfehler",
     "invalid_score": "Ungültiger Punktestand",
     "draw": "Unentschieden",
-    "duplicate": "Doppeltes Spiel"
+    "duplicate": "Doppeltes Spiel",
+    "deleted_user": "Gelöschter Benutzer",
+    "enable": "Aktivieren",
+    "on": "Ein",
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
   },
   "new_match": {
     "title": "Spieler auswählen",
@@ -343,8 +365,8 @@
     "message": "Deine Mitgliedschaft ist abgelaufen. Um PadelUp weiterhin nutzen zu können, verlängere bitte dein Abonnement.",
     "monthly_fee": "Monatliche Gebühr",
     "payment_instructions": "Bitte sende die Zahlung per PayPal an:",
-    "as_friend": "bitte „als Freund",
-    "contribution_note": "Dieser kleine Beitrag hält das System am Laufen und verbessert es. Vielen Dank.",
+    "as_friend": "bitte (als Freund)",
+    "contribution_note": "Dieser kleine Beitrag hält das System am Laufen und verbessert es.\n Vielen Dank und weiter kämpfen , um auf der Top Rank zu gelangen \n\n  ",
     "processing": "Wird bearbeitet...",
     "confirm_payment": "Ich habe die Zahlung getätigt",
     "disclaimer": "Mit der Bestätigung erklärst du dich damit einverstanden, dass du die Zahlung gesendet hast. Falsche Bestätigungen können zur Sperrung des Kontos führen.",
@@ -369,7 +391,9 @@
     "new_message": "neue Nachricht",
     "loading_chat": "Lade Chat...",
     "start_conversation": "Starte eine Unterhaltung mit {{name}}!",
-    "type_message": "Nachricht eingeben..."
+    "type_message": "Nachricht eingeben...",
+    "delete_conversation": "Konversation löschen",
+    "confirm_delete_conversation": "Sind Sie sicher, dass Sie diese Konversation löschen möchten? Sie wird nur für Sie gelöscht."
   },
   "welcome_modal": {
     "title": "Willkommen bei PadelUp",

@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, Send, Loader2, ArrowLeft, MessageSquarePlus } from 'lucide-react';
+import { X, Send, Loader2, ArrowLeft, MessageSquarePlus, Trash2 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '../ui/Button';
 import { useChat } from '../../context/ChatContext';
+import { useModal } from '../../context/ModalContext';
 import { useTranslation } from 'react-i18next';
 
 interface Message {
@@ -16,6 +17,8 @@ interface Message {
         username: string;
         avatar_url: string | null;
     };
+    deleted_by_sender?: boolean;
+    deleted_by_receiver?: boolean;
 }
 
 interface ConversationUser {
@@ -36,6 +39,7 @@ interface ChatDrawerProps {
 
 const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatDrawerProps) => {
     const { t } = useTranslation();
+    const { confirm } = useModal();
     const [view, setView] = useState<'list' | 'chat'>('list');
     const [activeChatUser, setActiveChatUser] = useState<ConversationUser | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -45,6 +49,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
     const [loadingConversations, setLoadingConversations] = useState(true);
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
 
     // Scroll to bottom
@@ -110,26 +115,28 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
             // 1. Get IDs of people who sent us messages
             const { data: incoming } = await supabase
                 .from('messages')
-                .select('sender_id, created_at, content, is_read')
+                .select('sender_id, created_at, content, is_read, deleted_by_receiver')
                 .eq('receiver_id', user.id)
                 .order('created_at', { ascending: false });
 
             // 2. Get IDs of people we sent messages to
             const { data: outgoing } = await supabase
                 .from('messages')
-                .select('receiver_id, created_at, content')
+                .select('receiver_id, created_at, content, deleted_by_sender')
                 .eq('sender_id', user.id)
                 .order('created_at', { ascending: false });
 
             const interactionMap = new Map<string, { last_msg: string, time: string }>();
 
             incoming?.forEach(msg => {
+                if (msg.deleted_by_receiver) return; // Skip deleted
                 if (!interactionMap.has(msg.sender_id)) {
                     interactionMap.set(msg.sender_id, { last_msg: msg.content, time: msg.created_at });
                 }
             });
 
             outgoing?.forEach(msg => {
+                if (msg.deleted_by_sender) return; // Skip deleted
                 const existing = interactionMap.get(msg.receiver_id);
                 // If no existing or this message is newer
                 if (!existing || new Date(msg.created_at) > new Date(existing.time)) {
@@ -184,7 +191,11 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
             .limit(50);
 
         if (!error && data) {
-            const mappedMessages = data.map((msg: any) => ({
+            const mappedMessages = data.filter((msg: any) => {
+                if (msg.sender_id === user.id && msg.deleted_by_sender) return false;
+                if (msg.receiver_id === user.id && msg.deleted_by_receiver) return false;
+                return true;
+            }).map((msg: any) => ({
                 ...msg,
                 sender: msg.sender
             }));
@@ -252,6 +263,11 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         e.preventDefault();
         if (!newMessage.trim() || !currentUser || !activeChatUser) return;
 
+        // Reset height
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+        }
+
         setSending(true);
         try {
             const { error } = await supabase
@@ -277,6 +293,42 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         setActiveChatUser(null);
         if (onActiveUserChange) onActiveUserChange(null);
         fetchConversations();
+    };
+
+    const deleteConversation = async (e: React.MouseEvent, otherUserId: string) => {
+        e.stopPropagation();
+
+        const confirmed = await confirm({
+            title: t('chat.delete_conversation'),
+            message: t('chat.confirm_delete_conversation'),
+            type: 'danger',
+            confirmText: t('common.confirm'),
+            cancelText: t('common.cancel')
+        });
+
+        if (!confirmed) return;
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Mark sent messages as deleted
+        await supabase
+            .from('messages')
+            .update({ deleted_by_sender: true })
+            .eq('sender_id', user.id)
+            .eq('receiver_id', otherUserId);
+
+        // Mark received messages as deleted
+        await supabase
+            .from('messages')
+            .update({ deleted_by_receiver: true })
+            .eq('receiver_id', user.id)
+            .eq('sender_id', otherUserId);
+
+        fetchConversations();
+        if (activeChatUser?.id === otherUserId) {
+            handleBackToList();
+        }
     };
 
     if (!isOpen) return null;
@@ -328,22 +380,41 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
 
                                 <div
                                     key={conv.id}
+                                    className="group relative flex items-center gap-4 p-4 rounded-xl bg-slate-800/30 border border-transparent hover:border-slate-700 hover:bg-slate-800/80 cursor-pointer transition-all"
                                     onClick={() => loadUserForChat(conv.id)}
-                                    className="flex items-center gap-4 p-4 rounded-xl bg-slate-800/30 border border-transparent hover:border-slate-700 hover:bg-slate-800/80 cursor-pointer transition-all"
                                 >
                                     <Avatar src={conv.avatar_url} fallback={conv.username} />
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-baseline mb-1">
-                                            <h3 className="font-semibold text-white truncate">{conv.username}</h3>
-                                            {conv.has_unread && conv.last_message_time && <span className="text-[10px] text-green-400 font-medium">
-                                                {t('chat.new_message')}
-                                            </span>
-                                            }
-                                            {conv.last_message_time && <span className="ml-2 text-slate-500 text-[10px]">{new Date(conv.last_message_time).toLocaleString()}</span>}
+                                        <div className="flex justify-between items-center mb-1">
+                                            <h3 className="font-semibold text-white truncate pr-2">{conv.username}</h3>
+                                            {conv.last_message_time && (
+                                                <span className="text-slate-500 text-[10px] whitespace-nowrap flex-shrink-0">
+                                                    {new Date(conv.last_message_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            )}
                                         </div>
-                                        <p className="text-sm text-slate-400 truncate">{conv.last_message}</p>
-
+                                        <div className="flex justify-between items-center gap-2">
+                                            <p className={cn(
+                                                "text-sm truncate",
+                                                conv.has_unread ? "text-white font-medium" : "text-slate-400"
+                                            )}>
+                                                {conv.last_message}
+                                            </p>
+                                            {conv.has_unread && (
+                                                <span className="bg-green-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-sm flex-shrink-0">
+                                                    {t('chat.new_message')}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
+
+                                    <button
+                                        onClick={(e) => deleteConversation(e, conv.id)}
+                                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                                        title={t('chat.delete_conversation')}
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
                                 </div>
                             ))
                         )}
@@ -407,12 +478,22 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                         <form onSubmit={handleSend} className="p-4 border-t border-slate-800 bg-slate-900/95 backdrop-blur">
                             <div className="relative">
                                 <textarea
+                                    name='message'
+                                    ref={textareaRef}
                                     value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onChange={(e) => {
+                                        setNewMessage(e.target.value);
+                                        // Auto resize
+                                        if (textareaRef.current) {
+                                            textareaRef.current.style.height = 'auto'; // Reset to recalc
+                                            textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 150) + 'px';
+                                        }
+                                    }}
                                     placeholder={t('chat.type_message')}
                                     rows={1}
-                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-4 pr-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all resize-none min-h-[50px] max-h-[150px]"
+                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-4 pr-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all resize-none min-h-[50px] overflow-hidden"
                                 />
+
                                 <button
                                     type="submit"
                                     disabled={sending || !newMessage.trim()}
@@ -425,7 +506,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                     </>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

@@ -10,14 +10,18 @@ import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
 
+// Update Player interface
 interface Player {
     id: string;
     username: string;
     avatar_url: string | null;
     elo: number;
     subscription_end_date?: string | null;
+    banned?: boolean | null;
 }
-
+//Este elo_snapshot se guarda en la tabla matches al crearlo, pero no afecta a los perfiles todavía.
+//Cuando se confirma el partido, la función confirm_match (en supabase/functions) vuelve a calcular todo desde cero.
+//Esto es así para evitar que no se pueda hacer trampa con el elo y que el calculo sea con el ultimo partido actualizado.
 const NewMatch = () => {
     const { alert, confirm } = useModal();
     const { t } = useTranslation();
@@ -69,9 +73,10 @@ const NewMatch = () => {
 
     const fetchPlayers = async () => {
         try {
+            const { data: { user } } = await supabase.auth.getUser();
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, username, avatar_url, elo, subscription_end_date')
+                .select('id, username, avatar_url, elo, subscription_end_date, banned')
                 .eq('approved', true) // Only select approved players
                 .eq('is_admin', false)
                 .order('username');
@@ -79,11 +84,31 @@ const NewMatch = () => {
 
             // Filter Expired Subscriptions
             const validPlayers = data?.filter(p => {
-                if (!p.subscription_end_date) return false;
+                if (!p.subscription_end_date || p.banned) return false;
                 return new Date(p.subscription_end_date) >= new Date();
             }) || [];
 
             setAvailablePlayers(validPlayers);
+
+            if (user) {
+                let currentUserPlayer = validPlayers.find(p => p.id === user.id);
+
+                // If not found in list (e.g. admin), fetch explicitly
+                if (!currentUserPlayer) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('id, username, avatar_url, elo, subscription_end_date, banned')
+                        .eq('id', user.id)
+                        .single();
+                    if (profile) {
+                        currentUserPlayer = profile;
+                    }
+                }
+
+                if (currentUserPlayer) {
+                    setSelectedPlayers(prev => ({ ...prev, t1p1: currentUserPlayer }));
+                }
+            }
         } catch (error) {
             console.error('Error fetching players:', error);
         } finally {
@@ -180,7 +205,7 @@ const NewMatch = () => {
         return null;
     };
 
-    const handleSave = async () => {
+    const handleNextStep = async () => {
         if (!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2) return;
 
         // Validation: Verify User is participating
@@ -201,6 +226,12 @@ const NewMatch = () => {
                 return;
             }
         }
+
+        setStep(2);
+    };
+
+    const handleSave = async () => {
+        if (!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2) return;
 
         // Validation: Check if at least one game has been played
         const totalGames = sets.reduce((acc, s) => acc + s.t1 + s.t2, 0);
@@ -249,6 +280,9 @@ const NewMatch = () => {
 
         setLoading(true);
         try {
+            // Get user for created_by
+            const { data: { user } } = await supabase.auth.getUser();
+
             // 0. Check for duplicates (last 2 hours)
             const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
             const { data: recentMatches } = await supabase
@@ -341,6 +375,10 @@ const NewMatch = () => {
                 t2p2: newRatings.t2p2
             };
 
+            // Calculate auto-confirm time (24 hours from now) from Client to ensure it matches user expectation
+            const autoConfirmDate = new Date();
+            autoConfirmDate.setHours(autoConfirmDate.getHours() + 24);
+
             const { data: newMatch, error: matchError } = await supabase.from('matches').insert({
                 team1_p1: selectedPlayers.t1p1.id,
                 team1_p2: selectedPlayers.t1p2.id,
@@ -351,6 +389,7 @@ const NewMatch = () => {
                 winner_team: winnerTeam,
                 commentary: commentary.trim() || null,
                 status: 'pending', // Explicitly pending
+                auto_confirm_at: autoConfirmDate.toISOString(),
                 elo_snapshot: eloSnapshot,
                 created_by: user?.id
             }).select().single();
@@ -497,7 +536,7 @@ const NewMatch = () => {
                         className="w-full"
                         size="lg"
                         disabled={!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2}
-                        onClick={() => setStep(2)}
+                        onClick={handleNextStep}
                     >
                         {t('new_match.next_step')}
                     </Button>

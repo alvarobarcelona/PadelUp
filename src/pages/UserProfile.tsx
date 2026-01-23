@@ -10,7 +10,10 @@ interface Profile {
     id: string;
     username: string;
     avatar_url: string | null;
+    first_name?: string;
+    last_name?: string;
     elo: number;
+    subscription_end_date?: string;
     level: number;
     created_at: string;
 }
@@ -145,6 +148,7 @@ export default function UserProfile() {
     if (!profile) return <div className="p-8 text-center text-red-500">{t('profile.not_found')}</div>;
 
     const isMe = currentUser === profile.id;
+    const subscriptionExpired = !profile.subscription_end_date || profile.subscription_end_date < new Date().toISOString();
 
     return (
         <div className="max-w-4xl mx-auto pb-20">
@@ -173,8 +177,16 @@ export default function UserProfile() {
                 <h1 className="mt-6 text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
                     {profile.username}
                 </h1>
+                {(profile.first_name || profile.last_name) && (
+                    <p className="text-lg text-slate-300 font-medium mt-1">
+                        {profile.first_name} {profile.last_name}
+                    </p>
+                )}
                 <p className="text-slate-400 text-sm mt-1">{t('profile.level')} {getLevelFromElo(profile.elo).level}</p>
                 <p className="text-slate-400 text-sm mt-1">{t('profile.joined', { date: new Date(profile.created_at).toLocaleDateString() })}</p>
+                {subscriptionExpired && (
+                    <p className="text-red-500 text-sm mt-1">{t('profile.subscription_expired')}</p>
+                )}
             </div>
 
             {/* Rivalry Section (Only if not viewing own profile) */}
@@ -187,7 +199,7 @@ export default function UserProfile() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Stats Card */}
-                        <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700/50 backdrop-blur-sm">
+                        <div className="bg-slate-800/50 flex flex-col items-center justify-center p-6 rounded-xl border border-slate-700/50 backdrop-blur-sm">
                             <div className="text-slate-400 text-sm mb-2">{t('profile.record_against', { name: profile.username })}</div>
                             <div className="flex items-end gap-2">
                                 <span className="text-4xl font-bold text-green-400">{stats.wins}</span>
@@ -195,9 +207,10 @@ export default function UserProfile() {
                                 <span className="text-4xl font-bold text-red-400">{stats.losses}</span>
                             </div>
                             <div className="mt-2 text-xs text-slate-500">
-                                {t('profile.matches_total_wr', { count: stats.matchesPlayed, wr: stats.winRate })}
+                                {t(stats.matchesPlayed === 1 ? 'profile.matches_total_wr_singular' : 'profile.matches_total_wr', { count: stats.matchesPlayed, wr: stats.winRate })}
                             </div>
                         </div>
+
 
                         {/* Badge/Status Card */}
                         <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700/50 backdrop-blur-sm flex flex-col justify-center items-center text-center">
@@ -229,13 +242,13 @@ export default function UserProfile() {
                         </div>
 
                         {/* Streak Card */}
-                        <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700/50 backdrop-blur-sm flex flex-col justify-center">
+                        <div className="bg-slate-800/50 flex items-center justify-center p-6 rounded-xl border border-slate-700/50 backdrop-blur-sm flex flex-col justify-center">
                             <div className="text-slate-400 text-sm mb-2">{t('profile.current_run')} </div>
                             {stats.streak > 0 ? (
 
                                 <div className="flex flex-col items-center">
                                     <div className="flex items-center gap-2">
-                                        <div className="text-2xl font-bold text-green-400">{t('profile.streak_wins', { count: Math.abs(stats.streak <= 1 ? 1 : stats.streak) })}</div>
+                                        <div className="text-2xl font-bold text-green-400">{t(Math.abs(stats.streak) === 1 ? 'profile.streak_win' : 'profile.streak_wins', { count: Math.abs(stats.streak) })}</div>
                                         <TrendingUp className="w-5 h-5 text-green-500 shrink-0" />
                                     </div>
                                     <div className="text-xs text-green-500/80">{t('profile.streak_wins_desc')}</div>
@@ -243,7 +256,7 @@ export default function UserProfile() {
                             ) : stats.streak < 0 ? (
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
-                                        <div className="text-2xl font-bold text-red-400">{t('profile.streak_losses', { count: Math.abs(stats.streak <= 1 ? 1 : stats.streak) })}</div>
+                                        <div className="text-2xl font-bold text-red-400">{t(Math.abs(stats.streak) === 1 ? 'profile.streak_losses' : 'profile.streak_losses_plural', { count: Math.abs(stats.streak) })}</div>
                                         <TrendingDown className="w-5 h-5 text-red-500 shrink-0" />
                                     </div>
                                     <div className="text-xs text-red-500/80">{t('profile.streak_losses_desc')}</div>
@@ -253,8 +266,11 @@ export default function UserProfile() {
                             )}
                         </div>
                     </div>
+
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
+
 }

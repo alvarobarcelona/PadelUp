@@ -4,8 +4,10 @@ import { CreditCard, AlertTriangle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { useNavigate } from 'react-router-dom';
 
 const Subscription = () => {
+    const navigate = useNavigate();
     const { t } = useTranslation();
     const { alert } = useModal();
     const [loading, setLoading] = useState(false);
@@ -77,7 +79,8 @@ const Subscription = () => {
                             <p>Alvaro Barcelona Peralta</p>
                         </p>
                         <p className="text-xs text-center mt-1">{t('subscription.as_friend')}</p>
-                        <p className="text-xs text-center mt-1">{t('subscription.contribution_note')}</p>
+                        <p className="text-xs text-center mt-1 whitespace-pre-line">{t('subscription.contribution_note')}</p>
+                        <span className="flex justify-center"><img src="/pala-padel.png" alt="pala-padel" className="w-16" /></span>
                     </div>
                 </div>
 
@@ -93,6 +96,13 @@ const Subscription = () => {
                     <p className="text-xs text-slate-500">
                         {t('subscription.disclaimer')}
                     </p>
+                    <p className="text-xs text-slate-500">{t('auth.support_email')}: padeluppadeleros@gmail.com</p>
+                </div>
+                <div
+                    className="text-xs text-slate-500 mt-4 cursor-pointer hover:text-slate-300 transition-colors"
+                    onClick={() => navigate('/auth')}
+                >
+                    {t('auth.back_to_login') || 'Back to Login'}
                 </div>
             </div>
         </div>

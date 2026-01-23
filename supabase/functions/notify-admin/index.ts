@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
             </div>
 
             <div style="text-align: center; margin-top: 30px;">
-              <a href="https://padelup.vercel.app" style="background-color: #4ade80; color: #064e3b; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; transition: background 0.3s;">
+              <a href="https://padel-up-nine.vercel.app/admin" style="background-color: #4ade80; color: #064e3b; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; transition: background 0.3s;">
                 Review in PadelUp
               </a>
             </div>

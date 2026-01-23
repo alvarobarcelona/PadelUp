@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { normalizeForSearch } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';
-import { Loader2, Calendar, AlertCircle, Search, X } from 'lucide-react';
+import { Loader2, Calendar, AlertCircle, Search, X, MapPin } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +20,8 @@ interface Match {
     team2_p2: { username: string, avatar_url: string | null } | null;
     created_by?: string;
     creator_username?: string;
+    club_id?: number | null;
+    club_name?: string;
 }
 
 const History = () => {
@@ -52,6 +54,7 @@ const History = () => {
           winner_team,
           commentary,
           created_by,
+          club_id,
           team1_p1(username, avatar_url),
           team1_p2(username, avatar_url),
           team2_p1(username, avatar_url),
@@ -63,6 +66,17 @@ const History = () => {
             if (error) throw error;
 
             let matchesWithCreators = data || [];
+
+            // Fetch Clubs
+            let clubMap: Record<number, string> = {};
+            try {
+                const { data: clubs } = await supabase.from('clubs').select('id, name');
+                if (clubs) {
+                    clubs.forEach(c => clubMap[c.id] = c.name);
+                }
+            } catch (err) {
+                console.error("Error fetching clubs", err);
+            }
 
             // Manual fetch for creators to avoid FK issues if they are not properly set up
             if (matchesWithCreators.length > 0) {
@@ -81,7 +95,13 @@ const History = () => {
 
                     matchesWithCreators = matchesWithCreators.map((m: any) => ({
                         ...m,
-                        creator_username: m.created_by ? creatorsMap[m.created_by] : undefined
+                        creator_username: m.created_by ? creatorsMap[m.created_by] : undefined,
+                        club_name: m.club_id ? clubMap[m.club_id] : undefined
+                    }));
+                } else {
+                    matchesWithCreators = matchesWithCreators.map((m: any) => ({
+                        ...m,
+                        club_name: m.club_id ? clubMap[m.club_id] : undefined
                     }));
                 }
             }
@@ -101,10 +121,11 @@ const History = () => {
         const normalizedQuery = normalizeForSearch(searchQuery);
         const idMatch = match.id.toString().includes(normalizedQuery);
         const creatorMatch = match.creator_username && normalizeForSearch(match.creator_username).includes(normalizedQuery);
+        const clubMatch = match.club_name && normalizeForSearch(match.club_name).includes(normalizedQuery);
 
         const checkPlayer = (player: any) => player?.username && normalizeForSearch(player.username).includes(normalizedQuery);
 
-        return idMatch || creatorMatch ||
+        return idMatch || creatorMatch || clubMatch ||
             checkPlayer(match.team1_p1) ||
             checkPlayer(match.team1_p2) ||
             checkPlayer(match.team2_p1) ||
@@ -173,20 +194,41 @@ const MatchCard = ({ match }: { match: Match }) => {
 
     return (
         <div className="relative overflow-hidden rounded-xl bg-slate-800 border border-slate-700 shadow-md">
+
             {/* Header / Date */}
-            <div className="flex items-center justify-between border-b border-slate-700 bg-slate-800/50 px-4 py-2 text-xs text-slate-500">
-                <div className="flex items-center gap-1">
-                    <Calendar size={12} />
-                    {date}
-                </div>
-                {match.creator_username && (
-                    <div className="text-slate-500 flex items-center gap-1">
-                        <span className="opacity-60 text-[10px]">{t('history.created_by')}</span>
-                        <span className="font-medium text-slate-400 text-[10px]">{match.creator_username}</span>
+            {/* Header / Date - Simplified Layout */}
+            <div className="flex flex-col border-b border-slate-700 bg-slate-800/50 px-4 py-2 text-xs text-slate-500 gap-1">
+                {/* Top Row: Date - Creator - Match ID */}
+                <div className="flex items-center justify-between w-full">
+                    {/* Left: Date */}
+                    <div className="flex items-center gap-1 shrink-0">
+                        <Calendar size={12} />
+                        {date}
                     </div>
-                )}
-                <div>
-                    <span>{t('history.match_num', { id: match.id })}</span>
+
+
+
+                    {/* Right: Match ID */}
+                    <div className="shrink-0">
+                        <span>{t('history.match_num', { id: match.id })}</span>
+                    </div>
+                </div>
+                <div className="flex items-center justify-between w-full">
+                    {/* Bottom Row: Club Location */}
+                    {match.club_name && (
+                        <div className="flex items-center gap-1 text-slate-400">
+                            <MapPin size={12} />
+                            <span className="font-medium">{match.club_name}</span>
+                        </div>
+                    )}
+
+                    {/* Center: Creator (Conditional) */}
+                    {match.creator_username && (
+                        <div className="flex items-center gap-1  overflow-hidden">
+                            <span className="opacity-60 text-[10px]">{t('history.created_by')}</span>
+                            <span className="font-medium text-slate-400 text-[10px] truncate">{match.creator_username}</span>
+                        </div>
+                    )}
                 </div>
             </div>
 

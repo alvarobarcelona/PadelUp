@@ -17,10 +17,13 @@ const Auth = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>(''); // Default empty or first club
+    const [showResend, setShowResend] = useState(false);
 
     const [isStandalone, setIsStandalone] = useState(false);
 
@@ -48,7 +51,32 @@ const Auth = () => {
         if (msg.includes('Invalid login credentials')) return t('auth.errors.incorrect_credentials');
         if (msg.includes('Password should be at least')) return t('auth.errors.password_short');
         if (msg.includes('User already registered')) return t('auth.errors.user_registered');
+        if (msg.includes('Email not confirmed')) return t('auth.errors.email_not_confirmed');
         return msg;
+    };
+
+    const handleResendConfirmation = async () => {
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.resend({
+                type: 'signup',
+                email: email,
+                options: {
+                    emailRedirectTo: window.location.origin
+                }
+            });
+            if (error) throw error;
+            await alert({
+                title: 'Success',
+                message: t('auth.success.signup_confirm'),
+                type: 'success'
+            });
+            setShowResend(false);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleResetPassword = async (e: React.FormEvent) => {
@@ -101,11 +129,13 @@ const Auth = () => {
         }
 
         setLoading(true);
+        setLoading(true);
         setError(null);
+        setShowResend(false);
 
         try {
             if (isLogin) {
-                const { error, data } = await supabase.auth.signInWithPassword({
+                const { error } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
@@ -114,13 +144,17 @@ const Auth = () => {
                     if (error.message.includes('Invalid login credentials')) {
                         throw new Error(t('auth.errors.incorrect_password'));
                     }
+                    if (error.message.includes('Email not confirmed')) {
+                        setShowResend(true);
+                        throw new Error(t('auth.errors.email_not_confirmed'));
+                    }
                     throw error;
                 }
 
-                // LOG LOGIN
-                if (data.user) {
+                // LOG LOGIN desactivated for the moment (a lot of logs)
+                /*if (data.user) {
                     logActivity('USER_LOGIN', data.user.id, { email });
-                }
+                }*/
 
                 navigate('/');
             } else {
@@ -145,21 +179,30 @@ const Auth = () => {
                     password,
                     options: {
                         emailRedirectTo: window.location.origin,
-                        data: {
-                            username: username,
-                            email: email
-                        }
                     }
                 });
                 if (error) throw error;
 
-                // UPDATE PROFILE WITH CLUB
-                if (data.user && selectedClubId) {
-                    await supabase.from('profiles').update({ main_club_id: selectedClubId }).eq('id', data.user.id);
-                }
-
-                // LOG REGISTER
+                // Create Profile Manually
                 if (data.user) {
+                    const { error: profileError } = await supabase.from('profiles').insert({
+                        id: data.user.id,
+                        username: username,
+                        email: email,
+                        first_name: firstName,
+                        last_name: lastName,
+                        main_club_id: selectedClubId || null,
+                        elo: 1150
+                    });
+
+                    if (profileError) {
+                        console.error('Profile creation failed:', profileError);
+                        // Optional: Delete the auth user if profile creation fails? 
+                        // For now just throw so user knows.
+                        throw new Error(`Profile creation failed: ${profileError.message}`);
+                    }
+
+                    // Log Activity
                     logActivity('USER_REGISTER', data.user.id, { username, email });
 
                     // Notify Admin
@@ -181,8 +224,13 @@ const Auth = () => {
                     message: t('auth.success.signup_confirm'),
                     type: 'success'
                 });
+                setIsLogin(true);
+                setPassword('');
             }
         } catch (err: any) {
+            if (err.message.includes('Email not confirmed')) {
+                setShowResend(true);
+            }
             setError(getFriendlyErrorMessage(err.message));
         } finally {
             setLoading(false);
@@ -210,6 +258,32 @@ const Auth = () => {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                             />
+                        </div>
+                    )}
+
+                    {/* Name Fields */}
+                    {!isLogin && !isForgotPassword && (
+                        <div className="flex gap-2 mb-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-slate-400">{t('auth.first_name')}</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="mt-1 block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 transition-colors"
+                                    value={firstName}
+                                    onChange={(e) => setFirstName(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-slate-400">{t('auth.last_name')}</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="mt-1 block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 transition-colors"
+                                    value={lastName}
+                                    onChange={(e) => setLastName(e.target.value)}
+                                />
+                            </div>
                         </div>
                     )}
 
@@ -280,6 +354,14 @@ const Auth = () => {
                     {error && (
                         <div className="p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">
                             {error}
+                            {showResend && (
+                                <button
+                                    onClick={handleResendConfirmation}
+                                    className="block mt-2 text-xs text-red-500 hover:text-red-400 underline"
+                                >
+                                    {t('auth.success.resend_confirmation')}
+                                </button>
+                            )}
                         </div>
                     )}
 

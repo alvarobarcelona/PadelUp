@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy, Info } from 'lucide-react';
+import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy, Info, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
@@ -61,15 +61,48 @@ const Home = () => {
             if (error) console.error('Error auto-processing matches:', error);
         });
 
-        // Check if user has seen welcome modal this session
-        const hasSeenWelcome = sessionStorage.getItem('padelup_welcome_seen_session');
-        if (!hasSeenWelcome) {
-            setShowWelcome(true);
-        }
+        checkWelcomeStatus();
     }, []);
+
+    const checkWelcomeStatus = async () => {
+        // 1. Check Session (Prevent spam on refresh)
+        const hasSeenSession = sessionStorage.getItem('padelup_welcome_seen_session');
+        if (hasSeenSession) return;
+
+        // 2. Get User & Metadata
+        const { data: { user } } = await supabase.auth.getUser();
+
+        // Only tracking for logged-in users as requested
+        if (user) {
+            const currentCount = user.user_metadata?.welcome_views_count || 0;
+
+
+            if (currentCount < 5) {
+                setShowWelcome(true);
+
+                // Increment and Save
+                const newCount = currentCount + 1;
+                const { error } = await supabase.auth.updateUser({
+                    data: { welcome_views_count: newCount }
+                });
+
+                if (error) {
+                    console.error('[WelcomeModal] Error updating count:', error);
+                } else {
+                    console.log(`[WelcomeModal] Count incremented to: ${newCount}`);
+                    sessionStorage.setItem('padelup_welcome_seen_session', 'true');
+                }
+            } else {
+                console.log('[WelcomeModal] Limit reached (5/5). Modal will not show.');
+            }
+        }
+    };
+
 
     const handleCloseWelcome = () => {
         setShowWelcome(false);
+        // Session storage is already set in checkWelcomeStatus for logged in users roughly when showing
+        // But let's ensure it's set here too just in case logic differs
         sessionStorage.setItem('padelup_welcome_seen_session', 'true');
     };
 
@@ -151,10 +184,7 @@ const Home = () => {
                             }
                             form.push({ id: m.id, won, points });
                         }
-                        setRecentForm(form.reverse()); // Show old -> new, or new -> old? Usually L -> R is Old -> New in a graph. But dots...
-                        // Reversing makes index 0 the oldest.
-                        // The UI "Recent Form" usually shows Left=Oldest, Right=Newest.
-                        // So reversing is correct if userMatches is Newest First.
+                        setRecentForm(form.reverse());
                     }
 
                     // Fetch Matchmaking Suggestions
@@ -173,7 +203,7 @@ const Home = () => {
                         const filtered = candidates.filter(p => p.elo >= minElo && p.elo <= maxElo);
                         // Sort by closeness to user's ELO
                         filtered.sort((a, b) => Math.abs(a.elo - profileData.elo) - Math.abs(b.elo - profileData.elo));
-                        setSuggestions(filtered.slice(0, 5)); // Top 5
+                        setSuggestions(filtered.slice(0, 5)); // 5 suggestions 
                     }
 
 
@@ -215,7 +245,7 @@ const Home = () => {
 
                         pendingWithCreators = pending.map((m: any) => ({
                             ...m,
-                            creator: m.created_by ? { username: creatorsMap[m.created_by] || 'Unknown' } : null
+                            creator: m.created_by ? { username: creatorsMap[m.created_by] || t('common.deleted_user') } : null
                         }));
                     }
 
@@ -401,10 +431,13 @@ const Home = () => {
                                 ))
                             )}
                         </div>
-                        <p className="text-[10px] text-slate-500 mt-2 font-medium group-hover:text-green-400 transition-colors flex items-center justify-between">
-                            {t('home.last_5')}
-                            <Info size={12} />
-                        </p>
+
+                        <div className=" flex items-center justify-between mt-2">
+                            <p className="text-[10px] text-slate-500 font-medium group-hover:text-green-400 transition-colors flex items-center justify-between">
+                                {t('home.last_5')}</p>
+                            <p className="text-[10px] text-slate-500 font-medium group-hover:text-green-400 transition-colors flex items-center justify-between"><Info size={20} /></p>
+                        </div>
+
                     </div>
                 </div>
 
@@ -565,7 +598,7 @@ const Home = () => {
                     <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                         <User size={18} className="text-blue-400" />
                         {t('home.suggestions')}
-                        <span className="text-xs font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
+                        <span className="text-xs text-center font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
                     </h2>
                     <span className="text-xs font-normal text-slate-500 mb-3 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.suggestions_limit', { defaultValue: 'Max 10 suggestions' })}</span>
                     <div className="flex flex-col gap-3 mt-3">
@@ -576,7 +609,7 @@ const Home = () => {
 
 
                             return (
-                                <div key={s.id} className="relative flex items-center p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 hover:bg-slate-800 transition-colors">
+                                <div key={s.id} className="relative flex justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 hover:bg-slate-800 transition-colors">
                                     <div className="flex items-center gap-3">
                                         <Avatar src={s.avatar_url} fallback={s.username} size="md" />
                                         <div>
@@ -587,12 +620,16 @@ const Home = () => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Message Button */}
                                     <button
                                         onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: s.id }))}
-                                        className="absolute top-5 right-2 px-3 py-0.5 bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded transition-colors font-bold text-[9px] uppercase tracking-wider border border-blue-500/20 whitespace-pre-line text-center"
+                                        className="ml-2 text-xs font-bold text-slate-400 p-1.5 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                                        title="Send Message"
                                     >
-                                        {t('home.get_in_touch')}
+                                        <MessageCircle size={18} />
                                     </button>
+
                                 </div>
                             )
                         })}
@@ -663,3 +700,5 @@ const Home = () => {
 };
 
 export default Home;
+
+

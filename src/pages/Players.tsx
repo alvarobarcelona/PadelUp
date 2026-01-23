@@ -1,4 +1,4 @@
-
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
@@ -11,6 +11,8 @@ import { useModal } from '../context/ModalContext';
 interface Player {
     id: string;
     username: string;
+    first_name: string;
+    last_name: string;
     elo: number;
     avatar_url: string | null;
     main_club_id: number | null;
@@ -147,7 +149,8 @@ const Players = () => {
         }
 
         // Search Filtering
-        const matchesSearch = !searchQuery.trim() || normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery));
+        const matchesSearch = !searchQuery.trim() || normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery)) ||
+            normalizeForSearch(`${player.first_name || ''} ${player.last_name || ''}`).includes(normalizeForSearch(searchQuery));
 
         // Club Filtering
         const matchesClub = selectedClubId === 'all' || player.main_club_id === Number(selectedClubId);
@@ -221,13 +224,15 @@ const Players = () => {
                         return (
                             <div key={player.id} className="flex items-center justify-between rounded-xl bg-slate-800/50 p-4 border border-slate-700/30 hover:bg-slate-800 transition-colors">
                                 <div className="flex items-center gap-3">
-                                    <Avatar fallback={player.username} src={player.avatar_url} />
-                                    <div>
-                                        <span className="font-semibold text-slate-200 block">{player.username}</span>
-                                        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                                            ELO {player.elo} • Lvl {getLevelFromElo(player.elo).level}
-                                        </span>
-                                    </div>
+                                    <Link to={`/user/${player.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                                        <Avatar fallback={player.username} src={player.avatar_url} />
+                                        <div>
+                                            <span className="font-semibold text-slate-200 block">{player.username}</span>
+                                            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                                                ELO {player.elo} • Lvl {getLevelFromElo(player.elo).level}
+                                            </span>
+                                        </div>
+                                    </Link>
                                 </div>
 
                                 <div className="flex items-center gap-2">

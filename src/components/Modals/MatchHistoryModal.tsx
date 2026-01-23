@@ -163,13 +163,13 @@ export const MatchHistoryModal = ({ isOpen, onClose, userId }: MatchHistoryModal
                                             {/* Team 1 */}
                                             <div className={cn("px-2 py-1 rounded bg-slate-900/50 flex justify-between items-center", match.winner_team === 1 && !isRejected && "ring-1 ring-green-500/30")}>
                                                 <span className={cn("text-xs font-medium", match.winner_team === 1 && !isRejected ? "text-green-400" : "text-slate-300")}>
-                                                    {playerNames[match.team1_p1] || 'Unknown'} & {playerNames[match.team1_p2] || 'Unknown'}
+                                                    {playerNames[match.team1_p1] || t('common.deleted_user')} & {playerNames[match.team1_p2] || t('common.deleted_user')}
                                                 </span>
                                             </div>
                                             {/* Team 2 */}
                                             <div className={cn("px-2 py-1 rounded bg-slate-900/50 flex justify-between items-center", match.winner_team === 2 && !isRejected && "ring-1 ring-green-500/30")}>
                                                 <span className={cn("text-xs font-medium", match.winner_team === 2 && !isRejected ? "text-green-400" : "text-slate-300")}>
-                                                    {playerNames[match.team2_p1] || 'Unknown'} & {playerNames[match.team2_p2] || 'Unknown'}
+                                                    {playerNames[match.team2_p1] || t('common.deleted_user')} & {playerNames[match.team2_p2] || t('common.deleted_user')}
                                                 </span>
                                             </div>
                                         </div>

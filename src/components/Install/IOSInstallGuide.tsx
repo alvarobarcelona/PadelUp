@@ -15,7 +15,7 @@ const IOSInstallGuide = () => {
                             <Share size={24} />
                         </div>
                         <div>
-                            <p className="text-slate-300">1. Tap the <span className="text-white font-bold">Share</span> button at the top.</p>
+                            <p className="text-slate-300">1. Tap the <span className="text-white font-bold">Share</span> button at the bottom.</p>
                         </div>
                     </div>
 
