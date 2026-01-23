@@ -562,7 +562,7 @@ const Profile = () => {
                         {stats.clubStats.map((club, i) => (
                             <div key={i} className="flex-shrink-0 auto-width bg-slate-700/50 rounded-lg p-3 flex flex-col items-center justify-center text-center border border-slate-700">
                                 <div className="p-3 rounded-full bg-slate-800 mb-3 shadow-sm">
-                                    <span className="text-2xl">🏟️</span>
+                                    <img src="padel-court.png" alt="" className="w-10 h-10 object-cover" />
                                 </div>
                                 <h4 className="font-bold text-white text-sm line-clamp-2 min-h-[2.5em] flex items-center justify-center">{club.name}</h4>
                                 <div className="mt-2 text-xs font-medium text-green-400 bg-green-900/20 px-2 py-1 rounded-full">

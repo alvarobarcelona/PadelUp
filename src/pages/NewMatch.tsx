@@ -9,11 +9,14 @@ import { normalizeForSearch } from '../lib/utils';
 import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { t } from 'i18next';
 
 // Update Player interface
 interface Player {
     id: string;
-    username: string;
+    username: string | null;
+    first_name: string | null;
+    last_name: string | null;
     avatar_url: string | null;
     elo: number;
     subscription_end_date?: string | null;
@@ -76,7 +79,7 @@ const NewMatch = () => {
             const { data: { user } } = await supabase.auth.getUser();
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, username, avatar_url, elo, subscription_end_date, banned')
+                .select('id, username, first_name, last_name, avatar_url, elo, subscription_end_date, banned')
                 .eq('approved', true) // Only select approved players
                 .eq('is_admin', false)
                 .order('username');
@@ -97,7 +100,7 @@ const NewMatch = () => {
                 if (!currentUserPlayer) {
                     const { data: profile } = await supabase
                         .from('profiles')
-                        .select('id, username, avatar_url, elo, subscription_end_date, banned')
+                        .select('id, username, first_name, last_name, avatar_url, elo, subscription_end_date, banned')
                         .eq('id', user.id)
                         .single();
                     if (profile) {
@@ -128,8 +131,8 @@ const NewMatch = () => {
             const isAlreadySelected = Object.values(selectedPlayers).some(p => p?.id === player.id);
             if (isAlreadySelected) {
                 await alert({
-                    title: 'Already Selected',
-                    message: t('new_match.player_already_selected'),
+                    title: t('new_match.player_already_selected_title'),
+                    message: t('new_match.player_already_selected_desc'),
                     type: 'warning'
                 });
                 return;
@@ -427,7 +430,7 @@ const NewMatch = () => {
     // PLAYER SELECTION MODAL
     if (isSelectionModalOpen) {
         const filteredPlayers = availablePlayers.filter(p =>
-            normalizeForSearch(p.username).includes(normalizeForSearch(searchQuery))
+            normalizeForSearch(p.username ?? '').includes(normalizeForSearch(searchQuery)) || normalizeForSearch(p.first_name ?? '').includes(normalizeForSearch(searchQuery)) || normalizeForSearch(p.last_name ?? '').includes(normalizeForSearch(searchQuery))
         );
 
         return (
@@ -457,10 +460,11 @@ const NewMatch = () => {
                             onClick={() => selectPlayer(player)}
                             className="flex flex-col items-center gap-2 rounded-xl bg-slate-800 p-4 active:bg-slate-700 active:scale-95 transition-all"
                         >
-                            <Avatar fallback={player.username} src={player.avatar_url} />
+                            <Avatar fallback={player.username ?? ''} src={player.avatar_url ?? ''} />
                             <span className="text-sm font-medium text-slate-200">{player.username}</span>
+                            <span className="text-[10px] text-slate-500">{player.first_name} {player.last_name}</span>
                             <span className="text-[10px] text-slate-500">ELO {player.elo}</span>
-                            <span className="text-[10px] text-slate-500">Level {getLevelFromElo(player.elo).level}</span>
+                            <span className="text-[10px] text-slate-500">{t('profile.level')} {getLevelFromElo(player.elo).level}</span>
                         </div>
                     ))}
                     {availablePlayers.length === 0 && (
@@ -675,10 +679,10 @@ const PlayerSelector = ({ label, player, onClick }: { label: string, player: Pla
         >
             {player ? (
                 <>
-                    <Avatar fallback={player.username} src={player.avatar_url} className="bg-green-500/20 text-green-400" />
+                    <Avatar fallback={player.username ?? ''} src={player.avatar_url ?? ''} className="bg-green-500/20 text-green-400" />
                     <p className="text-sm font-bold text-white truncate w-full text-center mt-1">{player.username}</p>
                     <span className="text-[10px] text-slate-400">ELO {player.elo}</span>
-                    <span className="text-[10px] text-slate-400">Level {getLevelFromElo(player.elo).level}</span>
+                    <span className="text-[10px] text-slate-400">{t('profile.level')} {getLevelFromElo(player.elo).level}</span>
                 </>
             ) : (
                 <>

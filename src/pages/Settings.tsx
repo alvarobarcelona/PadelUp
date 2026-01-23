@@ -668,6 +668,7 @@ const Settings = () => {
                                         <span className="text-[10px] text-slate-500">
                                             {isPushEnabled ? (t('common.active') || 'Active') : (t('common.inactive') || 'Inactive')}
                                         </span>
+                                        <div className="text-[10px] text-slate-500">({t('settings.push_notifications_only_for_messages') || 'Only for messages'})</div>
                                     </div>
                                 </div>
                             </div>
