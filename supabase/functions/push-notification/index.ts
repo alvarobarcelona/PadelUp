@@ -16,7 +16,7 @@ const vapidKeys = {
 };
 
 const vapidSubject =
-  Deno.env.get("VAPID_SUBJECT") || "mailto:padeluppadelerosqgmail.com";
+  Deno.env.get("VAPID_SUBJECT") || "mailto:padeluppadeleros@gmail.com";
 
 webpush.setVapidDetails(
   vapidSubject,
