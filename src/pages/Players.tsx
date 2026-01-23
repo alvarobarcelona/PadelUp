@@ -235,7 +235,7 @@ const Players = () => {
                                     </Link>
                                 </div>
 
-                                <div className="flex items-center gap-2">
+                                    <div className='flex flex-col '>
                                     {/* Action Logic based on Status and Tab */}
                                     {status === 'friend' && (
                                         activeTab === 'friends' ? (
@@ -264,7 +264,7 @@ const Players = () => {
                                         status === 'pending_outgoing' && (
                                             <button
                                                 onClick={() => handleRemove(player.id)}
-                                                className="text-xs font-bold text-slate-400 px-3 py-1 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors"
+                                                className="text-xs font-bold text-slate-400 px-2 py-1 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors"
                                             >
                                                 {t('community.revoke')}
                                             </button>
@@ -305,12 +305,13 @@ const Players = () => {
                                                 </button>
                                             )
                                         )}
+                                    </div>
 
-                                        {/* Message Button for everyone except self */}
-                                        {player.id !== currentUserId && (
-                                            <button
-                                                onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: player.id }))}
-                                                className="ml-2 text-xs font-bold text-slate-400 p-1.5 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                                    {/* Message Button for everyone except self */}
+                                    {player.id !== currentUserId && (
+                                        <button
+                                            onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: player.id }))}
+                                            className=" mt-0.5 flex justify-end text-xs font-bold text-slate-400 p-1.5 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
                                                 title="Send Message"
                                             >
                                                 <MessageCircle size={18} />
@@ -320,7 +321,7 @@ const Players = () => {
                                     </div>
 
 
-                                </div >
+                                
                             </div >
                         );
                     })
