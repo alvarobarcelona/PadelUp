@@ -34,14 +34,44 @@ const Settings = () => {
     const [isPushEnabled, setIsPushEnabled] = useState(false);
 
     useEffect(() => {
-        // Check if push is actually enabled (service worker subscription exists)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(registration => {
-                registration.pushManager.getSubscription().then(subscription => {
-                    setIsPushEnabled(!!subscription);
-                });
-            });
-        }
+        const checkPushStatus = async () => {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.ready;
+                    const subscription = await registration.pushManager.getSubscription();
+
+                    if (!subscription) {
+                        setIsPushEnabled(false);
+                        return;
+                    }
+
+                    // Permission check
+                    if (Notification.permission !== 'granted') {
+                        setIsPushEnabled(false);
+                        return;
+                    }
+
+                    // Database check: Is THIS subscription in the DB?
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const { data } = await supabase
+                            .from('push_subscriptions')
+                            .select('id')
+                            .eq('user_id', user.id)
+                            .contains('subscription', { endpoint: subscription.endpoint })
+                            .maybeSingle();
+
+                        // If we found a matching record in DB, then it's truly enabled.
+                        setIsPushEnabled(!!data);
+                    }
+                } catch (error) {
+                    console.error("Error checking push status:", error);
+                    setIsPushEnabled(false);
+                }
+            }
+        };
+
+        checkPushStatus();
     }, [pushLoading]);
     const [profile, setProfile] = useState<{ username: string, first_name: string, last_name: string, email: string, subscription_end_date: string | null, main_club_id: number | null } | null>(null);
     const [clubs, setClubs] = useState<any[]>([]);
