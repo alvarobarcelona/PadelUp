@@ -380,8 +380,8 @@ const Auth = () => {
                             <label htmlFor="consent" className="text-xs text-slate-400">
                                 <span dangerouslySetInnerHTML={{
                                     __html: t('legal.consent_checkbox', {
-                                        terms: `<a href="/terms" target="_blank" class="text-green-400 hover:underline underline-offset-2">${t('legal.terms')}</a>`,
-                                        privacy: `<a href="/privacy-policy" target="_blank" class="text-green-400 hover:underline underline-offset-2">${t('legal.privacy_policy')}</a>`
+                                        terms: `<a href="/terms" class="text-green-400 hover:underline underline-offset-2">${t('legal.terms')}</a>`,
+                                        privacy: `<a href="/privacy-policy" class="text-green-400 hover:underline underline-offset-2">${t('legal.privacy_policy')}</a>`
                                     })
                                 }} />
                             </label>

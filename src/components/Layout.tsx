@@ -55,7 +55,7 @@ const Layout = () => {
 
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('approved, subscription_end_date, is_admin, banned, banned_until')
+                .select('approved, subscription_end_date, is_admin, banned, banned_until, terms_accepted_at')
                 .eq('id', user.id)
                 .single();
 
@@ -76,16 +76,13 @@ const Layout = () => {
                 }
 
                 // Admins bypass subscription check
-                if (profile.is_admin) {
-                    setVerifying(false);
-                    return;
-                }
+                if (!profile.is_admin) {
+                    const isExpired = !profile.subscription_end_date || new Date(profile.subscription_end_date) < new Date();
 
-                const isExpired = !profile.subscription_end_date || new Date(profile.subscription_end_date) < new Date();
-
-                // Allow access to subscription page if expired
-                if (isExpired && window.location.pathname !== '/subscription') {
-                    navigate('/subscription');
+                    // Allow access to subscription page if expired
+                    if (isExpired && window.location.pathname !== '/subscription') {
+                        navigate('/subscription');
+                    }
                 }
             } else {
                 // No profile found? Treat as pending/unregistered.
@@ -93,9 +90,8 @@ const Layout = () => {
                 return;
             }
 
-            // Check for Terms Consent (GDPR)
-            const metadata = user.user_metadata || {};
-            if (!metadata.terms_accepted) {
+            // Check for Terms Consent (GDPR) - Source of truth is PROFILE for Admin visibility
+            if (!profile.terms_accepted_at) {
                 setShowTermsModal(true);
             }
 
