@@ -21,6 +21,7 @@ interface Player {
     elo: number;
     subscription_end_date?: string | null;
     banned?: boolean | null;
+    main_club_id?: number | null;
 }
 //Este elo_snapshot se guarda en la tabla matches al crearlo, pero no afecta a los perfiles todavía.
 //Cuando se confirma el partido, la función confirm_match (en supabase/functions) vuelve a calcular todo desde cero.
@@ -50,6 +51,7 @@ const NewMatch = () => {
     // Club State
     const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>('');
+    const [filterClubId, setFilterClubId] = useState<number | string>('all');
 
     useEffect(() => {
         fetchPlayers();
@@ -67,8 +69,9 @@ const NewMatch = () => {
                 const { data: profile } = await supabase.from('profiles').select('main_club_id').eq('id', user.id).single();
                 if (profile?.main_club_id) {
                     setSelectedClubId(profile.main_club_id);
-                } else if (clubsData.length > 0) {
-                    setSelectedClubId(clubsData[0].id);
+                    setFilterClubId(profile.main_club_id);
+                } else {
+                    setSelectedClubId('');
                 }
             }
         }
@@ -79,7 +82,7 @@ const NewMatch = () => {
             const { data: { user } } = await supabase.auth.getUser();
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, username, first_name, last_name, avatar_url, elo, subscription_end_date, banned')
+                .select('id, username, first_name, last_name, avatar_url, elo, subscription_end_date, banned, main_club_id')
                 .eq('approved', true) // Only select approved players
                 .eq('is_admin', false)
                 .order('username');
@@ -100,7 +103,7 @@ const NewMatch = () => {
                 if (!currentUserPlayer) {
                     const { data: profile } = await supabase
                         .from('profiles')
-                        .select('id, username, first_name, last_name, avatar_url, elo, subscription_end_date, banned')
+                        .select('id, username, first_name, last_name, avatar_url, elo, subscription_end_date, banned, main_club_id')
                         .eq('id', user.id)
                         .single();
                     if (profile) {
@@ -429,9 +432,11 @@ const NewMatch = () => {
 
     // PLAYER SELECTION MODAL
     if (isSelectionModalOpen) {
-        const filteredPlayers = availablePlayers.filter(p =>
-            normalizeForSearch(p.username ?? '').includes(normalizeForSearch(searchQuery)) || normalizeForSearch(p.first_name ?? '').includes(normalizeForSearch(searchQuery)) || normalizeForSearch(p.last_name ?? '').includes(normalizeForSearch(searchQuery))
-        );
+        const filteredPlayers = availablePlayers.filter(p => {
+            const matchesSearch = normalizeForSearch(p.username ?? '').includes(normalizeForSearch(searchQuery)) || normalizeForSearch(p.first_name ?? '').includes(normalizeForSearch(searchQuery)) || normalizeForSearch(p.last_name ?? '').includes(normalizeForSearch(searchQuery));
+            const matchesClub = filterClubId === 'all' || p.main_club_id === Number(filterClubId);
+            return matchesSearch && matchesClub;
+        });
 
         return (
             <div className="space-y-6 animate-fade-in pb-20 relative">
@@ -441,16 +446,31 @@ const NewMatch = () => {
                         <Button variant="ghost" size="icon" onClick={() => setIsSelectionModalOpen(false)}><X /></Button>
                     </div>
                     {/* Search Input */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-3 text-slate-500" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search player..."
-                            className="w-full bg-slate-800 border-slate-700 rounded-lg pl-10 pr-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-slate-500"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-
-                        />
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-3 text-slate-500" size={18} />
+                            <input
+                                type="text"
+                                placeholder={t('new_match.search_player')}
+                                className="w-full bg-slate-800 border-slate-700 rounded-lg pl-10 pr-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-slate-500"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        {clubs.length > 0 && (
+                            <select
+                                className="w-full bg-slate-800 border-slate-700 rounded-lg px-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all max-w-[150px]"
+                                value={filterClubId}
+                                onChange={(e) => setFilterClubId(e.target.value)}
+                            >
+                                <option value="all">{t('clubs.all_clubs') || 'All Clubs'}</option>
+                                {clubs.map(club => (
+                                    <option key={club.id} value={club.id}>
+                                        {club.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                 </header>
                 <div className="grid grid-cols-2 gap-4 overflow-y-auto pb-10">
@@ -495,7 +515,7 @@ const NewMatch = () => {
                                 value={selectedClubId}
                                 onChange={(e) => setSelectedClubId(e.target.value)}
                             >
-                                <option value="">{t('clubs.no_club') || 'No Club (Friendly Match)'}</option>
+                                <option value="">{t('clubs.no_club') || 'No Club'}</option>
                                 {clubs.map(club => (
                                     <option key={club.id} value={club.id}>
                                         {club.name} ({club.location})

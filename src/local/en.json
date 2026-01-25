@@ -88,7 +88,7 @@
   "clubs": {
     "all_clubs": "All Clubs",
     "search_club": "Search Club",
-    "select_club": "Select Club",
+    "select_club": "Select Club where you played the match",
     "select_club_if_you_wish": "Select Club (Optional)",
     "no_club": "No Club",
     "main_club": "Main Club",
@@ -223,6 +223,7 @@
   "new_match": {
     "title": "Select Players",
     "select_player": "Select Player",
+    "search_player": "Search player...",
     "team_1": "Team 1",
     "team_2": "Team 2",
     "player_1": "Player 1",

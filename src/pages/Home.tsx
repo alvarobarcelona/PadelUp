@@ -288,11 +288,14 @@ const Home = () => {
         if (!confirmed) return;
 
         try {
+            const match = recentMatches.find(m => m.id === matchId);
             const { error } = await supabase.rpc('confirm_match', { match_id: matchId });
             if (error) throw error;
 
             // LOG MATCH CONFIRM
-            logActivity('MATCH_CONFIRM', matchId.toString(), {});
+            logActivity('MATCH_CONFIRM', matchId.toString(), {
+                match_snapshot: match || 'Match details not found'                
+            });
 
             loadDashboardData(); // Refresh UI
         } catch (error: any) {

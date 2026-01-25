@@ -182,7 +182,7 @@
   "clubs": {
     "all_clubs": "Alle Clubs",
     "search_club": "Suche Club",
-    "select_club": "Wähle Club",
+    "select_club": "Wähle Club, wo du das Spiel gespielt hast",
     "no_club": "Kein Club",
     "main_club": "HauptClub",
     "select_club_if_you_wish": "Wähle Club (optional)",
@@ -221,6 +221,7 @@
   "new_match": {
     "title": "Spieler auswählen",
     "select_player": "Spieler auswählen",
+    "search_player": "Spieler suchen...",
     "team_1": "Team 1",
     "team_2": "Team 2",
     "player_1": "Spieler 1",

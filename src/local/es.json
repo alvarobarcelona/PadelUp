@@ -187,7 +187,7 @@
   "clubs": {
     "all_clubs": "Todos los clubs",
     "search_club": "Buscar Club",
-    "select_club": "Seleccionar Club",
+    "select_club": "Seleccionar Club donde jugaste el partido",
     "select_club_if_you_wish": "Seleccionar Club (Opcional)",
     "no_club": "Sin Club",
     "main_club": "Club Principal",
@@ -224,6 +224,7 @@
   "new_match": {
     "title": "Seleccionar Jugadores",
     "select_player": "Seleccionar Jugador",
+    "search_player": "Buscar jugador...",
     "team_1": "Equipo 1",
     "team_2": "Equipo 2",
     "player_1": "Jugador 1",
