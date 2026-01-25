@@ -347,7 +347,7 @@
   },
   "levels": {
     "title": "Niveles ELO",
-    "subtitle": "Entiende el sistema de clasificación",
+    "subtitle_2": "Si un usuario quiere ajustar su nivel por uno inferior, puede solicitarlo en el email de soporte. Siempre y cuando tenga sentido.\n\nPor ejemplo: al inicio del uso de la app no quiere empezar con 1150 de ELO (nivel 3).",
     "names": {
       "beginner": "Principiante",
       "basic": "Básico",

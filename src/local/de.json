@@ -357,7 +357,7 @@
   },
   "levels": {
     "title": "ELO-Stufen",
-    "subtitle": "Verstehe das Ranglistensystem",
+    "subtitle_2": "Wenn ein Benutzer sein Level auf einen niedrigeren anpassen möchte, kann er dies per E-Mail an den Support anfragen. Dabei muss es Sinn haben.\n\n Beispiel: Wenn ein Benutzer mit der App anfängt, möchte er nicht mit 1150 ELO (Level 3) beginnen.",
     "names": {
       "beginner": "Anfänger",
       "basic": "Basis",
