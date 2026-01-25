@@ -38,7 +38,7 @@ export const AchievementModal = ({ isOpen, onClose, achievement, isUnlocked }: A
             />
 
             {/* Modal Content */}
-            <div className="relative w-full max-w-sm transform overflow-hidden rounded-3xl bg-slate-900 p-6 text-left align-middle shadow-2xl transition-all border border-slate-700/50 animate-scale-in">
+            <div className="relative w-full max-w-sm transform overflow-hidden rounded-3xl bg-slate-900 p-6 text-left align-middle shadow-2xl transition-all border border-slate-700/50 animate-scale-in mt-96">
 
                 {/* Close Button */}
                 <button

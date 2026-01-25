@@ -150,6 +150,7 @@
     "last_20": "Last 20 Matches",
     "year": "Year {{year}}",
     "achievements": "Achv",
+    "points_info": "The points do not affect the level or ranking.",
     "no_achievements": "No achievements available.",
     "sign_out": "Sign Out",
     "built_with": "Built with ❤️ for Padel Lovers",
@@ -428,5 +429,64 @@
     "step_2_desc": "<b>Important:</b> You can only select players who are already registered in the app. Invite friends to join to track stats together.",
     "step_3_title": "Validation",
     "step_3_desc": "Your opponent will see in his home screen the match to confirm the score. true! Auto confirmation after 24h"
+  },
+  "legal": {
+    "privacy_policy": "Privacy Policy",
+    "impressum": "Impressum (Legal Notice)",
+    "terms": "Terms of Service",
+    "cookie_banner": {
+      "text": "We use cookies to improve your experience. By continuing to visit this site you agree to our use of cookies.",
+      "accept": "Accept",
+      "decline": "Decline"
+    },
+    "consent_checkbox": "I agree to the {{terms}} and {{privacy}}.",
+    "terms_update_modal": {
+      "title": "Terms & Privacy Update",
+      "message": "We have updated our legal documents to comply with GDPR and local regulations. Please review and accept the new Terms of Service and Privacy Policy to continue using PadelUp.",
+      "accept_button": "I Accept"
+    },
+    "privacy_policy_content": {
+      "section1_title": "1. Data Protection at a Glance",
+      "section1_subtitle": "General Notes",
+      "section1_text": "The following notes provide a simple overview of what happens to your personal data when you visit this website. Personal data is all data with which you can be personally identified.",
+      "section2_title": "2. Hosting",
+      "section2_text": "We host our website content with the following providers:",
+      "section2_subtitle": "Supabase",
+      "section2_text_2": "Provider is Supabase, Inc. We use Supabase for database and authentication.",
+      "section3_title": "3. General Notes and Mandatory Information",
+      "section3_subtitle": "Data Protection",
+      "section3_text": "The operators of these pages take the protection of your personal data very seriously. We treat your personal data confidentially and in accordance with the statutory data protection regulations and this privacy policy.",
+      "section3_subtitle_2": "Note on the Responsible Body",
+      "section3_text_2": "The responsible body for data processing on this website is:\n\nAlvaro Barcelona Peralta\nRatsbleiche 4\n38114, Brunswick, Germany\nEmail: padeluppadeleros@gmail.com",
+      "section4_title": "4. Data Collection on this Website",
+      "section4_subtitle": "Registration on this Website",
+      "section4_text": "You can register on this website to use additional functions on the site. We only use the data entered for this purpose for the purpose of using the respective offer or service for which you have registered. The mandatory information requested during registration must be provided in full. Otherwise, we will reject the registration."
+    },
+    "impressum_content": {
+      "section1_title": "Information pursuant to § 5 TMG",
+      "section1_text": "PadelUp\n(Private Project / Community Service)\n\nResponsible:\nAlvaro Barcelona Peralta\n Ratsbleiche 4\n 38114, Brunswick, Germany",
+      "section2_title": "Contact",
+      "section2_text": "Email: padeluppadeleros@gmail.com",
+      "section3_title": "Liability for Content",
+      "section3_text": "As a service provider, we are responsible for our own content on these pages in accordance with general laws pursuant to § 7 Para.1 TMG. According to §§ 8 to 10 TMG, however, we as a service provider are not obligated to monitor transmitted or stored third-party information or to investigate circumstances that indicate illegal activity.",
+      "section4_title": "Liability for Links",
+      "section4_text": "Our offer contains links to external third-party websites, on whose contents we have no influence. Therefore, we cannot assume any liability for these external contents. The respective provider or operator of the pages is always responsible for the content of the linked pages.",
+      "section5_title": "Copyright",
+      "section5_text": "The content and works on these pages created by the site operators are subject to German copyright law. Duplication, processing, distribution, and any kind of exploitation outside the limits of copyright law require the written consent of the respective author or creator."
+    },
+    "terms_content": {
+      "section1_title": "1. Scope",
+      "section1_text": "The following Terms and Conditions (GTC) apply to the use of this app.",
+      "section2_title": "2. Services",
+      "section2_text": "PadelUp provides a platform for recording padel matches and calculating rankings based on an ELO system.",
+      "section3_title": "3. Registration",
+      "section3_text": "Use of the app requires registration. The user is obliged to provide truthful information.",
+      "section4_title": "4. Fair Play",
+      "section4_text": "Users commit to fair behavior. Manipulation of game results leads to blocking.",
+      "section5_title": "5. Term and Termination",
+      "section5_text": "The contract runs for an indefinite period and can be terminated by the user at any time by deleting the account.",
+      "section6_title": "6. Liability",
+      "section6_text": "We are not liable for damages resulting from the use of the app, unless there is intent or gross negligence."
+    }
   }
 }

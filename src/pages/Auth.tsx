@@ -25,6 +25,7 @@ const Auth = () => {
     const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>(''); // Default empty or first club
     const [showResend, setShowResend] = useState(false);
+    const [consent, setConsent] = useState(false);
 
     const [isStandalone, setIsStandalone] = useState(false);
 
@@ -175,11 +176,23 @@ const Auth = () => {
                     }
                 }
 
+                if (!consent) {
+                    throw new Error('Please accept the Terms of Service and Privacy Policy.');
+                }
+
                 const { error, data } = await supabase.auth.signUp({
                     email,
                     password,
                     options: {
                         emailRedirectTo: window.location.origin,
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            username: username,
+                            club_id: isStandalone && clubs.length > 0 ? clubs[0].id : selectedClubId,
+                            terms_accepted: true,
+                            terms_accepted_at: new Date().toISOString()
+                        }
                     }
                 });
                 if (error) throw error;
@@ -193,7 +206,8 @@ const Auth = () => {
                         first_name: firstName,
                         last_name: lastName,
                         main_club_id: selectedClubId || null,
-                        elo: 1150
+                        elo: 1150,
+                        terms_accepted_at: new Date().toISOString()
                     });
 
                     if (profileError) {
@@ -349,6 +363,28 @@ const Auth = () => {
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Consent Checkbox */}
+                    {!isLogin && !isForgotPassword && (
+                        <div className="flex items-start gap-2 pt-2">
+                            <input
+                                type="checkbox"
+                                id="consent"
+                                required
+                                checked={consent}
+                                onChange={(e) => setConsent(e.target.checked)}
+                                className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-800 text-green-500 focus:ring-green-500"
+                            />
+                            <label htmlFor="consent" className="text-xs text-slate-400">
+                                <span dangerouslySetInnerHTML={{
+                                    __html: t('legal.consent_checkbox', {
+                                        terms: `<a href="/terms" target="_blank" class="text-green-400 hover:underline underline-offset-2">${t('legal.terms')}</a>`,
+                                        privacy: `<a href="/privacy-policy" target="_blank" class="text-green-400 hover:underline underline-offset-2">${t('legal.privacy_policy')}</a>`
+                                    })
+                                }} />
+                            </label>
                         </div>
                     )}
 

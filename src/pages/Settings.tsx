@@ -16,6 +16,7 @@ import {
     ShoppingCart,
     MapPin,
     Bell,
+    FileText,
 } from 'lucide-react';
 import { logActivity } from '../lib/logger';
 import { APP_FULL_VERSION } from '../lib/constants';
@@ -720,6 +721,49 @@ const Settings = () => {
                     <p className="text-[10px] text-slate-500 px-2 leading-relaxed">
                         {t('settings.support_desc')}
                     </p>
+                </div>
+
+                {/* Legal Section */}
+                <div className="space-y-2">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Legal</h2>
+                    <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden shadow-none transition-colors duration-300">
+                        <button
+                            onClick={() => navigate('/privacy-policy')}
+                            className="w-full flex items-center justify-between p-4 border-b border-slate-700/50 hover:bg-slate-700/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-slate-500/10 text-slate-400">
+                                    <FileText size={20} />
+                                </div>
+                                <span className="font-medium text-white">{t('legal.privacy_policy')}</span>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-500" />
+                        </button>
+                        <button
+                            onClick={() => navigate('/impressum')}
+                            className="w-full flex items-center justify-between p-4 border-b border-slate-700/50 hover:bg-slate-700/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-slate-500/10 text-slate-400">
+                                    <FileText size={20} />
+                                </div>
+                                <span className="font-medium text-white">{t('legal.impressum')}</span>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-500" />
+                        </button>
+                        <button
+                            onClick={() => navigate('/terms')}
+                            className="w-full flex items-center justify-between p-4 hover:bg-slate-700/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-slate-500/10 text-slate-400">
+                                    <FileText size={20} />
+                                </div>
+                                <span className="font-medium text-white">{t('legal.terms')}</span>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-500" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* ELO Info */}

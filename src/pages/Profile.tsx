@@ -597,6 +597,7 @@ const Profile = () => {
                         {allAchievements.filter(a => userAchievementIds.has(a.id)).reduce((acc, curr) => acc + (curr.point_value || 0), 0)} pts / {allAchievements.reduce((acc, curr) => acc + (curr.point_value || 0), 0)} pts
                     </span>
                 </h3>
+                <h2 className="text-xs text-slate-500 mb-4">{t('profile.points_info')}</h2>
 
                 {allAchievements.length === 0 ? (
                     <div className="text-center py-6 text-slate-500 text-sm">

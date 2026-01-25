@@ -137,6 +137,7 @@
     "last_20": "Letzte 20 Spiele",
     "year": "Jahr {{year}}",
     "achievements": "Erfolge",
+    "points_info": "Die Punkte beeinflussen nicht das Niveau oder die Rangliste.",
     "no_achievements": "Keine Erfolge verfügbar.",
     "sign_out": "Abmelden",
     "built_with": "Gebaut mit ❤️ für Padel-Liebhaber",
@@ -439,5 +440,64 @@
     "step_2_desc": "<b>Wichtig:</b> Du kannst nur Spieler auswählen, die bereits in der App registriert sind. Lade Freunde ein, um gemeinsam Statistiken zu verfolgen.",
     "step_3_title": "Bestätigung",
     "step_3_desc": "Dein Gegner sieht das Spiel auf seinem Startbildschirm zur Bestätigung. Sei ehrlich! Automatische Bestätigung nach 24 Std."
+  },
+  "legal": {
+    "privacy_policy": "Datenschutzerklärung",
+    "impressum": "Impressum",
+    "terms": "AGB (Nutzungsbedingungen)",
+    "cookie_banner": {
+      "text": "Wir verwenden Cookies, um Ihr Erlebnis zu verbessern. Durch die weitere Nutzung dieser Seite stimmen Sie der Verwendung von Cookies zu.",
+      "accept": "Akzeptieren",
+      "decline": "Ablehnen"
+    },
+    "consent_checkbox": "Ich stimme den {{terms}} und der {{privacy}} zu.",
+    "terms_update_modal": {
+      "title": "AGB & Datenschutz Update",
+      "message": "Wir haben unsere rechtlichen Dokumente aktualisiert, um der DSGVO und lokalen Vorschriften zu entsprechen. Bitte überprüfen und akzeptieren Sie die neuen AGB und die Datenschutzerklärung, um PadelUp weiterhin nutzen zu können.",
+      "accept_button": "Ich akzeptiere"
+    },
+    "privacy_policy_content": {
+      "section1_title": "1. Datenschutz auf einen Blick",
+      "section1_subtitle": "Allgemeine Hinweise",
+      "section1_text": "Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.",
+      "section2_title": "2. Hosting",
+      "section2_text": "Wir hosten die Inhalte unserer Website bei folgenden Anbietern:",
+      "section2_subtitle": "Supabase",
+      "section2_text_2": "Anbieter ist die Supabase, Inc. Wir nutzen Supabase für Datenbank und Authentifizierung.",
+      "section3_title": "3. Allgemeine Hinweise und Pflichtinformationen",
+      "section3_subtitle": "Datenschutz",
+      "section3_text": "Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend den gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung.",
+      "section3_subtitle_2": "Hinweis zur verantwortlichen Stelle",
+      "section3_text_2": "Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:\n\nAlvaro Barcelona Peralta\nRatsbleiche 4\n38114, Brunswick, Germany\nE-Mail: padeluppadeleros@gmail.com",
+      "section4_title": "4. Datenerfassung auf dieser Website",
+      "section4_subtitle": "Registrierung auf dieser Website",
+      "section4_text": "Sie können sich auf dieser Website registrieren, um zusätzliche Funktionen auf der Seite zu nutzen. Die dazu eingegebenen Daten verwenden wir nur zum Zwecke der Nutzung des jeweiligen Angebotes oder Dienstes, für den Sie sich registriert haben. Die bei der Registrierung abgefragten Pflichtangaben müssen vollständig angegeben werden. Anderenfalls werden wir die Registrierung ablehnen."
+    },
+    "impressum_content": {
+      "section1_title": "Angaben gemäß § 5 TMG",
+      "section1_text": "PadelUp\n(Privates Projekt / Community Service)\n\nVerantwortlich:\nAlvaro Barcelona Peralta\n Ratsbleiche 4\n 38114, Brunswick, Germany",
+      "section2_title": "Kontakt",
+      "section2_text": "E-Mail: padeluppadeleros@gmail.com",
+      "section3_title": "Haftung für Inhalte",
+      "section3_text": "Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.",
+      "section4_title": "Haftung für Links",
+      "section4_text": "Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich.",
+      "section5_title": "Urheberrecht",
+      "section5_text": "Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers."
+    },
+    "terms_content": {
+      "section1_title": "1. Geltungsbereich",
+      "section1_text": "Für die Nutzung dieser App gelten die folgenden Allgemeinen Geschäftsbedingungen (AGB).",
+      "section2_title": "2. Leistungen",
+      "section2_text": "PadelUp bietet eine Plattform zur Erfassung von Padel-Spielen und zur Berechnung von Ranglisten basierend auf einem ELO-System.",
+      "section3_title": "3. Registrierung",
+      "section3_text": "Die Nutzung der App erfordert eine Registrierung. Der Nutzer ist verpflichtet, wahrheitsgemäße Angaben zu machen.",
+      "section4_title": "4. Fair Play",
+      "section4_text": "Nutzer verpflichten sich zu fairem Verhalten. Manipulation von Spielergebnissen führt zu Sperrung.",
+      "section5_title": "5. Laufzeit und Kündigung",
+      "section5_text": "Der Vertrag läuft auf unbestimmte Zeit und kann jederzeit vom Nutzer durch Löschen des Kontos gekündigt werden.",
+      "section6_title": "6. Haftung",
+      "section6_text": "Wir haften nicht für Schäden, die aus der Nutzung der App entstehen, soweit nicht Vorsatz oder grobe Fahrlässigkeit vorliegt."
+    }
   }
 }

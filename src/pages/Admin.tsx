@@ -534,6 +534,9 @@ const Admin = () => {
                                                 {p.subscription_end_date ? ` (${new Date(p.subscription_end_date).toLocaleDateString()})` : ' (No Date)'}
                                                 {!isExpired && <span className="text-slate-500 font-normal">[{daysLeft}d left]</span>}
                                             </p>
+                                            <p className="text-[10px] text-slate-500 mt-1">
+                                                Terms: {p.terms_accepted_at ? <span className="text-green-500" title={new Date(p.terms_accepted_at).toLocaleString()}>Accepted ✅</span> : <span className="text-red-500">Not Accepted ❌</span>}
+                                            </p>
                                         </div>
                                     </div>
                                     <div className="flex gap-2">

@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { InstallPrompt } from './InstallPrompt';
 
 import BetaBanner from './BetaBanner';
+import CookieBanner from './CookieBanner';
+import TermsAcceptanceModal from './TermsAcceptanceModal';
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -19,6 +21,7 @@ const Layout = () => {
     const [verifying, setVerifying] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
+    const [showTermsModal, setShowTermsModal] = useState(false);
 
     useEffect(() => {
         const handleOpenChat = (e: CustomEvent<string>) => {
@@ -90,6 +93,12 @@ const Layout = () => {
                 return;
             }
 
+            // Check for Terms Consent (GDPR)
+            const metadata = user.user_metadata || {};
+            if (!metadata.terms_accepted) {
+                setShowTermsModal(true);
+            }
+
             setVerifying(false);
         };
 
@@ -143,6 +152,35 @@ const Layout = () => {
             </nav>
 
             <InstallPrompt />
+            <CookieBanner />
+
+            {showTermsModal && (
+                <TermsAcceptanceModal
+                    onAccept={async () => {
+                        const timestamp = new Date().toISOString();
+
+                        // 1. Update Auth Metadata (Core Truth)
+                        const { error } = await supabase.auth.updateUser({
+                            data: {
+                                terms_accepted: true,
+                                terms_accepted_at: timestamp
+                            }
+                        });
+
+                        // 2. Sync to Profiles (For Admin Visibility)
+                        // We don't block if this fails, but it's good to try
+                        await supabase.from('profiles').update({
+                            terms_accepted_at: timestamp
+                        }).eq('id', (await supabase.auth.getUser()).data.user?.id);
+                        if (!error) {
+                            setShowTermsModal(false);
+                        } else {
+                            console.error("Failed to update terms consent", error);
+                            alert("Error updating consent. Please try again.");
+                        }
+                    }}
+                />
+            )}
         </div >
     );
 };

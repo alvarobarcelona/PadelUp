@@ -23,8 +23,13 @@ import { useEffect } from 'react';
 import { supabase } from './lib/supabase';
 
 import { ChatProvider } from './context/ChatContext';
+import CookieBanner from './components/CookieBanner';
 
 import UserProfile from './pages/UserProfile';
+
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import Impressum from './pages/Impressum';
+import Terms from './pages/Terms';
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -51,6 +56,12 @@ function AppRoutes() {
         <Route path="/pending" element={<PendingApproval />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/banned" element={<Banned />} />
+
+        {/* Legal Routes */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/impressum" element={<Impressum />} />
+        <Route path="/terms" element={<Terms />} />
+
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="rankings" element={<Rankings />} />
@@ -64,6 +75,7 @@ function AppRoutes() {
           <Route path="levels" element={<Levels />} />
         </Route>
       </Routes>
+      <CookieBanner />
     </ChatProvider>
   );
 }
