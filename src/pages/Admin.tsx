@@ -371,6 +371,7 @@ const Admin = () => {
                 changes: {
                     username: editingPlayer.username,
                     elo: editingPlayer.elo,
+                    subscription_end_date: editingPlayer.subscription_end_date,
                     is_admin: editingPlayer.is_admin,
                     approved: editingPlayer.approved,
                     banned: editingPlayer.banned
@@ -424,12 +425,6 @@ const Admin = () => {
                     {t('admin.tab_members')} ({activeUsers.length})
                 </button>
                 <button
-                    onClick={() => setActiveTab('clubs')}
-                    className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'clubs' ? 'text-white border-b-2 border-indigo-500' : 'text-slate-500'}`}
-                >
-                    {t('admin.tab_clubs')}
-                </button>
-                <button
                     onClick={() => setActiveTab('matches')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'matches' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                 >
@@ -440,6 +435,12 @@ const Admin = () => {
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'direct_match' ? 'text-white border-b-2 border-red-500' : 'text-slate-500'}`}
                 >
                     {t('admin.tab_add_match')}
+                </button>
+                <button
+                    onClick={() => setActiveTab('clubs')}
+                    className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'clubs' ? 'text-white border-b-2 border-indigo-500' : 'text-slate-500'}`}
+                >
+                    {t('admin.tab_clubs')}
                 </button>
                 <button
                     onClick={() => setActiveTab('activity')}

@@ -162,7 +162,8 @@
       "perfect": "🔥 Perfektes Match",
       "good": "✨ Dynamisches Duo",
       "average": "⚖️ Ausgeglichen",
-      "bad": "🧊 Ausbaufähig"
+      "bad": "🧊 Ausbaufähig",
+      "unknown_desc": "Spiele mehr Matches, um eine Partnerchemie aufzubauen"
     },
     "top_partners": "Top Partner",
     "rivalry": {
@@ -289,7 +290,11 @@
     "edit_club": "Club bearbeiten",
     "create_club": "Club erstellen",
     "delete_club_confirm": "Möchten Sie diesen Club wirklich löschen?",
-    "no_clubs": "Keine Clubs gefunden."
+    "no_clubs": "Keine Clubs gefunden.",
+    "banned": "Gesperrt",
+    "not_banned": "Nicht gesperrt",
+    "subscribed_until": "Abonniert bis: ",
+    "not_subscribed": "Nicht abonniert"
   },
   "rankings": {
     "title": "Rangliste",

@@ -15,6 +15,7 @@ interface Player {
     avatar_url: string | null;
     elo: number;
     subscription_end_date?: string | null;
+    banned?: boolean;
 }
 
 interface MatchFormAdminProps {
@@ -51,7 +52,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, username, avatar_url, elo, subscription_end_date')
+                .select('id, username, avatar_url, elo, subscription_end_date, banned')
                 .eq('approved', true)
                 .order('username');
             if (error) throw error;
@@ -80,7 +81,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
             // Prevent selecting same player twice
             const isAlreadySelected = Object.values(selectedPlayers).some(p => p?.id === player.id);
             if (isAlreadySelected) {
-                await alert({ title: 'Warning', message: t('new_match.player_already_selected'), type: 'warning' });
+                await alert({ title: t('new_match.player_already_selected_title'), message: t('new_match.player_already_selected_desc'), type: 'warning' });
                 return;
             }
 
@@ -287,6 +288,8 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                             <span className="text-sm font-medium text-slate-200">{player.username}</span>
                             <span className="text-[10px] text-slate-500">ELO {player.elo}</span>
                             <span className="text-[10px] text-slate-500">Level {getLevelFromElo(player.elo).level}</span>
+                            <span className="text-[10px] text-slate-500">{player.subscription_end_date ? t('admin.subscribed_until', { date: player.subscription_end_date }) : t('admin.not_subscribed')}</span>
+                            <span className="text-[10px] text-slate-500"><span className="text-red-500">{player.banned ? t('admin.banned') : <span className="text-green-500">{t('admin.not_banned')}</span>}</span></span>
                         </div>
                     ))}
                     {filteredPlayers.length === 0 && (

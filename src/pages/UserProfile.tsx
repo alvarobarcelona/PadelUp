@@ -409,7 +409,7 @@ export default function UserProfile() {
                                     <div className="text-xs text-slate-500 mt-1">{synergy.matchesPlayed} {t('profile.synergy.matches')}</div>
                                 </>
                             ) : (
-                                <div className="text-slate-500 italic py-4">{t('profile.rivalry.unknown_desc')}</div>
+                                <div className="text-slate-500 italic py-4">{t('profile.synergy.unknown_desc')}</div>
                             )}
                         </div>
                     </div>

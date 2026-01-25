@@ -177,7 +177,8 @@
       "perfect": "🔥 Perfect Match",
       "good": "✨ Dynamic Duo",
       "average": "⚖️ Balanced",
-      "bad": "🧊 Needs Work"
+      "bad": "🧊 Needs Work",
+      "unknown_desc": "Play more matches to establish chemistry"
     },
     "top_partners": "Top Partners",
     "rivalry": {

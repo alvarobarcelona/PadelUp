@@ -167,7 +167,8 @@
       "perfect": "🔥 Pareja Perfecta",
       "good": "✨ Dúo Dinámico",
       "average": "⚖️ Equilibrado",
-      "bad": "🧊 Falta Química"
+      "bad": "🧊 Falta Química",
+      "unknown_desc": "Juega más partidos para establecer química"
     },
     "top_partners": "Mejores Parejas",
     "rivalry": {
