@@ -10,6 +10,7 @@ import { AchievementModal } from '../components/Modals/AchievementModal';
 import { APP_FULL_VERSION } from '../lib/constants';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 const iconMap: Record<string, any> = {
     'Trophy': Trophy,
@@ -23,6 +24,7 @@ const Profile = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { alert } = useModal();
+    const queryClient = useQueryClient();
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [allAchievements, setAllAchievements] = useState<any[]>([]);
@@ -298,6 +300,8 @@ const Profile = () => {
     };
 
     const handleLogout = async () => {
+        // Clear all caches to prevent next user from seeing previous user's data
+        queryClient.removeQueries();
         await supabase.auth.signOut();
         navigate('/auth');
     };
