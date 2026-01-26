@@ -304,7 +304,11 @@
     "banned": "Gesperrt",
     "not_banned": "Nicht gesperrt",
     "subscribed_until": "Abonniert bis: ",
-    "not_subscribed": "Nicht abonniert"
+    "not_subscribed": "Nicht abonniert",
+    "suspicious_activity": "Sicherheitsverletzung",
+    "suspicious_desc": "Sicherheitsverletzung erkannt.",
+    "suspicious_activity_btn": "Zurück",
+    "tab_suspicious_activity": "Sicherheitsverletzung"
   },
   "rankings": {
     "title": "Rangliste",

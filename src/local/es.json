@@ -303,8 +303,11 @@
     "maintenance_title": "Mantenimiento",
     "maintenance_desc": "Borrar mensajes antiguos para liberar espacio en la base de datos. Esta acción es irreversible.",
     "maintenance_btn": "Volver",
-    "tab_maintenance": "Mantenimiento"
-    
+    "tab_maintenance": "Mantenimiento",
+    "suspicious_activity": "Actividad sospechosa",
+    "suspicious_desc": "Actividad sospechosa detectada.",
+    "suspicious_activity_btn": "Volver",
+    "tab_suspicious_activity": "Actividad sospechosa"
   },
   "rankings": {
     "title": "Clasificación",

@@ -303,7 +303,11 @@
     "maintenance_title": "Maintenance",
     "maintenance_desc": "Delete old messages to free up database space. This action is irreversible.",
     "maintenance_btn": "Back",
-    "tab_maintenance": "Maintenance"
+    "tab_maintenance": "Maintenance",
+    "suspicious_activity": "Suspicious Activity",
+    "suspicious_desc": "Suspicious activity detected.",
+    "suspicious_activity_btn": "Back",
+    "tab_suspicious_activity": "Suspicious Activity"
   },
   "rankings": {
     "title": "Leaderboard",

@@ -492,6 +492,12 @@ const Admin = () => {
                 >
                     {t('admin.tab_maintenance') || 'Maintenance'}
                 </button>
+                <button
+                    onClick={() => navigate('/admin/suspicious')}
+                    className={`px-4 py-2 font-bold whitespace-nowrap text-slate-500 hover:text-red-400 border-b-2 border-transparent hover:border-red-400`}
+                >
+                    {t('admin.suspicious_activity') || 'Suspicious Activity'}
+                </button>
             </div>
 
             {/* DIRECT MATCH TAB */}
