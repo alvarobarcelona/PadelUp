@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
@@ -20,29 +21,34 @@ interface Player {
 
 const Rankings = () => {
     const { t } = useTranslation();
-    const [players, setPlayers] = useState<Player[]>([]);
-    const [loading, setLoading] = useState(true);
     const [view, setView] = useState<'global' | 'friends'>('friends');
     const [searchQuery, setSearchQuery] = useState('');
-    const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>('all');
 
-    useEffect(() => {
-        const init = async () => {
-            await fetchRankings();
-            const { data: c } = await supabase.from('clubs').select('*').order('name');
-            if (c) setClubs(c);
-        };
-        init();
-    }, [view]);
-
-    const fetchRankings = async () => {
-        try {
-            setLoading(true);
-            setPlayers([]);
-
+    // Fetch User (needed for friends view logic)
+    const { data: user } = useQuery({
+        queryKey: ['user'],
+        queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser();
+            return user;
+        },
+        staleTime: Infinity
+    });
 
+    // Fetch Clubs
+    const { data: clubs = [] } = useQuery({
+        queryKey: ['clubs'],
+        queryFn: async () => {
+            const { data } = await supabase.from('clubs').select('*').order('name');
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 60 // 1 hour
+    });
+
+    // Fetch Rankings
+    const { data: players = [], isLoading: loading } = useQuery({
+        queryKey: ['rankings', view, user?.id],
+        queryFn: async () => {
             if (view === 'global') {
                 const { data, error } = await supabase
                     .from('profiles')
@@ -52,7 +58,7 @@ const Rankings = () => {
                     .order('elo', { ascending: false });
 
                 if (error) throw error;
-                setPlayers(data || []);
+                return data || [];
             } else if (view === 'friends' && user) {
                 // 1. Get Friends IDs
                 const { data: friendships, error: friendsError } = await supabase
@@ -64,8 +70,8 @@ const Rankings = () => {
                 if (friendsError) throw friendsError;
 
                 const friendIds = friendships
-                    .filter(f => f.status === 'accepted')
-                    .map(f => f.user_id_1 === user.id ? f.user_id_2 : f.user_id_1);
+                    .filter((f: any) => f.status === 'accepted')
+                    .map((f: any) => f.user_id_1 === user.id ? f.user_id_2 : f.user_id_1);
 
                 // Include self in friends ranking
                 friendIds.push(user.id);
@@ -78,18 +84,15 @@ const Rankings = () => {
                     .order('elo', { ascending: false });
 
                 if (error) throw error;
-                setPlayers(data || []);
+                return data || [];
             }
-
-        } catch (error) {
-            console.error('Error fetching rankings:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+            return [];
+        },
+        enabled: view === 'global' || !!user // Only run if we have user for friends view
+    });
 
 
-    const filteredPlayers = players.filter(player => {
+    const filteredPlayers = players.filter((player: Player) => {
         const matchesSearch = normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery)) ||
             normalizeForSearch(`${player.first_name || ''} ${player.last_name || ''}`).includes(normalizeForSearch(searchQuery));
         const matchesClub = selectedClubId === 'all' || player.main_club_id === Number(selectedClubId);
@@ -142,7 +145,7 @@ const Rankings = () => {
                             className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
                         >
                             <option value="all">{t('clubs.all_clubs') || 'All Clubs'}</option>
-                            {clubs.map(c => (
+                            {clubs.map((c: any) => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                         </select>
@@ -162,7 +165,7 @@ const Rankings = () => {
                                 : t('rankings.no_players')}
                     </div>
                 ) : (
-                    filteredPlayers.map((player, index) => {
+                    filteredPlayers.map((player: Player, index: number) => {
                         const rank = index + 1;
                         const isTop = rank <= 3;
 

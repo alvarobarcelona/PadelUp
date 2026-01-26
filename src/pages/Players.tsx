@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, UserPlus, MessageCircle } from 'lucide-react';
@@ -7,6 +7,7 @@ import { getLevelFromElo } from '../lib/elo';
 import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Player {
     id: string;
@@ -21,128 +22,187 @@ interface Player {
 const Players = () => {
     const { t } = useTranslation();
     const { alert, confirm } = useModal();
-    const [players, setPlayers] = useState<Player[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [friendMap, setFriendMap] = useState<Record<string, 'friend' | 'pending_incoming' | 'pending_outgoing' | 'none'>>({});
-    const [friendshipIds, setFriendshipIds] = useState<Record<string, number>>({});
-    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const queryClient = useQueryClient();
+
+    // UI State
     const [activeTab, setActiveTab] = useState<'community' | 'friends'>('community');
     const [searchQuery, setSearchQuery] = useState('');
-    const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>('all');
+    const [hasSetDefaultClub, setHasSetDefaultClub] = useState(false);
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    // --- QUERIES ---
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            // 1. Get Current User
+    // 1. User
+    const { data: user } = useQuery({
+        queryKey: ['user'],
+        queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            setCurrentUserId(user?.id || null);
+            return user;
+        },
+        staleTime: Infinity
+    });
 
-            // 2. Fetch All Players
-            const { data: allPlayers } = await supabase
+    // 1.1 Profile (for default club)
+    const { data: profile } = useQuery({
+        queryKey: ['profile', user?.id],
+        enabled: !!user,
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('main_club_id')
+                .eq('id', user?.id)
+                .single();
+            return data;
+        },
+        staleTime: Infinity
+    });
+
+
+    // 2. All Players
+    const { data: players = [], isLoading: loading } = useQuery({
+        queryKey: ['allPlayers'],
+        queryFn: async () => {
+            const { data } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('approved', true)
                 .eq('is_admin', false)
                 .order('username');
+            return (data || []) as Player[];
+        },
+        staleTime: 1000 * 60 * 5 // 5 minutes
+    });
 
-            if (allPlayers) setPlayers(allPlayers);
+    // 3. Clubs
+    const { data: clubs = [] } = useQuery({
+        queryKey: ['clubs'],
+        queryFn: async () => {
+            const { data } = await supabase.from('clubs').select('*').order('name');
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 60 // 1 hour
+    });
 
-            // Fetch Clubs
-            const { data: c } = await supabase.from('clubs').select('*').order('name');
-            if (c) setClubs(c);
+    // 4. Friendships (Complex Map Return)
+    const { data: friendshipData = { statusMap: {}, idMap: {} } } = useQuery({
+        queryKey: ['friendships', user?.id],
+        enabled: !!user,
+        queryFn: async () => {
+            if (!user) return { statusMap: {}, idMap: {} };
 
-            // 3. Fetch Friendships if logged in
-            if (user) {
-                const { data: friendships } = await supabase
-                    .from('friendships')
-                    .select('*')
-                    .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`);
+            const { data: friendships } = await supabase
+                .from('friendships')
+                .select('*')
+                .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`);
 
-                if (friendships) {
-                    const statusMap: Record<string, any> = {};
-                    const idMap: Record<string, number> = {};
+            const statusMap: Record<string, 'friend' | 'pending_incoming' | 'pending_outgoing' | 'none'> = {};
+            const idMap: Record<string, number> = {};
 
-                    friendships.forEach(f => {
-                        const otherId = f.user_id_1 === user.id ? f.user_id_2 : f.user_id_1;
-                        idMap[otherId] = f.id;
+            if (friendships) {
+                friendships.forEach(f => {
+                    const otherId = f.user_id_1 === user.id ? f.user_id_2 : f.user_id_1;
+                    idMap[otherId] = f.id;
 
-                        if (f.status === 'accepted') {
-                            statusMap[otherId] = 'friend';
-                        } else if (f.user_id_1 === user.id) {
-                            statusMap[otherId] = 'pending_outgoing';
-                        } else {
-                            statusMap[otherId] = 'pending_incoming';
-                        }
-                    });
-                    setFriendMap(statusMap);
-                    setFriendshipIds(idMap);
-                }
+                    if (f.status === 'accepted') {
+                        statusMap[otherId] = 'friend';
+                    } else if (f.user_id_1 === user.id) {
+                        statusMap[otherId] = 'pending_outgoing';
+                    } else {
+                        statusMap[otherId] = 'pending_incoming';
+                    }
+                });
             }
-
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
+            return { statusMap, idMap };
         }
-    };
+    });
 
-    const handleSendRequest = async (targetId: string) => {
-        if (!currentUserId) return;
+    const friendMap = friendshipData.statusMap;
+    const friendshipIds = friendshipData.idMap;
 
-        // Optimistic UI
-        setFriendMap(prev => ({ ...prev, [targetId]: 'pending_outgoing' }));
-
-        const { error } = await supabase
-            .from('friendships')
-            .insert({ user_id_1: currentUserId, user_id_2: targetId, status: 'pending' });
-
-        if (error) {
-            await alert({ title: 'Error', message: t('common.error'), type: 'danger' });
-            loadData(); // Revert on error
-        } else {
-            loadData(); // Refresh to get ID
+    // --- EFFECT: Set Default Club ---
+    useEffect(() => {
+        if (profile?.main_club_id && !hasSetDefaultClub) {
+            setSelectedClubId(profile.main_club_id);
+            setHasSetDefaultClub(true);
         }
+    }, [profile, hasSetDefaultClub]);
+
+
+    // --- MUTATIONS ---
+
+    const sendRequestMutation = useMutation({
+        mutationFn: async (targetId: string) => {
+            if (!user) throw new Error("Not logged in");
+            const { error } = await supabase
+                .from('friendships')
+                .insert({ user_id_1: user.id, user_id_2: targetId, status: 'pending' });
+            if (error) throw error;
+            return targetId;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['friendships'] });
+        },
+        onError: () => {
+            alert({ title: 'Error', message: t('common.error'), type: 'danger' });
+        }
+    });
+
+    const acceptMutation = useMutation({
+        mutationFn: async (friendshipId: number) => {
+            const { error } = await supabase
+                .from('friendships')
+                .update({ status: 'accepted' })
+                .eq('id', friendshipId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['friendships'] });
+            // Also invalidate rankings if we are in friends view there (global dependency potentially)
+            queryClient.invalidateQueries({ queryKey: ['rankings'] });
+        }
+    });
+
+    const removeMutation = useMutation({
+        mutationFn: async (friendshipId: number) => {
+            const { error } = await supabase
+                .from('friendships')
+                .delete()
+                .eq('id', friendshipId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['friendships'] });
+            queryClient.invalidateQueries({ queryKey: ['rankings'] });
+        }
+    });
+
+
+    // --- HANDLERS ---
+
+    const handleSendRequest = (targetId: string) => {
+        sendRequestMutation.mutate(targetId);
     };
 
-    const handleAccept = async (targetId: string) => {
+    const handleAccept = (targetId: string) => {
         const friendshipId = friendshipIds[targetId];
-        if (!friendshipId) return;
-
-        setFriendMap(prev => ({ ...prev, [targetId]: 'friend' }));
-
-        const { error } = await supabase
-            .from('friendships')
-            .update({ status: 'accepted' })
-            .eq('id', friendshipId);
-
-        if (error) loadData();
+        if (friendshipId) acceptMutation.mutate(friendshipId);
     };
 
-    const handleReject = async (targetId: string) => {
+    const handleReject = (targetId: string) => {
         const friendshipId = friendshipIds[targetId];
-        if (!friendshipId) return;
-
-        setFriendMap(prev => ({ ...prev, [targetId]: 'none' }));
-
-        const { error } = await supabase
-            .from('friendships')
-            .delete()
-            .eq('id', friendshipId);
-
-        if (error) loadData();
+        if (friendshipId) removeMutation.mutate(friendshipId);
     };
 
-    // Alias for Revoke/Unfriend - same DB action
-    const handleRemove = handleReject;
+    const handleRemove = async (targetId: string) => {
+        // UI already handles confirmation before calling this if needed, or we do it here?
+        // In original code, confirm was inside the onClick for activeTab === 'friends'
+        // But here handleRemove is aliased to handleReject in original.
+        // Let's keep it simple.
+        handleReject(targetId);
+    };
+
 
     const filteredPlayers = players.filter(player => {
-
-
         // Tab Filtering
         if (activeTab === 'friends') {
             if (friendMap[player.id] !== 'friend') return false;
@@ -187,7 +247,7 @@ const Players = () => {
                             className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
                         >
                             <option value="all">{t('clubs.all_clubs') || 'All Clubs'}</option>
-                            {clubs.map(c => (
+                            {clubs.map((c: any) => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                         </select>
@@ -235,7 +295,7 @@ const Players = () => {
                                     </Link>
                                 </div>
 
-                                    <div className='flex flex-col '>
+                                <div className='flex flex-col '>
                                     {/* Action Logic based on Status and Tab */}
                                     {status === 'friend' && (
                                         activeTab === 'friends' ? (
@@ -292,7 +352,8 @@ const Players = () => {
                                     <div className="flex items-center gap-2"    >
 
                                         {status === 'none' && (
-                                            player.id === currentUserId ? (
+                                            // Ensure not attempting to friend self (though usually filtered out or UI handled, safe to check user?.id)
+                                            player.id === user?.id ? (
                                                 <span className="text-xs font-bold text-slate-500 px-3 py-1 bg-slate-800 rounded-full border border-slate-700">
                                                     {t('community.you')}
                                                 </span>
@@ -308,20 +369,17 @@ const Players = () => {
                                     </div>
 
                                     {/* Message Button for everyone except self */}
-                                    {player.id !== currentUserId && (
+                                    {player.id !== user?.id && (
                                         <button
                                             onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: player.id }))}
                                             className=" mt-0.5 flex justify-end text-xs font-bold text-slate-400 p-1.5 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-                                                title="Send Message"
-                                            >
-                                                <MessageCircle size={18} />
-                                            </button>
-                                        )}
+                                            title="Send Message"
+                                        >
+                                            <MessageCircle size={18} />
+                                        </button>
+                                    )}
 
-                                    </div>
-
-
-                                
+                                </div>
                             </div >
                         );
                     })
