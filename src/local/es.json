@@ -295,7 +295,16 @@
     "direct_entry_warning": "ENTRADA DIRECTA: Este partido se confirmará INMEDIATAMENTE y se actualizarán los ELOs.",
     "match_created_success": "¡Partido creado y validado correctamente! ELO actualizado.",
     "instant_action_note": "Acción Inmediata - No requiere verificación.",
-    "record_match_title": "Registrar Partido (sin confirmación)"
+    "record_match_title": "Registrar Partido (sin confirmación)",
+    "delete_old_msgs_title": "Borrar Mensajes Antiguos",
+    "delete_old_msgs_confirm": "¿Seguro que quieres borrar mensajes de más de {{days}} días?",
+    "delete_btn": "Borrar",
+    "cleanup_success": "{{count}} mensajes eliminados.",
+    "maintenance_title": "Mantenimiento",
+    "maintenance_desc": "Borrar mensajes antiguos para liberar espacio en la base de datos. Esta acción es irreversible.",
+    "maintenance_btn": "Volver",
+    "tab_maintenance": "Mantenimiento"
+    
   },
   "rankings": {
     "title": "Clasificación",
@@ -399,12 +408,19 @@
     "title": "Mensajes",
     "no_conversations": "No hay conversaciones.",
     "start_chatting_hint": "¡Encuentra un jugador en la Comunidad para empezar a chatear!",
-    "new_message": "nuevo mensaje",
+    "new_message": "Nuevo mensaje",
     "loading_chat": "Cargando chat...",
     "start_conversation": "¡Empieza una conversación con {{name}}!",
     "type_message": "Escribe un mensaje...",
     "delete_conversation": "Eliminar conversación",
-    "confirm_delete_conversation": "¿Estás seguro de querer eliminar esta conversación? Solo se eliminará para ti."
+    "select_user": "Selecciona un usuario",
+    "check_all_clubs": "Mensaje para todos los clubes",
+    "switch_search": "Cambiar búsqueda",
+    "broadcast_mode": "Modo de difusión",
+    "send_all": "Enviar a todos",
+    "broadcast_message": "Mensaje para todos",
+    "confirm_delete_conversation": "¿Estás seguro de querer eliminar esta conversación? Solo se eliminará para ti.",
+    "cleanup_disclaimer": "Mensajes antiguos a 90 dias podran ser eliminados por seguridad."
   },
   "welcome_modal": {
     "title": "Bienvenido a PadelUp",

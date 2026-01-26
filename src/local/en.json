@@ -295,7 +295,15 @@
     "direct_entry_warning": "DIRECT ENTRY: This match will be confirmed IMMEDIATELY and ELOs updated.",
     "match_created_success": "Match created and validated successfully! ELO updated.",
     "instant_action_note": "Instant Action - No verification required.",
-    "record_match_title": "Record Match (without confirmation)"
+    "record_match_title": "Record Match (without confirmation)",
+    "delete_old_msgs_title": "Delete Old Messages",
+    "delete_old_msgs_confirm": "Are you sure you want to delete messages older than {{days}} days?",
+    "delete_btn": "Delete",
+    "cleanup_success": "{{count}} messages deleted.",
+    "maintenance_title": "Maintenance",
+    "maintenance_desc": "Delete old messages to free up database space. This action is irreversible.",
+    "maintenance_btn": "Back",
+    "tab_maintenance": "Maintenance"
   },
   "rankings": {
     "title": "Leaderboard",
@@ -403,7 +411,14 @@
     "start_conversation": "Start a conversation with {{name}}!",
     "type_message": "Type a message...",
     "delete_conversation": "Delete conversation",
-    "confirm_delete_conversation": "Are you sure you want to delete this conversation? It will only be deleted for you."
+    "confirm_delete_conversation": "Are you sure you want to delete this conversation? It will only be deleted for you.",
+    "select_user": "Select user",
+    "check_all_clubs": "Message for all clubs",
+    "switch_search": "Switch search",
+    "broadcast_mode": "Broadcast mode",
+    "send_all": "Send to all",
+    "broadcast_message": "Broadcast message",
+    "cleanup_disclaimer": "Messages older than 90 days can be deleted for security."
   },
   "welcome_modal": {
     "title": "Welcome to PadelUp",

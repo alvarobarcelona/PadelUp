@@ -2,5 +2,8 @@
   "deno.enable": true,
   "deno.path": "C:\\Users\\user\\.deno\\bin\\deno.exe",
   "deno.enablePaths": ["supabase/functions"],
-  "deno.lint": true
+  "deno.lint": true,
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
 }

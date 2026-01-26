@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, Send, Loader2, ArrowLeft, MessageSquarePlus, Trash2 } from 'lucide-react';
+import { X, Send, Loader2, ArrowLeft, MessageSquarePlus, Trash2, ShieldCheck, MailPlus, Megaphone } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '../ui/Button';
 import { useChat } from '../../context/ChatContext';
@@ -39,7 +39,7 @@ interface ChatDrawerProps {
 
 const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatDrawerProps) => {
     const { t } = useTranslation();
-    const { confirm } = useModal();
+    const { confirm, alert } = useModal();
     const [view, setView] = useState<'list' | 'chat'>('list');
     const [activeChatUser, setActiveChatUser] = useState<ConversationUser | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -48,6 +48,16 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
     const [loading, setLoading] = useState(true);
     const [loadingConversations, setLoadingConversations] = useState(true);
     const [sending, setSending] = useState(false);
+
+    // Admin features
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [showAdminSearch, setShowAdminSearch] = useState(false);
+    const [allUsers, setAllUsers] = useState<any[]>([]);
+    const [clubs, setClubs] = useState<{ id: number, name: string }[]>([]);
+    const [selectedClubFilter, setSelectedClubFilter] = useState<string>('all');
+    const [adminSearchQuery, setAdminSearchQuery] = useState('');
+    const [isBroadcastMode, setIsBroadcastMode] = useState(false);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
@@ -65,6 +75,13 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             setCurrentUser(user);
+            if (user) {
+                // Check admin status
+                supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+                    .then(({ data }) => {
+                        if (data) setIsAdmin(data.is_admin || false);
+                    });
+            }
         });
     }, []);
 
@@ -84,6 +101,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
     const loadUserForChat = async (userId: string) => {
         setLoading(true);
         setView('chat');
+        setShowAdminSearch(false); // Close admin search if open
 
         // Mark as read immediately when opening chat
         markAsRead(userId);
@@ -108,10 +126,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         if (!user) return;
 
         try {
-            // Fetch unique users we've messaged with
-            // This is a bit tricky with simple SQL query in generic client, 
-            // usually better with a distinct RPC or view, but we'll specific queries
-
+            // Fetch interactions logic (unchanged)
             // 1. Get IDs of people who sent us messages
             const { data: incoming } = await supabase
                 .from('messages')
@@ -175,6 +190,25 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         }
     };
 
+    // for admin: Fetch all users when search is opened
+    const fetchAllUsersForAdmin = async () => {
+        if (allUsers.length > 0) return; // Cached in state
+
+        const { data: usersData } = await supabase
+            .from('profiles')
+            .select('id, username, main_club_id')
+            .neq('id', currentUser?.id) // Don't chat with self
+            .eq('is_admin', false) 
+            .order('username')
+        ;
+
+        if (usersData) setAllUsers(usersData);
+
+        const { data: clubsData } = await supabase.from('clubs').select('id, name').order('name');
+        if (clubsData) setClubs(clubsData);
+    };
+
+
     const fetchMessages = async (otherUserId: string) => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
@@ -204,7 +238,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         setLoading(false);
     };
 
-    // Realtime Subscription
+    // Realtime Subscription (unchanged)
     useEffect(() => {
         const channel = supabase
             .channel('public:messages')
@@ -288,6 +322,65 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         }
     };
 
+    const handleBroadcast = async () => {
+        if (!adminSearchQuery.trim()) {
+            // If broadcast mode, search query is the message content
+            // Wait, let's look at UI. 
+            // If Broadcast Mode -> Input becomes the Broadcast Message Content
+            // And we use the Filter to determine recipients
+            return;
+        }
+
+        const messageContent = adminSearchQuery.trim();
+
+        // Determine recipients
+        const recipients = allUsers.filter(u => {
+            return selectedClubFilter === 'all' || u.main_club_id === Number(selectedClubFilter);
+        });
+
+        if (recipients.length === 0) {
+            alert({ title: 'Error', message: 'No users found to broadcast to', type: 'danger' });
+            return;
+        }
+
+        const confirmed = await confirm({
+            title: 'Send Broadcast?',
+            message: `You are about to send this message to ${recipients.length} users. This cannot be undone.`,
+            type: 'danger',
+            confirmText: `Send to ${recipients.length} Users`
+        });
+
+        if (!confirmed) return;
+
+        setSending(true);
+
+        try {
+            const messagesToInsert = recipients.map(u => ({
+                content: messageContent,
+                sender_id: currentUser.id,
+                receiver_id: u.id
+            }));
+
+            const { error } = await supabase.from('messages').insert(messagesToInsert);
+
+            if (error) throw error;
+
+            alert({ title: 'Success', message: 'Broadcast sent successfully', type: 'success' });
+            setShowAdminSearch(false);
+            setAdminSearchQuery('');
+            setIsBroadcastMode(false);
+            setView('list');
+            fetchConversations();
+
+        } catch (error) {
+            console.error('Broadcast error:', error);
+            alert({ title: 'Error', message: 'Failed to send broadcast', type: 'danger' });
+        } finally {
+            setSending(false);
+        }
+    };
+
+
     const handleBackToList = () => {
         setView('list');
         setActiveChatUser(null);
@@ -331,6 +424,13 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         }
     };
 
+    // Filtered users for Admin Search
+    const filteredAdminUsers = allUsers.filter(u => {
+        const matchesClub = selectedClubFilter === 'all' || u.main_club_id === Number(selectedClubFilter);
+        const matchesSearch = !adminSearchQuery || u.username.toLowerCase().includes(adminSearchQuery.toLowerCase());
+        return matchesClub && matchesSearch;
+    });
+
     if (!isOpen) return null;
 
     return (
@@ -353,19 +453,126 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                             </button>
                         )}
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            {view === 'list' ? t('chat.title') : activeChatUser?.username}
+                            {view === 'list' ? (
+                                showAdminSearch ? t('chat.new_message') : t('chat.title')
+                            ) : activeChatUser?.username}
+                            {isAdmin && view === 'list' && (
+                                <ShieldCheck size={16} className="text-blue-400" />
+                            )}
                         </h2>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/50 transition-colors"
-                    >
-                        <X size={24} />
-                    </button>
+
+                    <div className="flex gap-2">
+                        {isAdmin && view === 'list' && !showAdminSearch && (
+                            <button
+                                onClick={() => {
+                                    setShowAdminSearch(true);
+                                    fetchAllUsersForAdmin();
+                                    setIsBroadcastMode(false);
+                                }}
+                                className="p-2 text-blue-400 hover:text-white rounded-lg hover:bg-slate-800/50 transition-colors"
+                                title="Admin: New Message"
+                            >
+                                <MailPlus size={24} />
+                            </button>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/50 transition-colors"
+                        >
+                            <X size={24} />
+                        </button>
+                    </div>
                 </div>
 
+                {/* Admin User Search / Selector */}
+                {showAdminSearch && view === 'list' && (
+                    <div className="p-4 bg-slate-800/50 border-b border-slate-800 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-slate-400">
+                                {isBroadcastMode ? t('chat.broadcast_message') : t('chat.select_user')}
+                            </span>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => {
+                                        setIsBroadcastMode(!isBroadcastMode);
+                                        setAdminSearchQuery('');
+                                    }}
+                                    className={`text-xs font-bold transition-colors ${isBroadcastMode ? 'text-green-400' : 'text-slate-500 hover:text-slate-300'}`}
+                                >
+                                    {isBroadcastMode ? t('chat.switch_search') : t('chat.broadcast_mode')}
+                                </button>
+                                <button onClick={() => setShowAdminSearch(false)} className="text-xs text-red-400 hover:text-red-300">{t('common.cancel')}</button>
+                            </div>
+                        </div>
+
+                        {/* Club Filter (Used for both) */}
+                        <select
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
+                            value={selectedClubFilter}
+                            onChange={(e) => setSelectedClubFilter(e.target.value)}
+                        >
+                            <option value="all">
+                                {isBroadcastMode ? t('chat.send_all') : t('chat.check_all_clubs')}
+                            </option>
+                            {clubs.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+
+                        {/* Broadcast: Message Input / Search: User Input */}
+                        {isBroadcastMode ? (
+                            <div className="space-y-2">
+                                <textarea
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-white focus:ring-2 focus:ring-green-500/50 outline-none resize-none min-h-[100px]"
+                                    placeholder="Type your broadcast message here..."
+                                    value={adminSearchQuery} // Reuse state for message content
+                                    onChange={(e) => setAdminSearchQuery(e.target.value)}
+                                />
+                                <button
+                                    onClick={handleBroadcast}
+                                    disabled={sending || !adminSearchQuery.trim()}
+                                    className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {sending ? <Loader2 className="animate-spin" size={18} /> : <Megaphone size={18} />}
+                                    Send Broadcast ({filteredAdminUsers.length} Users)
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <input
+                                    type="text"
+                                    placeholder="Type to search user..."
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
+                                    value={adminSearchQuery}
+                                    onChange={(e) => setAdminSearchQuery(e.target.value)}
+                                />
+
+                                {/* User List Result */}
+                                <div className="max-h-40 overflow-y-auto border border-slate-800 rounded-lg bg-slate-900">
+                                    {filteredAdminUsers.length === 0 ? (
+                                        <div className="p-3 text-xs text-slate-500 text-center">No users found</div>
+                                    ) : (
+                                        filteredAdminUsers.map(u => (
+                                            <button
+                                                key={u.id}
+                                                onClick={() => loadUserForChat(u.id)}
+                                                className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white flex items-center justify-between group"
+                                            >
+                                                <span>{u.username}</span>
+                                                <ArrowLeft size={14} className="opacity-0 group-hover:opacity-100 rotate-180 transition-opacity text-blue-400" />
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+
+
                 {/* View: Conversation List */}
-                {view === 'list' && (
+                {view === 'list' && !showAdminSearch && (
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                         {loadingConversations ? (
                             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-slate-500" /></div>
@@ -493,6 +700,9 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                     rows={1}
                                     className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-4 pr-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all resize-none min-h-[50px] overflow-hidden"
                                 />
+                                <div className="text-[10px] text-slate-500 text-center mt-1 select-none">
+                                    {t('chat.cleanup_disclaimer') || 'Messages older than 90 days may be deleted for security.'}
+                                </div>
 
                                 <button
                                     type="submit"

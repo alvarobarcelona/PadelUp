@@ -25,7 +25,7 @@ const Admin = () => {
     const [matches, setMatches] = useState<any[]>([]);
     const [clubs, setClubs] = useState<any[]>([]);
     const [logs, setLogs] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity'>('pending');
+    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity' | 'maintenance'>('pending');
 
     // Search State
     const [memberSearch, setMemberSearch] = useState('');
@@ -334,6 +334,44 @@ const Admin = () => {
     });
 
 
+
+    const handleCleanupMessages = async (days: number) => {
+        const confirmed = await confirm({
+            title: t('admin.delete_old_msgs_title'),
+            message: t('admin.delete_old_msgs_confirm', { days }),
+            type: 'danger',
+            confirmText: t('admin.delete_btn', { days })
+        });
+
+        if (!confirmed) return;
+
+        setLoading(true);
+        try {
+            // Calculate cutoff date
+            const date = new Date();
+            date.setDate(date.getDate() - days);
+            const cutoff = date.toISOString();
+
+            // Perform Delete
+            // Note: This relies on RLS allowing admins to delete messages
+            const { error, count } = await supabase
+                .from('messages')
+                .delete({ count: 'exact' })
+                .lt('created_at', cutoff);
+
+            if (error) throw error;
+
+            logActivity('ADMIN_CLEANUP_MESSAGES', editingPlayer.id, { days, deleted_count: count });
+            await alert({ title: t('common.success'), message: t('admin.cleanup_success', { count: count ?? 0 }), type: 'success' });
+
+        } catch (error: any) {
+            console.error(error);
+            await alert({ title: 'Error', message: 'Cleanup failed: ' + error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSavePlayer = async () => {
         if (!editingPlayer) return;
         setLoading(true);
@@ -447,6 +485,12 @@ const Admin = () => {
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'activity' ? 'text-white border-b-2 border-blue-500' : 'text-slate-500'}`}
                 >
                     {t('admin.tab_activity')}
+                </button>
+                <button
+                    onClick={() => setActiveTab('maintenance')}
+                    className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'maintenance' ? 'text-white border-b-2 border-orange-500' : 'text-slate-500'}`}
+                >
+                    {t('admin.tab_maintenance') || 'Maintenance'}
                 </button>
             </div>
 
@@ -801,6 +845,45 @@ const Admin = () => {
                                 );
                             })}
                         {logs.length === 0 && <p className="text-center text-slate-500 py-4">{t('admin.no_activity')}</p>}
+                    </div>
+                </div>
+            )}
+
+            {/* MAINTENANCE TAB */}
+            {activeTab === 'maintenance' && (
+                <div className="space-y-6">
+                    <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
+                        <h3 className="text-white font-bold mb-4 text-lg flex items-center gap-2">
+                            <Trash2 size={20} className="text-orange-500" />
+                            {t('admin.maintenance_title') || 'Message Cleanup'}
+                        </h3>
+                        <p className="text-slate-400 text-sm mb-6">
+                            {t('admin.maintenance_desc') || 'Delete old messages to save database space. This action is irreversible.'}
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <button
+                                onClick={() => handleCleanupMessages(30)}
+                                className="flex flex-col items-center justify-center p-4 bg-slate-900 border border-slate-700 hover:border-orange-500/50 rounded-xl transition-all hover:bg-slate-800 group"
+                            >
+                                <span className="text-2xl font-bold text-slate-200 group-hover:text-orange-400 mb-1">30 Days</span>
+                                <span className="text-xs text-slate-500">Delete older than 30 days</span>
+                            </button>
+                            <button
+                                onClick={() => handleCleanupMessages(60)}
+                                className="flex flex-col items-center justify-center p-4 bg-slate-900 border border-slate-700 hover:border-orange-500/50 rounded-xl transition-all hover:bg-slate-800 group"
+                            >
+                                <span className="text-2xl font-bold text-slate-200 group-hover:text-orange-400 mb-1">60 Days</span>
+                                <span className="text-xs text-slate-500">Delete older than 60 days</span>
+                            </button>
+                            <button
+                                onClick={() => handleCleanupMessages(90)}
+                                className="flex flex-col items-center justify-center p-4 bg-slate-900 border border-slate-700 hover:border-orange-500/50 rounded-xl transition-all hover:bg-slate-800 group"
+                            >
+                                <span className="text-2xl font-bold text-slate-200 group-hover:text-orange-400 mb-1">90 Days</span>
+                                <span className="text-xs text-slate-500">Delete older than 90 days</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
