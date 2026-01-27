@@ -475,7 +475,7 @@
       "section2_title": "2. Alojamiento",
       "section2_text": "Alojamos el contenido de nuestro sitio web con los siguientes proveedores:",
       "section2_subtitle": "Supabase",
-      "section2_text_2": "El proveedor es Supabase, Inc. Usamos Supabase para la base de datos y la autenticación.",
+      "section2_text_2": "El proveedor es Supabase, Inc. Usamos Supabase para la base de datos y la autenticación. Los datos se almacenan en servidores en la UE (AWS region eu-west-1, Irlanda).",
       "section3_title": "3. Notas Generales e Información Obligatoria",
       "section3_subtitle": "Protección de Datos",
       "section3_text": "Los operadores de estas páginas toman muy en serio la protección de sus datos personales. Tratamos sus datos personales de forma confidencial y de acuerdo con las normas legales de protección de datos y esta política de privacidad.",

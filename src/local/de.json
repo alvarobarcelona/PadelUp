@@ -485,7 +485,7 @@
       "section2_title": "2. Hosting",
       "section2_text": "Wir hosten die Inhalte unserer Website bei folgenden Anbietern:",
       "section2_subtitle": "Supabase",
-      "section2_text_2": "Anbieter ist die Supabase, Inc. Wir nutzen Supabase für Datenbank und Authentifizierung.",
+      "section2_text_2": "Anbieter ist die Supabase, Inc. Wir nutzen Supabase für Datenbank und Authentifizierung. Die Daten werden auf Servern in der EU (AWS Region eu-west-1, Irland) gespeichert.",
       "section3_title": "3. Allgemeine Hinweise und Pflichtinformationen",
       "section3_subtitle": "Datenschutz",
       "section3_text": "Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend den gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung.",
