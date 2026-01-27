@@ -4,7 +4,7 @@ import { Share } from 'lucide-react';
 
 const IOSInstallGuide = () => {
     return (
-        <div className="fixed inset-x-0 bottom-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 p-6 pb-8 safe-area-bottom rounded-t-2xl shadow-2xl animate-slide-up z-50">
+        <div className="fixed inset-x-0 bottom-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 p-6 pb-7 safe-area-bottom rounded-t-2xl shadow-2xl animate-slide-up z-50">
             <div className="flex flex-col gap-6 max-w-md mx-auto">
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-white">{t('install_prompt.title')}</h3>

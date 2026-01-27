@@ -449,8 +449,8 @@
   },
   "install_prompt": {
     "title": "App installieren",
-    "ios_instruction": "Tippen Sie auf das Teilen-Symbol <share_icon/> und dann \"Zum Home-Bildschirm\" <plus_icon/>",
-    "android_instruction": "Tippen Sie auf das Menü-Symbol <menu_icon/> und dann \"App installieren\"",
+    "ios_instruction": "In Safari tippen Sie auf der 3 Punkte, dann auf das Teilen-Symbol und dann die Option \"Mehr\" anschliesend auf \"Zum Home-Bildschirm\" ",
+    "android_instruction": "Tippen Sie auf das Menü-Symbol und dann \"App installieren\"",
     "dismiss": "Vielleicht später",
     "ios_instruction_footer": "Access your PadelUp with one touch"
   },
