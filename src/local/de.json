@@ -367,6 +367,7 @@
     "rejection_reason": "GRUND FÜR ABLEHNUNG",
     "rejected_by": "Abgelehnt von:",
     "confirmed_by": "Bestätigt von:",
+    "auto_accepted": "Automatisch akzeptiert",
     "close": "Schließen"
   },
   "levels": {

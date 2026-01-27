@@ -357,6 +357,7 @@
     "rejection_reason": "MOTIVO DEL RECHAZO",
     "rejected_by": "Rechazado por:",
     "confirmed_by": "Aceptado por:",
+    "auto_accepted": "Aceptado Automáticamente",
     "close": "Cerrar"
   },
   "levels": {

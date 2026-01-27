@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
-import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck, Flame, Swords, X } from 'lucide-react';
+import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck, Flame, Swords, X, ShieldHalf, Moon, Bird, Pickaxe, Crown, Rocket, LandPlot, Castle, Crosshair, HandFist, Drum } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { checkAchievements } from '../lib/achievements';
@@ -17,7 +17,19 @@ const iconMap: Record<string, any> = {
     'Medal': Medal,
     'Flame': Flame,
     'Camera': Camera,
-    'Sword': Swords
+    'Sword': Swords,
+    'ShieldHalf': ShieldHalf,
+    'Moon': Moon,
+    'Bird': Bird,
+    'Pickaxe': Pickaxe,
+    'Crown': Crown,
+    'Rocket': Rocket,
+    'LandPlot': LandPlot,
+    'Castle': Castle,
+    'Crosshair': Crosshair,
+    'HandFist': HandFist,
+    'ShieldCheck': ShieldCheck,
+    'Drum': Drum,
 };
 
 const Profile = () => {

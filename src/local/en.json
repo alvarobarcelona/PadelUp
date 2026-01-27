@@ -349,6 +349,7 @@
     "unknown": "Unknown",
     "note": "Note",
     "created_by": "Created by:",
+    "auto_accepted": "Auto Accepted",
     "recent_activity": "Recent Activity",
     "no_recent_matches": "No recent matches found.",
     "rejected": "REJECTED",

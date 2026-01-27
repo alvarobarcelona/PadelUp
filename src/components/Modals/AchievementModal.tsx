@@ -1,4 +1,4 @@
-import { X, Trophy, Medal, Flame, Camera, Swords, CheckCircle2 } from 'lucide-react';
+import { X, Trophy, Medal, Flame, Camera, Swords, CheckCircle2 , ShieldHalf, Moon, Bird, Pickaxe, Crown, Rocket, LandPlot, Castle, Crosshair, HandFist, ShieldCheck, Drum } from 'lucide-react';
 
 
 interface Achievement {
@@ -21,7 +21,19 @@ const iconMap: Record<string, any> = {
     'Medal': Medal,
     'Flame': Flame,
     'Camera': Camera,
-    'Sword': Swords
+    'Sword': Swords,
+    'ShieldHalf': ShieldHalf,
+    'Moon': Moon,
+    'Bird': Bird,
+    'Pickaxe': Pickaxe,
+    'Crown': Crown,
+    'Rocket': Rocket,
+    'LandPlot': LandPlot,
+    'Castle': Castle,
+    'Crosshair': Crosshair,
+    'HandFist': HandFist,
+    'ShieldCheck': ShieldCheck,
+    'Drum': Drum,
 };
 
 export const AchievementModal = ({ isOpen, onClose, achievement, isUnlocked }: AchievementModalProps) => {

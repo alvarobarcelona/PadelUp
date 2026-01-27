@@ -130,6 +130,8 @@ export const MatchHistoryModal = ({ isOpen, onClose, userId }: MatchHistoryModal
                     ) : (
                         matches.map((match) => {
                             const isRejected = match.status === 'rejected';
+                            //hack to display auto accepted matches
+                            const isAutoAccepted = match.status === 'confirmed' && !match.actor_id;
                             const isWin = match.status === 'confirmed' && (
                                 (match.winner_team === 1 && (match.team1_p1 === userId || match.team1_p2 === userId)) ||
                                 (match.winner_team === 2 && (match.team2_p1 === userId || match.team2_p2 === userId))
@@ -190,6 +192,9 @@ export const MatchHistoryModal = ({ isOpen, onClose, userId }: MatchHistoryModal
                                                 {isRejected ? t('history.rejected_by') : t('history.confirmed_by')} {playerNames[match.actor_id]}
                                             </span>
                                         </div>
+                                    )}
+                                    {isAutoAccepted && (
+                                        <span className=" flex justify-end gap-1 text-[10px] text-slate-500 italic">{t('history.auto_accepted')}</span>
                                     )}
 
                                     {/* Rejection Reason */}
