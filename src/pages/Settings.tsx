@@ -22,6 +22,7 @@ import { logActivity } from '../lib/logger';
 import { APP_FULL_VERSION } from '../lib/constants';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { usePushNotifications } from '../hooks/usePushNotifications';
 
@@ -32,6 +33,7 @@ const Settings = () => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const [isPushEnabled, setIsPushEnabled] = useState(false);
+    const queryClient = useQueryClient();
 
     useEffect(() => {
         const checkPushStatus = async () => {
@@ -374,6 +376,8 @@ const Settings = () => {
     };
 
     const handleLogout = async () => {
+        // Clear all caches to prevent next user from seeing previous user's data
+        queryClient.removeQueries();
         await supabase.auth.signOut();
         navigate('/auth');
     };
