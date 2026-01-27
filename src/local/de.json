@@ -292,6 +292,7 @@
     "maintenance_title": "Wartung",
     "maintenance_desc": "Alte Nachrichten löschen, um Speicherplatz in der Datenbank freizugeben. Diese Aktion ist irreversibel.",
     "maintenance_btn": "Zurück",
+    "delete_old_msgs_confirm_count": "Möchten Sie wirklich {{count}} Nachrichten von mehr als {{days}} Tagen löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
     "tab_maintenance": "Wartung",
     "tab_clubs": "Clubs",
     "add_club": "Club hinzufügen",
@@ -450,7 +451,8 @@
     "title": "App installieren",
     "ios_instruction": "Tippen Sie auf das Teilen-Symbol <share_icon/> und dann \"Zum Home-Bildschirm\" <plus_icon/>",
     "android_instruction": "Tippen Sie auf das Menü-Symbol <menu_icon/> und dann \"App installieren\"",
-    "dismiss": "Vielleicht später"
+    "dismiss": "Vielleicht später",
+    "ios_instruction_footer": "Access your PadelUp with one touch"
   },
   "info_modal": {
     "title": "Wie PadelUp funktioniert",

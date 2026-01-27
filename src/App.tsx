@@ -24,7 +24,7 @@ import { useEffect } from 'react';
 import { supabase } from './lib/supabase';
 
 import { ChatProvider } from './context/ChatContext';
-import CookieBanner from './components/CookieBanner';
+// import CookieBanner from './components/CookieBanner';
 
 import UserProfile from './pages/UserProfile';
 
@@ -77,7 +77,7 @@ function AppRoutes() {
           <Route path="levels" element={<Levels />} />
         </Route>
       </Routes>
-      <CookieBanner />
+      {/* <CookieBanner /> */}
     </ChatProvider>
   );
 }

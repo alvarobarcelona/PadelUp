@@ -336,21 +336,38 @@ const Admin = () => {
 
 
     const handleCleanupMessages = async (days: number) => {
-        const confirmed = await confirm({
-            title: t('admin.delete_old_msgs_title'),
-            message: t('admin.delete_old_msgs_confirm', { days }),
-            type: 'danger',
-            confirmText: t('admin.delete_btn', { days })
-        });
-
-        if (!confirmed) return;
-
         setLoading(true);
         try {
             // Calculate cutoff date
             const date = new Date();
             date.setDate(date.getDate() - days);
             const cutoff = date.toISOString();
+
+            // 1. Count messages to be deleted
+            const { count: countToDelete, error: countError } = await supabase
+                .from('messages')
+                .select('*', { count: 'exact', head: true })
+                .lt('created_at', cutoff);
+
+            if (countError) throw countError;
+
+            if (!countToDelete || countToDelete === 0) {
+                await alert({ title: 'Info', message: t('admin.no_activity') || 'No messages found to delete.', type: 'info' });
+                return;
+            }
+
+            setLoading(false); // Temporary stop loading to show confirm
+
+            const confirmed = await confirm({
+                title: t('admin.delete_old_msgs_title'),
+                message: t('admin.delete_old_msgs_confirm_count', { count: countToDelete, days }),
+                type: 'danger',
+                confirmText: t('admin.delete_btn', { days })
+            });
+
+            if (!confirmed) return;
+
+            setLoading(true);
 
             // Perform Delete
             // Note: This relies on RLS allowing admins to delete messages
@@ -361,7 +378,8 @@ const Admin = () => {
 
             if (error) throw error;
 
-            logActivity('ADMIN_CLEANUP_MESSAGES', editingPlayer.id, { days, deleted_count: count });
+            //It should be null because it is an admin action not a user action
+            logActivity('ADMIN_CLEANUP_MESSAGES', null, { days, deleted_count: count });
             await alert({ title: t('common.success'), message: t('admin.cleanup_success', { count: count ?? 0 }), type: 'success' });
 
         } catch (error: any) {

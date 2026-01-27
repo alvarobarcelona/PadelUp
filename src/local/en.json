@@ -298,6 +298,7 @@
     "record_match_title": "Record Match (without confirmation)",
     "delete_old_msgs_title": "Delete Old Messages",
     "delete_old_msgs_confirm": "Are you sure you want to delete messages older than {{days}} days?",
+    "delete_old_msgs_confirm_count": "Are you sure you want to delete {{count}} messages older than {{days}} days? This action cannot be undone.",
     "delete_btn": "Delete",
     "cleanup_success": "{{count}} messages deleted.",
     "maintenance_title": "Maintenance",
@@ -437,9 +438,10 @@
   },
   "install_prompt": {
     "title": "Install App on Screen",
-    "ios_instruction": "In Safari, tap the three dots icon, then tap Share, then tap Add to Home Screen.",
+    "ios_instruction": "In Safari, tap the three dots icon, then the option more, then tap Add to Home Screen.",
     "android_instruction": "In Chrome, tap the menu icon and then Install App.",
-    "dismiss": "Maybe later"
+    "dismiss": "Maybe later",
+    "ios_instruction_footer": "Access your PadelUp with one touch"
   },
   "info_modal": {
     "title": "How PadelUp Works",

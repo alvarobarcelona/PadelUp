@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { InstallPrompt } from './InstallPrompt';
 
 import BetaBanner from './BetaBanner';
-import CookieBanner from './CookieBanner';
+// import CookieBanner from './CookieBanner';
 import TermsAcceptanceModal from './TermsAcceptanceModal';
 
 const Layout = () => {
@@ -148,7 +148,7 @@ const Layout = () => {
             </nav>
 
             <InstallPrompt />
-            <CookieBanner />
+            {/* <CookieBanner /> */}
 
             {showTermsModal && (
                 <TermsAcceptanceModal
