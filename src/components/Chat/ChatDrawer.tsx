@@ -198,9 +198,9 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
             .from('profiles')
             .select('id, username, main_club_id')
             .neq('id', currentUser?.id) // Don't chat with self
-            .eq('is_admin', false) 
+            .eq('is_admin', false)
             .order('username')
-        ;
+            ;
 
         if (usersData) setAllUsers(usersData);
 
@@ -309,7 +309,8 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                 .insert({
                     content: newMessage.trim(),
                     sender_id: currentUser.id,
-                    receiver_id: activeChatUser.id
+                    receiver_id: activeChatUser.id,
+                    created_at: new Date().toISOString(),
                 });
 
             if (error) throw error;
@@ -671,7 +672,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                                     {msg.content}
                                                 </div>
                                                 <span className="text-[10px] text-slate-600 mt-1 px-1">
-                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {new Date(msg.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             </div>
                                         </div>
@@ -707,7 +708,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                 <button
                                     type="submit"
                                     disabled={sending || !newMessage.trim()}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-green-500 hover:text-green-400 disabled:text-slate-600 disabled:cursor-not-allowed transition-colors"
+                                    className="absolute right-2 top-6 -translate-y-1/2 p-2 text-green-500 hover:text-green-400 disabled:text-slate-600 disabled:cursor-not-allowed transition-colors"
                                 >
                                     {sending ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
                                 </button>
