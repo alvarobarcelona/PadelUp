@@ -386,13 +386,13 @@
   "subscription": {
     "title": "Subscription Expired",
     "message": "Your membership has expired. To continue using PadelUp, please renew your subscription.",
-    "monthly_fee": "Monthly Fee",
-    "payment_instructions": "Please send the payment via PayPal to:",
+    "monthly_fee": "Monthly Support",
+    "payment_instructions": "Please send the support via PayPal to:",
     "as_friend": "please, “as a friend”",
-    "contribution_note": "This small contribution keeps the system running and improving. Thank you very much.",
+    "contribution_note": "This small contribution keeps the system running and improving the community. Thank you very much.",
     "processing": "Processing...",
-    "confirm_payment": "I have made the payment",
-    "disclaimer": "By clicking confirming, you agree that you have sent the payment. False confirmations may lead to account suspension.",
+    "confirm_payment": "I have made the support",
+    "disclaimer": "By clicking confirming, you agree that you have sent the support. False confirmations may lead to account suspension.",
     "success": "Subscription renewed! Thank you.",
     "error": "Error updating subscription. Please try again."
   },
@@ -424,7 +424,7 @@
     "broadcast_mode": "Broadcast mode",
     "send_all": "Send to all",
     "broadcast_message": "Broadcast message",
-    "cleanup_disclaimer": "Messages older than 90 days can be deleted for security."
+    "cleanup_disclaimer": "Messages older than 90 days can be deleted for security.\nConversations are encrypted and 100% private."
   },
   "welcome_modal": {
     "title": "Welcome to PadelUp",

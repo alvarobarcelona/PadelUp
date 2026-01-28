@@ -214,32 +214,33 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        // Use RPC to get decrypted messages
         const { data, error } = await supabase
-            .from('messages')
-            .select(`
-                *,
-                sender:profiles!sender_id(username, avatar_url)
-            `)
-            .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
-            .order('created_at', { ascending: true })
-            .limit(50);
+            .rpc('get_chat_messages', { other_user_id: otherUserId });
 
         if (!error && data) {
-            const mappedMessages = data.filter((msg: any) => {
-                if (msg.sender_id === user.id && msg.deleted_by_sender) return false;
-                if (msg.receiver_id === user.id && msg.deleted_by_receiver) return false;
-                return true;
-            }).map((msg: any) => ({
-                ...msg,
-                sender: msg.sender
-            }));
+            // We need to attach sender info manually since RPC doesn't join yet
+            // optimization: we already know activeChatUser and currentUser
+            const mappedMessages = data.map((msg: any) => {
+                const isMe = msg.sender_id === user.id;
+                return {
+                    ...msg,
+                    sender: isMe ?
+                        { username: currentUser?.username, avatar_url: currentUser?.user_metadata?.avatar_url } : // Fallback if currentUser profile not fully loaded
+                        { username: activeChatUser?.username, avatar_url: activeChatUser?.avatar_url }
+                };
+            });
             setMessages(mappedMessages);
+        } else {
+            console.error('Error fetching messages:', error);
         }
         setLoading(false);
     };
 
     // Realtime Subscription (unchanged)
     useEffect(() => {
+
+
         const channel = supabase
             .channel('public:messages')
             .on(
@@ -250,14 +251,21 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                     table: 'messages',
                 },
                 async (payload) => {
-                    const newMessage = payload.new as Message;
+                    const newMsgRaw = payload.new as any;
                     const { data: { user } } = await supabase.auth.getUser();
 
                     if (!user) return;
 
+                    // Fetch the decrypted message content
+                    const { data: decryptedData, error } = await supabase
+                        .rpc('get_message_by_id', { message_id: newMsgRaw.id });
+
+                    if (error || !decryptedData || decryptedData.length === 0) return;
+
+                    const newMessage = decryptedData[0];
+
                     // If viewing list, refresh list to show new message/time
                     if (view === 'list') {
-                        // Debounce? or just simple refresh
                         fetchConversations();
                     }
 
@@ -269,16 +277,15 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                             (newMessage.sender_id === activeChatUser.id && newMessage.receiver_id === user.id);
 
                         if (isRelevant) {
-                            // Fetch sender details just in case
-                            const { data: senderData } = await supabase
-                                .from('profiles')
-                                .select('username, avatar_url')
-                                .eq('id', newMessage.sender_id)
-                                .single();
+                            // Determine sender info
+                            const isMe = newMessage.sender_id === user.id;
+                            const senderData = isMe ?
+                                { username: currentUser?.username, avatar_url: currentUser?.user_metadata?.avatar_url } :
+                                { username: activeChatUser.username, avatar_url: activeChatUser.avatar_url };
 
                             setMessages((prev) => {
                                 if (prev.some(m => m.id === newMessage.id)) return prev;
-                                return [...prev, { ...newMessage, sender: senderData || undefined }];
+                                return [...prev, { ...newMessage, sender: senderData }];
                             });
                             scrollToBottom();
                         }
@@ -305,12 +312,9 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         setSending(true);
         try {
             const { error } = await supabase
-                .from('messages')
-                .insert({
-                    content: newMessage.trim(),
-                    sender_id: currentUser.id,
+                .rpc('send_chat_message', {
                     receiver_id: activeChatUser.id,
-                    created_at: new Date().toISOString(),
+                    content: newMessage.trim()
                 });
 
             if (error) throw error;
@@ -701,7 +705,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                     rows={1}
                                     className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-4 pr-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all resize-none min-h-[50px] overflow-hidden"
                                 />
-                                <div className="text-[10px] text-slate-500 text-center mt-1 select-none">
+                                <div className="text-[10px] text-slate-500 text-center mt-1 select-none whitespace-pre-line">
                                     {t('chat.cleanup_disclaimer') || 'Messages older than 90 days may be deleted for security.'}
                                 </div>
 

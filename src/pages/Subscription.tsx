@@ -77,6 +77,7 @@ const Subscription = () => {
                         <p className="text-white font-mono bg-slate-800 p-2 rounded text-center border border-slate-600 select-all">
                             camase1990@gmail.com
                             <p>Alvaro Barcelona Peralta</p>
+                            
                         </p>
                         <p className="text-xs text-center mt-1">{t('subscription.as_friend')}</p>
                         <p className="text-xs text-center mt-1 whitespace-pre-line">{t('subscription.contribution_note')}</p>

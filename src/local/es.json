@@ -387,13 +387,13 @@
   "subscription": {
     "title": "Suscripción Caducada",
     "message": "Tu membresía ha caducado. Para continuar usando PadelUp, por favor renueva tu suscripción.",
-    "monthly_fee": "Cuota Mensual",
-    "payment_instructions": "Por favor envía el pago vía PayPal a:",
+    "monthly_fee": "Soporte Mensual",
+    "payment_instructions": "Por favor envía el soporte vía PayPal a:",
     "as_friend": "por favor, “como amigo”",
-    "contribution_note": "Esta pequeña contribución mantiene el sistema funcionando y mejorando. Muchas gracias.",
+    "contribution_note": "Esta pequeña contribución mantiene el sistema funcionando y mejorando la comunidad. Muchas gracias!!",
     "processing": "Procesando...",
-    "confirm_payment": "He realizado el pago",
-    "disclaimer": "Al confirmar, aceptas que has enviado el pago. Las confirmaciones falsas pueden llevar a la suspensión de la cuenta.",
+    "confirm_payment": "He realizado el soporte",
+    "disclaimer": "Al confirmar, aceptas que has enviado el soporte. Las confirmaciones falsas pueden llevar a la suspensión de la cuenta.",
     "success": "¡Suscripción renovada! Gracias.",
     "error": "Error actualizando la suscripción. Por favor inténtalo de nuevo."
   },
@@ -425,7 +425,7 @@
     "send_all": "Enviar a todos",
     "broadcast_message": "Mensaje para todos",
     "confirm_delete_conversation": "¿Estás seguro de querer eliminar esta conversación? Solo se eliminará para ti.",
-    "cleanup_disclaimer": "Mensajes antiguos a 90 dias podran ser eliminados por seguridad."
+    "cleanup_disclaimer": "Mensajes antiguos a 90 dias podran ser eliminados por seguridad.\nLas conversacions estan encriptadas y son 100% privadas."
   },
   "welcome_modal": {
     "title": "Bienvenido a PadelUp",

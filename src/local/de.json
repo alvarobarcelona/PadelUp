@@ -397,13 +397,13 @@
   "subscription": {
     "title": "Abonnement abgelaufen",
     "message": "Deine Mitgliedschaft ist abgelaufen. Um PadelUp weiterhin nutzen zu können, verlängere bitte dein Abonnement.",
-    "monthly_fee": "Monatliche Gebühr",
-    "payment_instructions": "Bitte sende die Zahlung per PayPal an:",
+    "monthly_fee": "Monatliche Stütze",
+    "payment_instructions": "Bitte sende die Unterstützung per PayPal an:",
     "as_friend": "bitte (als Freund)",
-    "contribution_note": "Dieser kleine Beitrag hält das System am Laufen und verbessert es.\n Vielen Dank und weiter kämpfen , um auf der Top Rank zu gelangen \n\n  ",
+    "contribution_note": "Dieser kleine Beitrag hält das System am Laufen und verbessert die Community.\n Vielen Dank und weiter kämpfen , um auf der Top Rank zu gelangen \n\n  ",
     "processing": "Wird bearbeitet...",
-    "confirm_payment": "Ich habe die Zahlung getätigt",
-    "disclaimer": "Mit der Bestätigung erklärst du dich damit einverstanden, dass du die Zahlung gesendet hast. Falsche Bestätigungen können zur Sperrung des Kontos führen.",
+    "confirm_payment": "Ich habe die Unterstützung getätigt",
+    "disclaimer": "Mit der Bestätigung erklärst du dich damit einverstanden, dass du die Unterstützung gesendet hast. Falsche Bestätigungen können zur Sperrung des Kontos führen.",
     "success": "Abonnement verlängert! Danke.",
     "error": "Fehler beim Aktualisieren des Abonnements. Bitte versuche es erneut."
   },
@@ -435,7 +435,7 @@
     "send_all": "An alle senden",
     "broadcast_message": "Nachricht für alle",
     "confirm_delete_conversation": "Sind Sie sicher, dass Sie diese Konversation löschen möchten? Sie wird nur für Sie gelöscht.",
-    "cleanup_disclaimer": "Nachrichten älter als 90 Tage können aus Sicherheitsgründen gelöscht werden."
+    "cleanup_disclaimer": "Nachrichten älter als 90 Tage können aus Sicherheitsgründen gelöscht werden. \nDie Konversationen sind verschlüsselt und 100% privat."
   },
   "welcome_modal": {
     "title": "Willkommen bei PadelUp",
