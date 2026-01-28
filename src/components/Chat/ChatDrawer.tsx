@@ -126,59 +126,21 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         if (!user) return;
 
         try {
-            // Fetch interactions logic (unchanged)
-            // 1. Get IDs of people who sent us messages
-            const { data: incoming } = await supabase
-                .from('messages')
-                .select('sender_id, created_at, content, is_read, deleted_by_receiver')
-                .eq('receiver_id', user.id)
-                .order('created_at', { ascending: false });
+            // Updated to use Server-Side RPC (Decrypted)
+            const { data, error } = await supabase.rpc('get_my_conversations');
 
-            // 2. Get IDs of people we sent messages to
-            const { data: outgoing } = await supabase
-                .from('messages')
-                .select('receiver_id, created_at, content, deleted_by_sender')
-                .eq('sender_id', user.id)
-                .order('created_at', { ascending: false });
+            if (error) throw error;
 
-            const interactionMap = new Map<string, { last_msg: string, time: string }>();
-
-            incoming?.forEach(msg => {
-                if (msg.deleted_by_receiver) return; // Skip deleted
-                if (!interactionMap.has(msg.sender_id)) {
-                    interactionMap.set(msg.sender_id, { last_msg: msg.content, time: msg.created_at });
-                }
-            });
-
-            outgoing?.forEach(msg => {
-                if (msg.deleted_by_sender) return; // Skip deleted
-                const existing = interactionMap.get(msg.receiver_id);
-                // If no existing or this message is newer
-                if (!existing || new Date(msg.created_at) > new Date(existing.time)) {
-                    interactionMap.set(msg.receiver_id, { last_msg: t('chat.you') + msg.content, time: msg.created_at });
-                }
-            });
-
-            const userIds = Array.from(interactionMap.keys());
-
-            if (userIds.length > 0) {
-                const { data: profiles } = await supabase
-                    .from('profiles')
-                    .select('id, username, avatar_url')
-                    .in('id', userIds);
-
-                if (profiles) {
-                    const unreadSenders = new Set(incoming?.filter((m: any) => !m.is_read).map((m: any) => m.sender_id));
-
-                    const convos = profiles.map(p => ({
-                        ...p,
-                        last_message: interactionMap.get(p.id)?.last_msg,
-                        last_message_time: interactionMap.get(p.id)?.time,
-                        has_unread: unreadSenders.has(p.id)
-                    })).sort((a, b) => new Date(b.last_message_time!).getTime() - new Date(a.last_message_time!).getTime());
-
-                    setConversations(convos);
-                }
+            if (data) {
+                const convos: ConversationUser[] = data.map((c: any) => ({
+                    id: c.user_id,
+                    username: c.username,
+                    avatar_url: c.avatar_url,
+                    last_message: c.last_message,
+                    last_message_time: c.last_message_time,
+                    has_unread: c.has_unread
+                }));
+                setConversations(convos);
             } else {
                 setConversations([]);
             }
