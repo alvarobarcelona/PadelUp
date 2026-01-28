@@ -358,7 +358,10 @@
     "rejected_by": "Rechazado por:",
     "confirmed_by": "Aceptado por:",
     "auto_accepted": "Aceptado Automáticamente",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "page_info": "Página {{current}} de {{total}}"
   },
   "levels": {
     "title": "Niveles ELO",

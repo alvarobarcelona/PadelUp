@@ -357,7 +357,10 @@
     "defeat": "DEFEAT",
     "rejection_reason": "REJECTION REASON",
     "rejected_by": "Rejected by:",
-    "confirmed_by": "Confirmed by:"
+    "confirmed_by": "Confirmed by:",
+    "previous": "Previous",
+    "next": "Next",
+    "page_info": "Page {{current}} of {{total}}"
   },
   "levels": {
     "title": "ELO Levels",

@@ -31,6 +31,8 @@ const History = () => {
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
 
 
     useEffect(() => {
@@ -117,6 +119,7 @@ const History = () => {
         }
     };
 
+    // Filter matches
     const filteredMatches = matches.filter(match => {
         const normalizedQuery = normalizeForSearch(searchQuery);
         const idMatch = match.id.toString().includes(normalizedQuery);
@@ -132,10 +135,36 @@ const History = () => {
             checkPlayer(match.team2_p2);
     });
 
+    // Reset pagination when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE);
+    const paginatedMatches = filteredMatches.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(prev => prev + 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(prev => prev - 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
     if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-green-500" /></div>;
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in pb-20">
             <header className='flex justify-between items-center'>
                 <h1 className="text-3xl font-bold text-white">{t('history.title')}</h1>
                 <button onClick={() => navigate('/')} className="text-slate-500 hover:text-slate-300 transition-colors"><X className="w-6 h-6" /></button>
@@ -170,9 +199,35 @@ const History = () => {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {filteredMatches.map((match) => (
+                    {paginatedMatches.map((match) => (
                         <MatchCard key={match.id} match={match} />
                     ))}
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {filteredMatches.length > ITEMS_PER_PAGE && (
+                <div className="flex flex-col items-center gap-2 mt-6 pt-4 border-t border-slate-800">
+                    <span className="text-sm text-slate-500">
+                        {t('history.page_info', { current: currentPage, total: totalPages })}
+                    </span>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={handlePrevPage}
+                            disabled={currentPage === 1}
+                            className="px-4 py-2 rounded-lg bg-slate-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700 transition-colors text-sm font-medium"
+                        >
+                            {t('history.previous')}
+                        </button>
+
+                        <button
+                            onClick={handleNextPage}
+                            disabled={currentPage === totalPages}
+                            className="px-4 py-2 rounded-lg bg-slate-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700 transition-colors text-sm font-medium"
+                        >
+                            {t('history.next')}
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

@@ -368,7 +368,10 @@
     "rejected_by": "Abgelehnt von:",
     "confirmed_by": "Bestätigt von:",
     "auto_accepted": "Automatisch akzeptiert",
-    "close": "Schließen"
+    "close": "Schließen",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "page_info": "Seite {{current}} von {{total}}"
   },
   "levels": {
     "title": "ELO-Stufen",
