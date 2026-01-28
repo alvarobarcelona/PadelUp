@@ -72,14 +72,23 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
     }, [messages, view]);
 
     // Initialize user and handle external activeUserId prop
+    const [currentUserProfile, setCurrentUserProfile] = useState<ConversationUser | null>(null);
+
+    // Initialize user and handle external activeUserId prop
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             setCurrentUser(user);
             if (user) {
-                // Check admin status
-                supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+                // Fetch full profile for self (avatar_url source of truth)
+                supabase.from('profiles')
+                    .select('id, username, avatar_url, is_admin')
+                    .eq('id', user.id)
+                    .single()
                     .then(({ data }) => {
-                        if (data) setIsAdmin(data.is_admin || false);
+                        if (data) {
+                            setIsAdmin(data.is_admin || false);
+                            setCurrentUserProfile(data as any);
+                        }
                     });
             }
         });
@@ -115,7 +124,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
 
         if (data) {
             setActiveChatUser(data);
-            fetchMessages(userId);
+            fetchMessages(userId, data);
         }
         setLoading(false);
     };
@@ -172,7 +181,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
     };
 
 
-    const fetchMessages = async (otherUserId: string) => {
+    const fetchMessages = async (otherUserId: string, targetProfile?: ConversationUser) => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -184,13 +193,16 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         if (!error && data) {
             // We need to attach sender info manually since RPC doesn't join yet
             // optimization: we already know activeChatUser and currentUser
+            // FIX: Use targetProfile if available to avoid stale state (React state updates are async)
+            const chatPartner = targetProfile || activeChatUser;
+
             const mappedMessages = data.map((msg: any) => {
                 const isMe = msg.sender_id === user.id;
                 return {
                     ...msg,
                     sender: isMe ?
-                        { username: currentUser?.username, avatar_url: currentUser?.user_metadata?.avatar_url } : // Fallback if currentUser profile not fully loaded
-                        { username: activeChatUser?.username, avatar_url: activeChatUser?.avatar_url }
+                        { username: currentUserProfile?.username || currentUser?.username, avatar_url: currentUserProfile?.avatar_url } : // Use profile table
+                        { username: chatPartner?.username, avatar_url: chatPartner?.avatar_url }
                 };
             });
             setMessages(mappedMessages);
@@ -243,7 +255,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                             // Determine sender info
                             const isMe = newMessage.sender_id === user.id;
                             const senderData = isMe ?
-                                { username: currentUser?.username, avatar_url: currentUser?.user_metadata?.avatar_url } :
+                                { username: currentUserProfile?.username || currentUser?.username, avatar_url: currentUserProfile?.avatar_url } :
                                 { username: activeChatUser.username, avatar_url: activeChatUser.avatar_url };
 
                             setMessages((prev) => {

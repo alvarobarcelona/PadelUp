@@ -18,6 +18,16 @@ RETURNS text AS $$
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+-- Helper: Safe Decrypt (Returns fallback text if key is wrong/data corrupt)
+CREATE OR REPLACE FUNCTION safe_decrypt(encrypted_data bytea, key text) 
+RETURNS text AS $$
+BEGIN
+    RETURN extensions.pgp_sym_decrypt(encrypted_data, key)::text;
+EXCEPTION WHEN OTHERS THEN
+    RETURN '[Mensaje encriptado/Error clave]'; -- Fallback text
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
 
 -- 3. Migration Function: Encrypt existing messages
 DO $$
@@ -102,7 +112,7 @@ BEGIN
         m.sender_id,
         m.receiver_id,
         -- Try to decrypt. If decrypt fails (bad key?), return error text or raw
-        extensions.pgp_sym_decrypt(m.content_encrypted::bytea, encryption_key)::text as content,
+        safe_decrypt(m.content_encrypted::bytea, encryption_key) as content,
         m.is_read,
         m.deleted_by_sender,
         m.deleted_by_receiver
@@ -144,7 +154,7 @@ BEGIN
         m.created_at,
         m.sender_id,
         m.receiver_id,
-        extensions.pgp_sym_decrypt(m.content_encrypted::bytea, encryption_key)::text as content,
+        safe_decrypt(m.content_encrypted::bytea, encryption_key) as content,
         m.is_read
     FROM messages m
     WHERE m.id = message_id
@@ -184,9 +194,9 @@ BEGIN
             m.is_read
         FROM messages m
         WHERE 
-            (m.sender_id = current_user_id AND m.deleted_by_sender = false) 
+            (m.sender_id = current_user_id AND m.deleted_by_sender IS NOT TRUE) 
             OR 
-            (m.receiver_id = current_user_id AND m.deleted_by_receiver = false)
+            (m.receiver_id = current_user_id AND m.deleted_by_receiver IS NOT TRUE)
     ),
     ranked_messages AS (
         SELECT 
@@ -202,7 +212,7 @@ BEGIN
         p.id as user_id,
         p.username,
         p.avatar_url,
-        extensions.pgp_sym_decrypt(rm.content_encrypted::bytea, encryption_key)::text as last_message,
+        safe_decrypt(rm.content_encrypted::bytea, encryption_key) as last_message,
         rm.created_at as last_message_time,
         EXISTS (
             SELECT 1 FROM messages m2 

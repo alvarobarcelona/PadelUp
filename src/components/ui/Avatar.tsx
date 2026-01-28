@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { cn } from './Button';
 
 interface AvatarProps {
@@ -8,6 +9,13 @@ interface AvatarProps {
 }
 
 export const Avatar = ({ src, fallback, size = 'md', className }: AvatarProps) => {
+    const [imageError, setImageError] = useState(false);
+
+    // Reset error state when src changes
+    useEffect(() => {
+        setImageError(false);
+    }, [src]);
+
     return (
         <div
             className={cn(
@@ -21,10 +29,15 @@ export const Avatar = ({ src, fallback, size = 'md', className }: AvatarProps) =
                 className
             )}
         >
-            {src ? (
-                <img src={src} alt={fallback} className="h-full w-full object-cover" />
+            {src && !imageError ? (
+                <img
+                    src={src}
+                    alt={fallback}
+                    className="h-full w-full object-cover"
+                    onError={() => setImageError(true)}
+                />
             ) : (
-                <div className="flex h-full w-full items-center justify-center font-bold text-slate-400 uppercase">
+                <div className="flex h-full w-full items-center justify-center font-bold text-slate-400 uppercase select-none">
                     {fallback.slice(0, 2)}
                 </div>
             )}
