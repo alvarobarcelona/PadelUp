@@ -319,7 +319,8 @@
     "no_results": "No se encontraron jugadores.",
     "no_friends": "No tienes amigos aún. ¡Ve a 'Comunidad' para añadir algunos!",
     "no_players": "No se encontraron jugadores.",
-    "click_hint": "Haz clic en un jugador para ver estadísticas Cara a Cara"
+    "click_hint": "Haz clic en un jugador para ver estadísticas Cara a Cara",
+    "fire_motivation": "¡Gana 3 partidos seguidos para prender fuego a tu avatar! 🔥"
   },
   "community": {
     "title": "Comunidad",
@@ -428,7 +429,9 @@
     "send_all": "Enviar a todos",
     "broadcast_message": "Mensaje para todos",
     "confirm_delete_conversation": "¿Estás seguro de querer eliminar esta conversación? Solo se eliminará para ti.",
-    "cleanup_disclaimer": "Mensajes antiguos a 90 dias podran ser eliminados por seguridad.\nLas conversacions estan encriptadas y son 100% privadas."
+    "cleanup_disclaimer": "Mensajes antiguos a 90 dias podran ser eliminados por seguridad.\nLas conversacions estan encriptadas y son 100% privadas.",
+    "read": "Leído",
+    "sent": "Enviado"
   },
   "welcome_modal": {
     "title": "Bienvenido a PadelUp",

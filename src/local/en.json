@@ -319,7 +319,8 @@
     "no_results": "No players found matching your search.",
     "no_friends": "No friends found. Go to 'Community' to add some!",
     "no_players": "No players found.",
-    "click_hint": "Click on a player to see Head-to-Head stats"
+    "click_hint": "Click on a player to see Head-to-Head stats",
+    "fire_motivation": "Win 3 matches in a row to set your avatar on fire! 🔥"
   },
   "community": {
     "title": "Community",
@@ -427,7 +428,9 @@
     "broadcast_mode": "Broadcast mode",
     "send_all": "Send to all",
     "broadcast_message": "Broadcast message",
-    "cleanup_disclaimer": "Messages older than 90 days can be deleted for security.\nConversations are encrypted and 100% private."
+    "cleanup_disclaimer": "Messages older than 90 days can be deleted for security.\nConversations are encrypted and 100% private.",
+    "read": "Read",
+    "sent": "Sent"
   },
   "welcome_modal": {
     "title": "Welcome to PadelUp",

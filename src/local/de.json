@@ -320,7 +320,8 @@
     "no_results": "Keine Spieler gefunden.",
     "no_friends": "Keine Freunde gefunden. Gehen Sie zu 'Community', um welche hinzuzufügen!",
     "no_players": "Keine Spieler gefunden.",
-    "click_hint": "Klicken Sie auf einen Spieler, um den direkten Vergleich zu sehen"
+    "click_hint": "Klicken Sie auf einen Spieler, um den direkten Vergleich zu sehen",
+    "fire_motivation": "Gewinne 3 Spiele in Folge, um deinen Avatar in Brand zu setzen! 🔥"
   },
   "community": {
     "title": "Community",
@@ -438,7 +439,9 @@
     "send_all": "An alle senden",
     "broadcast_message": "Nachricht für alle",
     "confirm_delete_conversation": "Sind Sie sicher, dass Sie diese Konversation löschen möchten? Sie wird nur für Sie gelöscht.",
-    "cleanup_disclaimer": "Nachrichten älter als 90 Tage können aus Sicherheitsgründen gelöscht werden. \nDie Konversationen sind verschlüsselt und 100% privat."
+    "cleanup_disclaimer": "Nachrichten älter als 90 Tage können aus Sicherheitsgründen gelöscht werden. \nDie Konversationen sind verschlüsselt und 100% privat.",
+    "read": "Gelesen",
+    "sent": "Gesendet"
   },
   "welcome_modal": {
     "title": "Willkommen bei PadelUp",

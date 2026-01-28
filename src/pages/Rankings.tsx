@@ -92,6 +92,58 @@ const Rankings = () => {
     });
 
 
+    // Fetch Streaks (Optimized: Fetch last 500 matches and calc in memory)
+    const { data: streaks = {} } = useQuery({
+        queryKey: ['streaks'],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('matches')
+                .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2')
+                .eq('status', 'confirmed')
+                .order('created_at', { ascending: false })
+                .limit(200);
+
+            if (!data) return {};
+
+            const streakMap: Record<string, number> = {};
+
+
+            // We iterate from newest to oldest to find "current" streaks
+            // Actually, to count consecutive, we just need to see if they won the LAST N games.
+            // But complex interweaving of matches makes this tricky. 
+            // Simpler: Maintain a counter for everyone. If we see a loss, we stop counting for that person.
+            // Since we iterate newest -> oldest (descending):
+            // 1. If we see a WIN for player X, and we haven't seen a LOSS yet, increment streak.
+            // 2. If we see a LOSS for player X, mark as "streak broken" (or just stop incrementing).
+
+            // "broken" set to track who already lost a recent game
+            const brokenStreaks = new Set<string>();
+
+            for (const m of data) {
+                const t1 = [m.team1_p1, m.team1_p2].filter(Boolean);
+                const t2 = [m.team2_p1, m.team2_p2].filter(Boolean);
+
+                const winners = m.winner_team === 1 ? t1 : t2;
+                const losers = m.winner_team === 1 ? t2 : t1;
+
+                // Process Winners
+                for (const pid of winners) {
+                    if (!brokenStreaks.has(pid)) {
+                        streakMap[pid] = (streakMap[pid] || 0) + 1;
+                    }
+                }
+
+                // Process Losers
+                for (const pid of losers) {
+                    brokenStreaks.add(pid); // Their streak ends here (going backwards)
+                }
+            }
+
+            return streakMap;
+        },
+        staleTime: 1000 * 60 * 5 // 5 minutes
+    });
+
     const filteredPlayers = players.filter((player: Player) => {
         const matchesSearch = normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery)) ||
             normalizeForSearch(`${player.first_name || ''} ${player.last_name || ''}`).includes(normalizeForSearch(searchQuery));
@@ -152,6 +204,8 @@ const Rankings = () => {
                     )}
                 </div>
             </header>
+            
+            <div className='text-center text-slate-400'>{t('rankings.fire_motivation')}</div>
 
             <div className="space-y-3">
                 {loading ? (
@@ -168,9 +222,11 @@ const Rankings = () => {
                     filteredPlayers.map((player: Player, index: number) => {
                         const rank = index + 1;
                         const isTop = rank <= 3;
-
+                        const streak = streaks[player.id] || 0;
+                        const isOnFire = streak >= 3;
 
                         return (
+
                             <Link
                                 to={`/user/${player.id}`}
                                 key={player.id}
@@ -193,11 +249,12 @@ const Rankings = () => {
                                 </div>
 
                                 {/* Player Info  head to head*/}
-                                <Avatar src={player.avatar_url} fallback={player.username} />
+                                <Avatar src={player.avatar_url} fallback={player.username} isOnFire={isOnFire} />
 
                                 <div className="flex-1 min-w-0">
-                                    <h3 className={cn("truncate font-semibold", isTop ? "text-white" : "text-slate-300")}>
+                                    <h3 className={cn("truncate font-semibold flex items-center gap-2", isTop ? "text-white" : "text-slate-300")}>
                                         {player.username}
+                                        {isOnFire && <span className="text-xs animate-pulse">🔥</span>}
                                     </h3>
                                 </div>
 

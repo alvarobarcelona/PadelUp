@@ -43,3 +43,24 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Fire Effect for Winning Streak */
+@keyframes fire-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 5px #f97316,
+      0 0 10px #ef4444;
+    border-color: #f97316;
+  }
+  50% {
+    box-shadow:
+      0 0 15px #f97316,
+      0 0 25px #ef4444;
+    border-color: #ef4444;
+  }
+}
+
+.fire-effect {
+  animation: fire-glow 1.5s ease-in-out infinite;
+}
