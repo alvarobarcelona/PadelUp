@@ -589,7 +589,9 @@ const Home = () => {
                 {/* Main Action - Floating/Prominent */}
                 <Link
                     to="/new-match"
-                    className="group relative flex items-center justify-center gap-3 rounded-2xl bg-green-500 py-5 font-bold text-slate-900 shadow-xl shadow-green-500/20 active:scale-95 transition-all hover:bg-green-400 overflow-hidden"
+                    className="group relative flex items-center justify-center gap-3 rounded-2xl bg-green-500 py-5 font-bold text-slate-900 shadow-xl shadow-green-500/20 active:scale-95 transition-all hover:bg-green-400 overflow-hidden touch-none select-none"
+                    style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                     <Plus size={28} strokeWidth={3} />
