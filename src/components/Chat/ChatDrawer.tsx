@@ -127,6 +127,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
 
         try {
             // Updated to use Server-Side RPC (Decrypted)
+            // This is much faster and secure.
             const { data, error } = await supabase.rpc('get_my_conversations');
 
             if (error) throw error;

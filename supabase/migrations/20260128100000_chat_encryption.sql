@@ -174,24 +174,29 @@ BEGIN
     encryption_key := get_chat_encryption_key();
 
     RETURN QUERY
-    WITH ranked_messages AS (
+    WITH valid_messages AS (
         SELECT 
             m.id,
             m.sender_id,
             m.receiver_id,
             m.content_encrypted,
             m.created_at,
-            m.is_read,
-            m.deleted_by_sender,
-            m.deleted_by_receiver,
-            ROW_NUMBER() OVER (
-                PARTITION BY 
-                    CASE WHEN m.sender_id = current_user_id THEN m.receiver_id ELSE m.sender_id END 
-                ORDER BY m.created_at DESC
-            ) as rn
+            m.is_read
         FROM messages m
         WHERE 
-            m.sender_id = current_user_id OR m.receiver_id = current_user_id
+            (m.sender_id = current_user_id AND m.deleted_by_sender = false) 
+            OR 
+            (m.receiver_id = current_user_id AND m.deleted_by_receiver = false)
+    ),
+    ranked_messages AS (
+        SELECT 
+            vm.*,
+            ROW_NUMBER() OVER (
+                PARTITION BY 
+                    CASE WHEN vm.sender_id = current_user_id THEN vm.receiver_id ELSE vm.sender_id END 
+                ORDER BY vm.created_at DESC
+            ) as rn
+        FROM valid_messages vm
     )
     SELECT 
         p.id as user_id,
@@ -208,10 +213,6 @@ BEGIN
     FROM ranked_messages rm
     JOIN profiles p ON p.id = (CASE WHEN rm.sender_id = current_user_id THEN rm.receiver_id ELSE rm.sender_id END)
     WHERE rm.rn = 1
-    AND (
-        (rm.sender_id = current_user_id AND rm.deleted_by_sender = false) OR
-        (rm.receiver_id = current_user_id AND rm.deleted_by_receiver = false)
-    )
     ORDER BY rm.created_at DESC;
 END;
 $$;

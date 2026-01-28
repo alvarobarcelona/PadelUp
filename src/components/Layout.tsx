@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Home, Trophy, Users, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
@@ -18,6 +18,7 @@ const Layout = () => {
     const navigate = useNavigate();
     const { unreadCount } = useChat();
     const { t } = useTranslation();
+    const location = useLocation();
     const [verifying, setVerifying] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
@@ -43,7 +44,7 @@ const Layout = () => {
             // Clean URL
             window.history.replaceState({}, '', window.location.pathname);
         }
-    }, []);
+    }, [location.search]);
 
     useEffect(() => {
         const checkAccess = async () => {
