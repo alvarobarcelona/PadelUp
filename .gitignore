@@ -28,3 +28,6 @@ dist-ssr
 .env
 .sql
 .env.local
+
+backups/
+scripts/
