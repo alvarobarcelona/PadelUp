@@ -625,6 +625,17 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                 messages.map((msg) => {
                                     const isMe = msg.sender_id === currentUser?.id;
 
+                                    // Calculate sender info at render time to ensure it updates when profiles load from notifications
+                                    const senderInfo = isMe ?
+                                        {
+                                            username: currentUserProfile?.username || currentUser?.username,
+                                            avatar_url: currentUserProfile?.avatar_url
+                                        } :
+                                        {
+                                            username: activeChatUser?.username,
+                                            avatar_url: activeChatUser?.avatar_url
+                                        };
+
                                     return (
                                         <div
                                             key={msg.id}
@@ -634,8 +645,8 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                             )}
                                         >
                                             <Avatar
-                                                src={msg.sender?.avatar_url}
-                                                fallback={msg.sender?.username || '?'}
+                                                src={senderInfo.avatar_url}
+                                                fallback={senderInfo.username || '?'}
                                                 size="sm"
                                             />
                                             <div className={cn(

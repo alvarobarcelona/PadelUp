@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     }
 
     const notificationPayload = JSON.stringify({
-      title: "New Message",
+      title: "Notification",
       body: record.content || "You have a new message!",
       url: `/?chatUser=${record.sender_id}`, // specific chat URL
       data: {
