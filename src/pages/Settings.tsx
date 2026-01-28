@@ -15,17 +15,67 @@ import {
     Globe,
     ShoppingCart,
     MapPin,
+    Bell,
+    FileText,
 } from 'lucide-react';
 import { logActivity } from '../lib/logger';
 import { APP_FULL_VERSION } from '../lib/constants';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const Settings = () => {
     const { alert, confirm } = useModal();
+
+    const { subscribeToPush, unsubscribeFromPush, loading: pushLoading } = usePushNotifications();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
-    const [profile, setProfile] = useState<{ username: string, email: string, subscription_end_date: string | null, main_club_id: number | null } | null>(null);
+    const [isPushEnabled, setIsPushEnabled] = useState(false);
+    const queryClient = useQueryClient();
+
+    useEffect(() => {
+        const checkPushStatus = async () => {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.ready;
+                    const subscription = await registration.pushManager.getSubscription();
+
+                    if (!subscription) {
+                        setIsPushEnabled(false);
+                        return;
+                    }
+
+                    // Permission check
+                    if (Notification.permission !== 'granted') {
+                        setIsPushEnabled(false);
+                        return;
+                    }
+
+                    // Database check: Is THIS subscription in the DB?
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const { data } = await supabase
+                            .from('push_subscriptions')
+                            .select('id')
+                            .eq('user_id', user.id)
+                            .contains('subscription', { endpoint: subscription.endpoint })
+                            .maybeSingle();
+
+                        // If we found a matching record in DB, then it's truly enabled.
+                        setIsPushEnabled(!!data);
+                    }
+                } catch (error) {
+                    console.error("Error checking push status:", error);
+                    setIsPushEnabled(false);
+                }
+            }
+        };
+
+        checkPushStatus();
+    }, [pushLoading]);
+    const [profile, setProfile] = useState<{ username: string, first_name: string, last_name: string, email: string, subscription_end_date: string | null, main_club_id: number | null } | null>(null);
     const [clubs, setClubs] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -34,6 +84,8 @@ const Settings = () => {
     // Editing State
     const [isEditing, setIsEditing] = useState(false);
     const [newUsername, setNewUsername] = useState('');
+    const [newFirstName, setNewFirstName] = useState('');
+    const [newLastName, setNewLastName] = useState('');
     const [newDescClub, setNewDescClub] = useState<number | string>('');
 
     // Password Change State
@@ -89,17 +141,22 @@ const Settings = () => {
         if (user) {
             const { data } = await supabase
                 .from('profiles')
-                .select('username, notifications_enabled, subscription_end_date, main_club_id')
+                .select('username, first_name, last_name, notifications_enabled, subscription_end_date, main_club_id')
                 .eq('id', user.id)
                 .single();
 
             setProfile({
                 username: data?.username || '',
+                first_name: data?.first_name || '',
+                last_name: data?.last_name || '',
                 email: user.email || '',
                 subscription_end_date: data?.subscription_end_date || null,
                 main_club_id: data?.main_club_id || null
             });
             setNewDescClub(data?.main_club_id || '');
+            setNewUsername(data?.username || '');
+            setNewFirstName(data?.first_name || '');
+            setNewLastName(data?.last_name || '');
 
             /*   setNewUsername(data?.username || '');
               if (data?.notifications_enabled !== undefined) {
@@ -126,8 +183,28 @@ const Settings = () => {
          }
      }; */
 
+    const normalizeUsername = (str: string) => {
+        // Basic normalization: lowercase and remove accents
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    };
+
+
     const handleUpdateProfile = async () => {
         if (!profile || !newUsername.trim()) return;
+
+        if (normalizeUsername(newUsername) === normalizeUsername(profile.username) &&
+            newFirstName === profile.first_name &&
+            newLastName === profile.last_name &&
+            (newDescClub ? Number(newDescClub) : null) === profile.main_club_id) {
+
+            await alert({
+                title: t("settings.no_changes"),
+                message: t("settings.no_changes_desc") || "This name is already taken.",
+                type: 'info'
+            });
+            return;
+        }
+
 
         try {
             setLoading(true);
@@ -135,10 +212,29 @@ const Settings = () => {
 
             if (!user) throw new Error('No user found');
 
+            // Check if username exists (case-insensitive)
+            const { data: existingUser } = await supabase
+                .from('profiles')
+                .select('id')
+                .ilike('username', newUsername)
+                .neq('id', user.id)
+                .maybeSingle();
+
+            if (existingUser) {
+                await alert({
+                    title: t("settings.usernameTakenTitle"),
+                    message: t("settings.usernameTakenMessage"),
+                    type: 'warning'
+                });
+                return;
+            }
+
             const { error } = await supabase
                 .from('profiles')
                 .update({
                     username: newUsername,
+                    first_name: newFirstName,
+                    last_name: newLastName,
                     main_club_id: newDescClub ? Number(newDescClub) : null
                 })
                 .eq('id', user.id);
@@ -148,6 +244,8 @@ const Settings = () => {
             setProfile({
                 ...profile,
                 username: newUsername,
+                first_name: newFirstName,
+                last_name: newLastName,
                 main_club_id: newDescClub ? Number(newDescClub) : null
             });
             setIsEditing(false);
@@ -161,14 +259,14 @@ const Settings = () => {
             // Check for Postgres Unique Violation (code 23505)
             if (error?.code === '23505') {
                 await alert({
-                    title: 'Username Taken',
-                    message: 'That username is already taken. Please choose another one.',
+                    title: t("settings.usernameTakenTitle"),
+                    message: t("settings.usernameTakenMessage"),
                     type: 'warning'
                 });
             } else {
                 await alert({
-                    title: 'Error',
-                    message: `Error updating profile: ${error.message || 'Unknown error'}`,
+                    title: t("settings.error"),
+                    message: t("settings.errorUpdatingProfile"),
                     type: 'danger'
                 });
             }
@@ -278,6 +376,8 @@ const Settings = () => {
     };
 
     const handleLogout = async () => {
+        // Clear all caches to prevent next user from seeing previous user's data
+        queryClient.removeQueries();
         await supabase.auth.signOut();
         navigate('/auth');
     };
@@ -320,6 +420,7 @@ const Settings = () => {
                                     ) : (
                                         <>
                                             <p className="font-medium text-white">{profile?.username || t('common.loading')}</p>
+                                            <p className="text-xs text-slate-400">{t('settings.username')}</p>
                                             <p className="text-xs text-slate-400">{profile?.email}</p>
                                         </>
                                     )}
@@ -341,6 +442,9 @@ const Settings = () => {
                                             onClick={() => {
                                                 setIsEditing(false);
                                                 setNewUsername(profile?.username || '');
+                                                setNewFirstName(profile?.first_name || '');
+                                                setNewLastName(profile?.last_name || '');
+                                                setNewDescClub(profile?.main_club_id || '');
                                             }}
                                             className="p-2 text-red-400 hover:bg-red-500/10 rounded-full transition-colors"
                                         >
@@ -355,6 +459,60 @@ const Settings = () => {
                                         {t('settings.edit')}
                                     </button>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* First Name Edit Row */}
+                        <div className="w-full flex items-center justify-between p-4 border-b border-slate-700/50">
+                            <div className="flex items-center gap-3 flex-1">
+                                <div className="p-2 rounded-full bg-blue-500/10 text-blue-400">
+                                    <User size={20} />
+                                </div>
+                                <div className="text-left flex-1">
+                                    {isEditing ? (
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase text-slate-500 font-bold">{t('auth.first_name')}</label>
+                                            <input
+                                                type="text"
+                                                value={newFirstName}
+                                                onChange={(e) => setNewFirstName(e.target.value)}
+                                                className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="font-medium text-white">{profile?.first_name || '-'}</p>
+                                            <p className="text-xs text-slate-400">{t('auth.first_name')}</p>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Last Name Edit Row */}
+                        <div className="w-full flex items-center justify-between p-4 border-b border-slate-700/50">
+                            <div className="flex items-center gap-3 flex-1">
+                                <div className="p-2 rounded-full bg-blue-500/10 text-blue-400">
+                                    <User size={20} />
+                                </div>
+                                <div className="text-left flex-1">
+                                    {isEditing ? (
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase text-slate-500 font-bold">{t('auth.last_name')}</label>
+                                            <input
+                                                type="text"
+                                                value={newLastName}
+                                                onChange={(e) => setNewLastName(e.target.value)}
+                                                className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="font-medium text-white">{profile?.last_name || '-'}</p>
+                                            <p className="text-xs text-slate-400">{t('auth.last_name')}</p>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -532,20 +690,48 @@ const Settings = () => {
                         Posible desarrollo futuro. */}
 
                         {/* Notifications */}
-                        {/* <div className="flex items-center justify-between p-4">
+                        {/* Notifications */}
+                        {/* Push Notifications Toggle */}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-full bg-purple-500/10 text-purple-400">
                                     <Bell size={20} />
                                 </div>
-                                <span className="font-medium text-white">{t('settings.notifications')}</span>
+                                <div className="flex flex-col text-left">
+                                    <span className="font-medium text-white">{t('settings.push_notifications') || 'Push Notifications'}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-slate-500">
+                                            {isPushEnabled ? (t('common.active') || 'Active') : (t('common.inactive') || 'Inactive')}
+                                        </span>
+                                        <div className="text-[10px] text-slate-500">({t('settings.push_notifications_only_for_messages') || 'Only for messages'})</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div
-                                onClick={handleNotificationToggle}
-                                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${notifications ? 'bg-green-500' : 'bg-slate-600'}`}
+
+                            <button
+                                onClick={async () => {
+                                    if (isPushEnabled) {
+                                        await unsubscribeFromPush();
+                                    } else {
+                                        try {
+                                            await subscribeToPush();
+                                            setIsPushEnabled(true);
+                                        } catch (error: any) {
+                                            console.error("Failed to enable push:", error);
+                                            window.alert("Failed to enable push: " + (error.message || error));
+                                            setIsPushEnabled(false);
+                                        }
+                                    }
+                                }}
+                                disabled={pushLoading}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${isPushEnabled ? 'bg-purple-600' : 'bg-slate-700'}`}
                             >
-                                <div className={`absolute top-1 left-1 bg-white h-4 w-4 rounded-full transition-transform ${notifications ? 'translate-x-5' : ''}`} />
-                            </div>
-                        </div> */}
+                                <span
+                                    className={`${isPushEnabled ? 'translate-x-6' : 'translate-x-1'
+                                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                                />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -569,6 +755,49 @@ const Settings = () => {
                     <p className="text-[10px] text-slate-500 px-2 leading-relaxed">
                         {t('settings.support_desc')}
                     </p>
+                </div>
+
+                {/* Legal Section */}
+                <div className="space-y-2">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Legal</h2>
+                    <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden shadow-none transition-colors duration-300">
+                        <button
+                            onClick={() => navigate('/privacy-policy')}
+                            className="w-full flex items-center justify-between p-4 border-b border-slate-700/50 hover:bg-slate-700/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-slate-500/10 text-slate-400">
+                                    <FileText size={20} />
+                                </div>
+                                <span className="font-medium text-white">{t('legal.privacy_policy')}</span>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-500" />
+                        </button>
+                        <button
+                            onClick={() => navigate('/impressum')}
+                            className="w-full flex items-center justify-between p-4 border-b border-slate-700/50 hover:bg-slate-700/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-slate-500/10 text-slate-400">
+                                    <FileText size={20} />
+                                </div>
+                                <span className="font-medium text-white">{t('legal.impressum')}</span>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-500" />
+                        </button>
+                        <button
+                            onClick={() => navigate('/terms')}
+                            className="w-full flex items-center justify-between p-4 hover:bg-slate-700/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-slate-500/10 text-slate-400">
+                                    <FileText size={20} />
+                                </div>
+                                <span className="font-medium text-white">{t('legal.terms')}</span>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-500" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* ELO Info */}

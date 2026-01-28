@@ -1,21 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Share, MonitorSmartphone, X, MoreVertical, HardDriveDownload } from 'lucide-react';
 import { useTranslation, Trans } from 'react-i18next';
+import { usePWA } from '../context/PWAContext';
 
 export const InstallPrompt = () => {
     const { t } = useTranslation();
+    const { deferredPrompt, isInstalled } = usePWA();
     const [isIOS, setIsIOS] = useState(false);
-    const [isStandalone, setIsStandalone] = useState(false);
     const [showPrompt, setShowPrompt] = useState(false);
 
     useEffect(() => {
-        // Check if already in standalone mode
-        const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
-            (window.navigator as any).standalone ||
-            document.referrer.includes('android-app://');
-
-        setIsStandalone(isStandaloneMode);
-
         // Detect iOS
         const userAgent = window.navigator.userAgent.toLowerCase();
         const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
@@ -26,21 +20,31 @@ export const InstallPrompt = () => {
 
         // Show prompt if not standalone and not dismissed (and on mobile ideally, but we show for all for now or check width)
         // Also good to wait a bit so it doesn't pop up immediately
-        if (!isStandaloneMode && !isDismissed) {
+        if (!isInstalled && !isDismissed && (deferredPrompt || isIosDevice)) {
             const timer = setTimeout(() => {
                 setShowPrompt(true);
             }, 3000);
             return () => clearTimeout(timer);
         }
 
-    }, []);
+    }, [deferredPrompt, isInstalled]);
 
     const handleDismiss = () => {
         localStorage.setItem('pwa_install_dismissed', 'true');
         setShowPrompt(false);
     };
 
-    if (!showPrompt || isStandalone) return null;
+    const handleInstall = async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                setShowPrompt(false);
+            }
+        }
+    };
+
+    if (!showPrompt || isInstalled) return null;
 
     return (
         <div className="fixed bottom-4 left-4 right-4 z-50 animate-slide-up-fade">
@@ -75,15 +79,27 @@ export const InstallPrompt = () => {
                                     />
                                 </p>
                             ) : (
-                                <p>
-                                    <Trans
-                                        i18nKey="install_prompt.android_instruction"
-                                        components={{
-                                            menu_icon: <MoreVertical size={16} className="inline mx-1 text-slate-400" />,
-                                            install_icon: <HardDriveDownload size={16} className="inline mx-1 text-green-400" />
-                                        }}
-                                    />
-                                </p>
+                                <div>
+                                    {deferredPrompt ? (
+                                        <button
+                                            onClick={handleInstall}
+                                            className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                                        >
+                                            <HardDriveDownload size={16} />
+                                            {t('install_prompt.install_button', 'Install App')}
+                                        </button>
+                                    ) : (
+                                        <p>
+                                            <Trans
+                                                i18nKey="install_prompt.android_instruction"
+                                                components={{
+                                                    menu_icon: <MoreVertical size={16} className="inline mx-1 text-slate-400" />,
+                                                    install_icon: <HardDriveDownload size={16} className="inline mx-1 text-green-400" />
+                                                }}
+                                            />
+                                        </p>
+                                    )}
+                                </div>
                             )}
                         </div>
 

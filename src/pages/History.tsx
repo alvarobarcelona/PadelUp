@@ -1,8 +1,9 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { normalizeForSearch } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';
-import { Loader2, Calendar, AlertCircle, Search, X } from 'lucide-react';
+import { Loader2, Calendar, AlertCircle, Search, X, MapPin } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -17,6 +18,10 @@ interface Match {
     team1_p2: { username: string, avatar_url: string | null } | null;
     team2_p1: { username: string, avatar_url: string | null } | null;
     team2_p2: { username: string, avatar_url: string | null } | null;
+    created_by?: string;
+    creator_username?: string;
+    club_id?: number | null;
+    club_name?: string;
 }
 
 const History = () => {
@@ -26,6 +31,8 @@ const History = () => {
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
 
 
     useEffect(() => {
@@ -48,6 +55,8 @@ const History = () => {
           score,
           winner_team,
           commentary,
+          created_by,
+          club_id,
           team1_p1(username, avatar_url),
           team1_p2(username, avatar_url),
           team2_p1(username, avatar_url),
@@ -58,9 +67,49 @@ const History = () => {
 
             if (error) throw error;
 
-            // Map the data to our interface if needed, but the structure 
-            // team1_p1: { username: '...' } is what Supabase returns by default.
-            setMatches(data as any || []);
+            let matchesWithCreators = data || [];
+
+            // Fetch Clubs
+            let clubMap: Record<number, string> = {};
+            try {
+                const { data: clubs } = await supabase.from('clubs').select('id, name');
+                if (clubs) {
+                    clubs.forEach(c => clubMap[c.id] = c.name);
+                }
+            } catch (err) {
+                console.error("Error fetching clubs", err);
+            }
+
+            // Manual fetch for creators to avoid FK issues if they are not properly set up
+            if (matchesWithCreators.length > 0) {
+                const creatorIds = [...new Set(matchesWithCreators.map((m: any) => m.created_by).filter(Boolean))];
+
+                if (creatorIds.length > 0) {
+                    const { data: creators } = await supabase
+                        .from('profiles')
+                        .select('id, username')
+                        .in('id', creatorIds);
+
+                    const creatorsMap: Record<string, string> = {};
+                    creators?.forEach((c: any) => {
+                        creatorsMap[c.id] = c.username;
+                    });
+
+                    matchesWithCreators = matchesWithCreators.map((m: any) => ({
+                        ...m,
+                        creator_username: m.created_by ? creatorsMap[m.created_by] : undefined,
+                        club_name: m.club_id ? clubMap[m.club_id] : undefined
+                    }));
+                } else {
+                    matchesWithCreators = matchesWithCreators.map((m: any) => ({
+                        ...m,
+                        club_name: m.club_id ? clubMap[m.club_id] : undefined
+                    }));
+                }
+            }
+
+            // Map the data to our interface if needed
+            setMatches(matchesWithCreators as any || []);
 
         } catch (error: any) {
             console.error('Error fetching matches:', error);
@@ -70,23 +119,52 @@ const History = () => {
         }
     };
 
+    // Filter matches
     const filteredMatches = matches.filter(match => {
-        const lowerQuery = searchQuery.toLowerCase();
-        const idMatch = match.id.toString().includes(lowerQuery);
+        const normalizedQuery = normalizeForSearch(searchQuery);
+        const idMatch = match.id.toString().includes(normalizedQuery);
+        const creatorMatch = match.creator_username && normalizeForSearch(match.creator_username).includes(normalizedQuery);
+        const clubMatch = match.club_name && normalizeForSearch(match.club_name).includes(normalizedQuery);
 
-        const checkPlayer = (player: any) => player?.username?.toLowerCase().includes(lowerQuery);
+        const checkPlayer = (player: any) => player?.username && normalizeForSearch(player.username).includes(normalizedQuery);
 
-        return idMatch ||
+        return idMatch || creatorMatch || clubMatch ||
             checkPlayer(match.team1_p1) ||
             checkPlayer(match.team1_p2) ||
             checkPlayer(match.team2_p1) ||
             checkPlayer(match.team2_p2);
     });
 
+    // Reset pagination when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE);
+    const paginatedMatches = filteredMatches.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(prev => prev + 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(prev => prev - 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
     if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-green-500" /></div>;
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in pb-20">
             <header className='flex justify-between items-center'>
                 <h1 className="text-3xl font-bold text-white">{t('history.title')}</h1>
                 <button onClick={() => navigate('/')} className="text-slate-500 hover:text-slate-300 transition-colors"><X className="w-6 h-6" /></button>
@@ -121,9 +199,35 @@ const History = () => {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {filteredMatches.map((match) => (
+                    {paginatedMatches.map((match) => (
                         <MatchCard key={match.id} match={match} />
                     ))}
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {filteredMatches.length > ITEMS_PER_PAGE && (
+                <div className="flex flex-col items-center gap-2 mt-6 pt-4 border-t border-slate-800">
+                    <span className="text-sm text-slate-500">
+                        {t('history.page_info', { current: currentPage, total: totalPages })}
+                    </span>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={handlePrevPage}
+                            disabled={currentPage === 1}
+                            className="px-4 py-2 rounded-lg bg-slate-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700 transition-colors text-sm font-medium"
+                        >
+                            {t('history.previous')}
+                        </button>
+
+                        <button
+                            onClick={handleNextPage}
+                            disabled={currentPage === totalPages}
+                            className="px-4 py-2 rounded-lg bg-slate-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700 transition-colors text-sm font-medium"
+                        >
+                            {t('history.next')}
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
@@ -145,13 +249,42 @@ const MatchCard = ({ match }: { match: Match }) => {
 
     return (
         <div className="relative overflow-hidden rounded-xl bg-slate-800 border border-slate-700 shadow-md">
+
             {/* Header / Date */}
-            <div className="flex items-center justify-between border-b border-slate-700 bg-slate-800/50 px-4 py-2 text-xs text-slate-500">
-                <div className="flex items-center gap-1">
-                    <Calendar size={12} />
-                    {date}
+            {/* Header / Date - Simplified Layout */}
+            <div className="flex flex-col border-b border-slate-700 bg-slate-800/50 px-4 py-2 text-xs text-slate-500 gap-1">
+                {/* Top Row: Date - Creator - Match ID */}
+                <div className="flex items-center justify-between w-full">
+                    {/* Left: Date */}
+                    <div className="flex items-center gap-1 shrink-0">
+                        <Calendar size={12} />
+                        {date}
+                    </div>
+
+
+
+                    {/* Right: Match ID */}
+                    <div className="shrink-0">
+                        <span>{t('history.match_num', { id: match.id })}</span>
+                    </div>
                 </div>
-                <span>{t('history.match_num', { id: match.id })}</span>
+                <div className="flex items-center justify-between w-full">
+                    {/* Bottom Row: Club Location */}
+                    {match.club_name && (
+                        <div className="flex items-center gap-1 text-slate-400">
+                            <MapPin size={12} />
+                            <span className="font-medium">{match.club_name}</span>
+                        </div>
+                    )}
+
+                    {/* Center: Creator (Conditional) */}
+                    {match.creator_username && (
+                        <div className="flex items-center gap-1  overflow-hidden">
+                            <span className="opacity-60 text-[10px]">{t('history.created_by')}</span>
+                            <span className="font-medium text-slate-400 text-[10px] truncate">{match.creator_username}</span>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="flex items-center justify-between p-4">

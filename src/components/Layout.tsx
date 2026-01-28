@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Home, Trophy, Users, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
@@ -11,14 +11,18 @@ import { useTranslation } from 'react-i18next';
 import { InstallPrompt } from './InstallPrompt';
 
 import BetaBanner from './BetaBanner';
+// import CookieBanner from './CookieBanner';
+import TermsAcceptanceModal from './TermsAcceptanceModal';
 
 const Layout = () => {
     const navigate = useNavigate();
     const { unreadCount } = useChat();
     const { t } = useTranslation();
+    const location = useLocation();
     const [verifying, setVerifying] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
+    const [showTermsModal, setShowTermsModal] = useState(false);
 
     useEffect(() => {
         const handleOpenChat = (e: CustomEvent<string>) => {
@@ -30,6 +34,18 @@ const Layout = () => {
         return () => window.removeEventListener('openChat' as any, handleOpenChat);
     }, []);
 
+    // Deep link handling (Push Notifications)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const chatUserParam = params.get('chatUser');
+        if (chatUserParam) {
+            setChatActiveUser(chatUserParam);
+            setIsChatOpen(true);
+            // Clean URL
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, [location.search]);
+
     useEffect(() => {
         const checkAccess = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -40,7 +56,7 @@ const Layout = () => {
 
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('approved, subscription_end_date, is_admin, banned, banned_until')
+                .select('approved, subscription_end_date, is_admin, banned, banned_until, terms_accepted_at')
                 .eq('id', user.id)
                 .single();
 
@@ -61,21 +77,23 @@ const Layout = () => {
                 }
 
                 // Admins bypass subscription check
-                if (profile.is_admin) {
-                    setVerifying(false);
-                    return;
-                }
+                if (!profile.is_admin) {
+                    const isExpired = !profile.subscription_end_date || new Date(profile.subscription_end_date) < new Date();
 
-                const isExpired = !profile.subscription_end_date || new Date(profile.subscription_end_date) < new Date();
-
-                // Allow access to subscription page if expired
-                if (isExpired && window.location.pathname !== '/subscription') {
-                    navigate('/subscription');
+                    // Allow access to subscription page if expired
+                    if (isExpired && window.location.pathname !== '/subscription') {
+                        navigate('/subscription');
+                    }
                 }
             } else {
                 // No profile found? Treat as pending/unregistered.
                 navigate('/pending');
                 return;
+            }
+
+            // Check for Terms Consent (GDPR) - Source of truth is PROFILE for Admin visibility
+            if (!profile.terms_accepted_at) {
+                setShowTermsModal(true);
             }
 
             setVerifying(false);
@@ -131,6 +149,35 @@ const Layout = () => {
             </nav>
 
             <InstallPrompt />
+            {/* <CookieBanner /> */}
+
+            {showTermsModal && (
+                <TermsAcceptanceModal
+                    onAccept={async () => {
+                        const timestamp = new Date().toISOString();
+
+                        // 1. Update Auth Metadata (Core Truth)
+                        const { error } = await supabase.auth.updateUser({
+                            data: {
+                                terms_accepted: true,
+                                terms_accepted_at: timestamp
+                            }
+                        });
+
+                        // 2. Sync to Profiles (For Admin Visibility)
+                        // We don't block if this fails, but it's good to try
+                        await supabase.from('profiles').update({
+                            terms_accepted_at: timestamp
+                        }).eq('id', (await supabase.auth.getUser()).data.user?.id);
+                        if (!error) {
+                            setShowTermsModal(false);
+                        } else {
+                            console.error("Failed to update terms consent", error);
+                            alert("Error updating consent. Please try again.");
+                        }
+                    }}
+                />
+            )}
         </div >
     );
 };

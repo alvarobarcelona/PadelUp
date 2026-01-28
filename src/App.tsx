@@ -12,18 +12,25 @@ import Players from './pages/Players';
 import Admin from './pages/Admin';
 import Settings from './pages/Settings';
 import Levels from './pages/Levels';
+import SuspiciousUsers from './pages/Admin/SuspiciousUsers';
 
 import PendingApproval from './pages/PendingApproval';
 import Subscription from './pages/Subscription';
 import Banned from './pages/Banned';
 import ResetPassword from './pages/ResetPassword';
+import Install from './pages/Install';
 
 import { useEffect } from 'react';
 import { supabase } from './lib/supabase';
 
 import { ChatProvider } from './context/ChatContext';
+// import CookieBanner from './components/CookieBanner';
 
 import UserProfile from './pages/UserProfile';
+
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import Impressum from './pages/Impressum';
+import Terms from './pages/Terms';
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -45,10 +52,17 @@ function AppRoutes() {
     <ChatProvider>
       <Routes>
         <Route path="/auth" element={<Auth />} />
+        <Route path="/install" element={<Install />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/pending" element={<PendingApproval />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/banned" element={<Banned />} />
+
+        {/* Legal Routes */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/impressum" element={<Impressum />} />
+        <Route path="/terms" element={<Terms />} />
+
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="rankings" element={<Rankings />} />
@@ -58,10 +72,12 @@ function AppRoutes() {
           <Route path="profile" element={<Profile />} />
           <Route path="user/:id" element={<UserProfile />} />
           <Route path="admin" element={<Admin />} />
+          <Route path="admin/suspicious" element={<SuspiciousUsers />} />
           <Route path="settings" element={<Settings />} />
           <Route path="levels" element={<Levels />} />
         </Route>
       </Routes>
+      {/* <CookieBanner /> */}
     </ChatProvider>
   );
 }

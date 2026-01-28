@@ -5,18 +5,27 @@ import { Avatar } from '../components/ui/Avatar';
 import { Users, X, Trophy, Loader2, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor, getLevelFromElo } from '../lib/elo';
+import { normalizeForSearch } from '../lib/utils';
 import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { t } from 'i18next';
 
+// Update Player interface
 interface Player {
     id: string;
-    username: string;
+    username: string | null;
+    first_name: string | null;
+    last_name: string | null;
     avatar_url: string | null;
     elo: number;
     subscription_end_date?: string | null;
+    banned?: boolean | null;
+    main_club_id?: number | null;
 }
-
+//Este elo_snapshot se guarda en la tabla matches al crearlo, pero no afecta a los perfiles todavía.
+//Cuando se confirma el partido, la función confirm_match (en supabase/functions) vuelve a calcular todo desde cero.
+//Esto es así para evitar que no se pueda hacer trampa con el elo y que el calculo sea con el ultimo partido actualizado.
 const NewMatch = () => {
     const { alert, confirm } = useModal();
     const { t } = useTranslation();
@@ -42,6 +51,7 @@ const NewMatch = () => {
     // Club State
     const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>('');
+    const [filterClubId, setFilterClubId] = useState<number | string>('all');
 
     useEffect(() => {
         fetchPlayers();
@@ -59,8 +69,9 @@ const NewMatch = () => {
                 const { data: profile } = await supabase.from('profiles').select('main_club_id').eq('id', user.id).single();
                 if (profile?.main_club_id) {
                     setSelectedClubId(profile.main_club_id);
-                } else if (clubsData.length > 0) {
-                    setSelectedClubId(clubsData[0].id);
+                    setFilterClubId(profile.main_club_id);
+                } else {
+                    setSelectedClubId('');
                 }
             }
         }
@@ -68,9 +79,10 @@ const NewMatch = () => {
 
     const fetchPlayers = async () => {
         try {
+            const { data: { user } } = await supabase.auth.getUser();
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, username, avatar_url, elo, subscription_end_date')
+                .select('id, username, first_name, last_name, avatar_url, elo, subscription_end_date, banned, main_club_id')
                 .eq('approved', true) // Only select approved players
                 .eq('is_admin', false)
                 .order('username');
@@ -78,11 +90,31 @@ const NewMatch = () => {
 
             // Filter Expired Subscriptions
             const validPlayers = data?.filter(p => {
-                if (!p.subscription_end_date) return false;
+                if (!p.subscription_end_date || p.banned) return false;
                 return new Date(p.subscription_end_date) >= new Date();
             }) || [];
 
             setAvailablePlayers(validPlayers);
+
+            if (user) {
+                let currentUserPlayer = validPlayers.find(p => p.id === user.id);
+
+                // If not found in list (e.g. admin), fetch explicitly
+                if (!currentUserPlayer) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('id, username, first_name, last_name, avatar_url, elo, subscription_end_date, banned, main_club_id')
+                        .eq('id', user.id)
+                        .single();
+                    if (profile) {
+                        currentUserPlayer = profile;
+                    }
+                }
+
+                if (currentUserPlayer) {
+                    setSelectedPlayers(prev => ({ ...prev, t1p1: currentUserPlayer }));
+                }
+            }
         } catch (error) {
             console.error('Error fetching players:', error);
         } finally {
@@ -102,8 +134,8 @@ const NewMatch = () => {
             const isAlreadySelected = Object.values(selectedPlayers).some(p => p?.id === player.id);
             if (isAlreadySelected) {
                 await alert({
-                    title: 'Already Selected',
-                    message: t('new_match.player_already_selected'),
+                    title: t('new_match.player_already_selected_title'),
+                    message: t('new_match.player_already_selected_desc'),
                     type: 'warning'
                 });
                 return;
@@ -168,7 +200,40 @@ const NewMatch = () => {
             // 7-7 handled by input but good to double check
             if (t1 === 7 && t2 === 7) return prefix + t('new_match.invalid_7_7');
         }
+        // Check if match ended in 2 sets
+        if (sets[0].t1 > sets[0].t2 && sets[1].t1 > sets[1].t2) {
+            if (sets[2].t1 + sets[2].t2 > 0) return t('new_match.match_already_finished');
+        }
+        if (sets[0].t2 > sets[0].t1 && sets[1].t2 > sets[1].t1) {
+            if (sets[2].t1 + sets[2].t2 > 0) return t('new_match.match_already_finished');
+        }
+
         return null;
+    };
+
+    const handleNextStep = async () => {
+        if (!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2) return;
+
+        // Validation: Verify User is participating
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const isParticipant =
+                selectedPlayers.t1p1.id === user.id ||
+                selectedPlayers.t1p2.id === user.id ||
+                selectedPlayers.t2p1.id === user.id ||
+                selectedPlayers.t2p2.id === user.id;
+
+            if (!isParticipant) {
+                await alert({
+                    title: t('common.validation_error'),
+                    message: t('new_match.must_include_self') || "You must be a participant to create a match.",
+                    type: 'warning'
+                });
+                return;
+            }
+        }
+
+        setStep(2);
     };
 
     const handleSave = async () => {
@@ -211,7 +276,7 @@ const NewMatch = () => {
         // --- MANUAL CONFIRMATION ---
         const isConfirmed = await confirm({
             title: t('common.confirm_title') || 'Confirm Action',
-            message: t('home.confirm_prompt') || "Confirm this match result? This will update ELO ratings.",
+            message: t('common.confirm_prompt') || "Confirm this match result? This will update ELO ratings.",
             type: 'confirm',
             confirmText: t('common.confirm') || 'Confirm',
             cancelText: t('common.cancel') || 'Cancel'
@@ -221,6 +286,9 @@ const NewMatch = () => {
 
         setLoading(true);
         try {
+            // Get user for created_by
+            const { data: { user } } = await supabase.auth.getUser();
+
             // 0. Check for duplicates (last 2 hours)
             const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
             const { data: recentMatches } = await supabase
@@ -305,13 +373,17 @@ const NewMatch = () => {
             // --- ELO CALCULATION END ---
 
             // 1. Prepare Match Data
-            const { data: { user } } = await supabase.auth.getUser();
+            // user is already fetched at start of handleSave
             const eloSnapshot = {
                 t1p1: newRatings.t1p1,
                 t1p2: newRatings.t1p2,
                 t2p1: newRatings.t2p1,
                 t2p2: newRatings.t2p2
             };
+
+            // Calculate auto-confirm time (24 hours from now) from Client to ensure it matches user expectation
+            const autoConfirmDate = new Date();
+            autoConfirmDate.setHours(autoConfirmDate.getHours() + 24);
 
             const { data: newMatch, error: matchError } = await supabase.from('matches').insert({
                 team1_p1: selectedPlayers.t1p1.id,
@@ -323,6 +395,7 @@ const NewMatch = () => {
                 winner_team: winnerTeam,
                 commentary: commentary.trim() || null,
                 status: 'pending', // Explicitly pending
+                auto_confirm_at: autoConfirmDate.toISOString(),
                 elo_snapshot: eloSnapshot,
                 created_by: user?.id
             }).select().single();
@@ -359,9 +432,11 @@ const NewMatch = () => {
 
     // PLAYER SELECTION MODAL
     if (isSelectionModalOpen) {
-        const filteredPlayers = availablePlayers.filter(p =>
-            p.username.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        const filteredPlayers = availablePlayers.filter(p => {
+            const matchesSearch = normalizeForSearch(p.username ?? '').includes(normalizeForSearch(searchQuery)) || normalizeForSearch(p.first_name ?? '').includes(normalizeForSearch(searchQuery)) || normalizeForSearch(p.last_name ?? '').includes(normalizeForSearch(searchQuery));
+            const matchesClub = filterClubId === 'all' || p.main_club_id === Number(filterClubId);
+            return matchesSearch && matchesClub;
+        });
 
         return (
             <div className="space-y-6 animate-fade-in pb-20 relative">
@@ -371,16 +446,31 @@ const NewMatch = () => {
                         <Button variant="ghost" size="icon" onClick={() => setIsSelectionModalOpen(false)}><X /></Button>
                     </div>
                     {/* Search Input */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-3 text-slate-500" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search player..."
-                            className="w-full bg-slate-800 border-slate-700 rounded-lg pl-10 pr-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-slate-500"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-
-                        />
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-3 text-slate-500" size={18} />
+                            <input
+                                type="text"
+                                placeholder={t('new_match.search_player')}
+                                className="w-full bg-slate-800 border-slate-700 rounded-lg pl-10 pr-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-slate-500"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        {clubs.length > 0 && (
+                            <select
+                                className="w-full bg-slate-800 border-slate-700 rounded-lg px-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all max-w-[150px]"
+                                value={filterClubId}
+                                onChange={(e) => setFilterClubId(e.target.value)}
+                            >
+                                <option value="all">{t('clubs.all_clubs') || 'All Clubs'}</option>
+                                {clubs.map(club => (
+                                    <option key={club.id} value={club.id}>
+                                        {club.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                 </header>
                 <div className="grid grid-cols-2 gap-4 overflow-y-auto pb-10">
@@ -390,10 +480,11 @@ const NewMatch = () => {
                             onClick={() => selectPlayer(player)}
                             className="flex flex-col items-center gap-2 rounded-xl bg-slate-800 p-4 active:bg-slate-700 active:scale-95 transition-all"
                         >
-                            <Avatar fallback={player.username} src={player.avatar_url} />
+                            <Avatar fallback={player.username ?? ''} src={player.avatar_url ?? ''} />
                             <span className="text-sm font-medium text-slate-200">{player.username}</span>
+                            <span className="text-[10px] text-slate-500">{player.first_name} {player.last_name}</span>
                             <span className="text-[10px] text-slate-500">ELO {player.elo}</span>
-                            <span className="text-[10px] text-slate-500">Level {getLevelFromElo(player.elo).level}</span>
+                            <span className="text-[10px] text-slate-500">{t('profile.level')} {getLevelFromElo(player.elo).level}</span>
                         </div>
                     ))}
                     {availablePlayers.length === 0 && (
@@ -424,7 +515,7 @@ const NewMatch = () => {
                                 value={selectedClubId}
                                 onChange={(e) => setSelectedClubId(e.target.value)}
                             >
-                                <option value="">{t('clubs.no_club') || 'No Club (Friendly Match)'}</option>
+                                <option value="">{t('clubs.no_club') || 'No Club'}</option>
                                 {clubs.map(club => (
                                     <option key={club.id} value={club.id}>
                                         {club.name} ({club.location})
@@ -469,7 +560,7 @@ const NewMatch = () => {
                         className="w-full"
                         size="lg"
                         disabled={!selectedPlayers.t1p1 || !selectedPlayers.t1p2 || !selectedPlayers.t2p1 || !selectedPlayers.t2p2}
-                        onClick={() => setStep(2)}
+                        onClick={handleNextStep}
                     >
                         {t('new_match.next_step')}
                     </Button>
@@ -523,25 +614,51 @@ const NewMatch = () => {
             {/* Score Inputs */}
             <div className="space-y-4">
                 <h3 className="text-center text-slate-400 text-sm tracking-widest uppercase">{t('new_match.set_scores')}</h3>
-                {[0, 1, 2].map((i) => (
-                    <div key={i} className="flex items-center justify-center gap-6">
-                        <input
-                            type="number"
-                            min="0" max="7"
-                            className="w-16 h-16 rounded-xl bg-slate-800 text-center text-3xl font-bold text-white focus:bg-slate-700 focus:ring-2 ring-green-500 outline-none transition-all placeholder-slate-600"
-                            value={sets[i].t1.toString()}
-                            onChange={(e) => updateScore(i, 't1', parseInt(e.target.value) || 0)}
-                        />
-                        <span className="text-slate-600 font-bold text-xl">-</span>
-                        <input
-                            type="number"
-                            min="0" max="7"
-                            className="w-16 h-16 rounded-xl bg-slate-800 text-center text-3xl font-bold text-white focus:bg-slate-700 focus:ring-2 ring-blue-500 outline-none transition-all placeholder-slate-600"
-                            value={sets[i].t2.toString()}
-                            onChange={(e) => updateScore(i, 't2', parseInt(e.target.value) || 0)}
-                        />
-                    </div>
-                ))}
+                {[0, 1, 2].map((i) => {
+                    const getWinner = (s: { t1: number, t2: number }) => {
+                        if (s.t1 >= 6 && (s.t1 - s.t2 >= 2 || s.t1 === 7)) return 1;
+                        if (s.t2 >= 6 && (s.t2 - s.t1 >= 2 || s.t2 === 7)) return 2;
+                        return 0;
+                    };
+
+                    // Logic for Set 2 (Index 1)
+                    if (i === 1) {
+                        // Hide if Set 1 is not finished
+                        if (getWinner(sets[0]) === 0) return null;
+                    }
+
+                    // Logic for Set 3 (Index 2)
+                    if (i === 2) {
+                        const w1 = getWinner(sets[0]);
+                        const w2 = getWinner(sets[1]);
+
+                        // Hide if Set 2 is not finished
+                        if (w2 === 0) return null;
+
+                        // Hide if Match is decided (2-0)
+                        if (w1 !== 0 && w1 === w2) return null;
+                    }
+
+                    return (
+                        <div key={i} className="flex items-center justify-center gap-6">
+                            <input
+                                type="number"
+                                min="0" max="7"
+                                className="w-16 h-16 rounded-xl bg-slate-800 text-center text-3xl font-bold text-white focus:bg-slate-700 focus:ring-2 ring-green-500 outline-none transition-all placeholder-slate-600"
+                                value={sets[i].t1.toString()}
+                                onChange={(e) => updateScore(i, 't1', parseInt(e.target.value) || 0)}
+                            />
+                            <span className="text-slate-600 font-bold text-xl">-</span>
+                            <input
+                                type="number"
+                                min="0" max="7"
+                                className="w-16 h-16 rounded-xl bg-slate-800 text-center text-3xl font-bold text-white focus:bg-slate-700 focus:ring-2 ring-blue-500 outline-none transition-all placeholder-slate-600"
+                                value={sets[i].t2.toString()}
+                                onChange={(e) => updateScore(i, 't2', parseInt(e.target.value) || 0)}
+                            />
+                        </div>
+                    );
+                })}
                 <p className="text-center text-xs text-slate-500 italic px-4">
                     {t('new_match.score_hint')}
                 </p>
@@ -582,10 +699,10 @@ const PlayerSelector = ({ label, player, onClick }: { label: string, player: Pla
         >
             {player ? (
                 <>
-                    <Avatar fallback={player.username} src={player.avatar_url} className="bg-green-500/20 text-green-400" />
+                    <Avatar fallback={player.username ?? ''} src={player.avatar_url ?? ''} className="bg-green-500/20 text-green-400" />
                     <p className="text-sm font-bold text-white truncate w-full text-center mt-1">{player.username}</p>
                     <span className="text-[10px] text-slate-400">ELO {player.elo}</span>
-                    <span className="text-[10px] text-slate-400">Level {getLevelFromElo(player.elo).level}</span>
+                    <span className="text-[10px] text-slate-400">{t('profile.level')} {getLevelFromElo(player.elo).level}</span>
                 </>
             ) : (
                 <>

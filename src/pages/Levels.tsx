@@ -14,7 +14,7 @@ const Levels = () => {
                 </Link>
                 <div>
                     <h1 className="text-2xl font-bold text-white tracking-tight">{t('levels.title')}</h1>
-                    <p className="text-slate-400 text-sm">{t('levels.subtitle')}</p>
+                    <p className="text-slate-400 text-sm">{t('levels.subtitle_2')}</p>
                 </div>
             </div>
 

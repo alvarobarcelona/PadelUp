@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { padelUpSupportMail } from '../lib/constants';
 
 const Banned = () => {
     const { t } = useTranslation();
@@ -45,7 +46,8 @@ const Banned = () => {
                 {t('banned.reason_1')} <br />
                 {t('banned.reason_2')} <br />
                 {t('banned.reason_3')} <br />
-                {t('banned.contact_admin')}
+                {t('banned.contact_admin')} <br />
+                {t('banned.support_email')}: {padelUpSupportMail}
             </p>
             <Button onClick={handleLogout} variant="danger" className="w-full max-w-xs">
                 {t('banned.sign_out')}

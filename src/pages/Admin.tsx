@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { getMatchPointsFromHistory } from '../lib/elo';
 import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
 import { logActivity, ACTIVITY_ACTIONS, type ActivityAction } from '../lib/logger';
+import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
 
@@ -24,7 +25,7 @@ const Admin = () => {
     const [matches, setMatches] = useState<any[]>([]);
     const [clubs, setClubs] = useState<any[]>([]);
     const [logs, setLogs] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity'>('pending');
+    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity' | 'maintenance'>('pending');
 
     // Search State
     const [memberSearch, setMemberSearch] = useState('');
@@ -33,6 +34,7 @@ const Admin = () => {
 
     // Edit State
     const [editingPlayer, setEditingPlayer] = useState<any | null>(null);
+    const [newPassword, setNewPassword] = useState('');
 
     // Create Club State
     const [newClubName, setNewClubName] = useState('');
@@ -107,6 +109,7 @@ const Admin = () => {
             logActivity('ADMIN_DELETE_USER', id, { deleted_id: id });
 
             await alert({ title: 'Success', message: 'User deleted permanently.', type: 'success' });
+            setNewPassword('');
             fetchData();
         } catch (error: any) {
             console.error(error);
@@ -320,8 +323,8 @@ const Admin = () => {
     const activeUsers = players.filter(p => {
         if (!p.approved) return false;
         if (!memberSearch) return true;
-        const search = memberSearch.toLowerCase();
-        return p.username.toLowerCase().includes(search) || p.id.includes(search);
+        const search = normalizeForSearch(memberSearch);
+        return normalizeForSearch(p.username).includes(search) || p.id.includes(search);
     });
 
     // Filter Matches
@@ -330,6 +333,62 @@ const Admin = () => {
         return m.id.toString().includes(matchSearch);
     });
 
+
+
+    const handleCleanupMessages = async (days: number) => {
+        setLoading(true);
+        try {
+            // Calculate cutoff date
+            const date = new Date();
+            date.setDate(date.getDate() - days);
+            const cutoff = date.toISOString();
+
+            // 1. Count messages to be deleted
+            const { count: countToDelete, error: countError } = await supabase
+                .from('messages')
+                .select('*', { count: 'exact', head: true })
+                .lt('created_at', cutoff);
+
+            if (countError) throw countError;
+
+            if (!countToDelete || countToDelete === 0) {
+                await alert({ title: 'Info', message: t('admin.no_activity') || 'No messages found to delete.', type: 'info' });
+                return;
+            }
+
+            setLoading(false); // Temporary stop loading to show confirm
+
+            const confirmed = await confirm({
+                title: t('admin.delete_old_msgs_title'),
+                message: t('admin.delete_old_msgs_confirm_count', { count: countToDelete, days }),
+                type: 'danger',
+                confirmText: t('admin.delete_btn', { days })
+            });
+
+            if (!confirmed) return;
+
+            setLoading(true);
+
+            // Perform Delete
+            // Note: This relies on RLS allowing admins to delete messages
+            const { error, count } = await supabase
+                .from('messages')
+                .delete({ count: 'exact' })
+                .lt('created_at', cutoff);
+
+            if (error) throw error;
+
+            //It should be null because it is an admin action not a user action
+            logActivity('ADMIN_CLEANUP_MESSAGES', null, { days, deleted_count: count });
+            await alert({ title: t('common.success'), message: t('admin.cleanup_success', { count: count ?? 0 }), type: 'success' });
+
+        } catch (error: any) {
+            console.error(error);
+            await alert({ title: 'Error', message: 'Cleanup failed: ' + error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSavePlayer = async () => {
         if (!editingPlayer) return;
@@ -350,11 +409,25 @@ const Admin = () => {
 
             if (error) throw error;
 
+            // Update Password if provided
+            if (newPassword.trim()) {
+                const { error: passwordError } = await supabase.functions.invoke('admin-update-user', {
+                    body: {
+                        user_id: editingPlayer.id,
+                        password: newPassword
+                    }
+                });
+
+                if (passwordError) throw new Error(`Password update failed: ${passwordError.message}`);
+                // Verify response ok? invoke wraps it but good to know.
+            }
+
             // LOG ADMIN EDIT
             logActivity('ADMIN_EDIT_USER', editingPlayer.id, {
                 changes: {
                     username: editingPlayer.username,
                     elo: editingPlayer.elo,
+                    subscription_end_date: editingPlayer.subscription_end_date,
                     is_admin: editingPlayer.is_admin,
                     approved: editingPlayer.approved,
                     banned: editingPlayer.banned
@@ -362,7 +435,9 @@ const Admin = () => {
             });
 
             await alert({ title: 'Success', message: 'Player updated successfully!', type: 'success' });
+            await alert({ title: 'Success', message: 'Player updated successfully!', type: 'success' });
             setEditingPlayer(null);
+            setNewPassword('');
             fetchData();
         } catch (error: any) {
             console.error(error);
@@ -406,12 +481,6 @@ const Admin = () => {
                     {t('admin.tab_members')} ({activeUsers.length})
                 </button>
                 <button
-                    onClick={() => setActiveTab('clubs')}
-                    className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'clubs' ? 'text-white border-b-2 border-indigo-500' : 'text-slate-500'}`}
-                >
-                    {t('admin.tab_clubs')}
-                </button>
-                <button
                     onClick={() => setActiveTab('matches')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'matches' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                 >
@@ -424,10 +493,28 @@ const Admin = () => {
                     {t('admin.tab_add_match')}
                 </button>
                 <button
+                    onClick={() => setActiveTab('clubs')}
+                    className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'clubs' ? 'text-white border-b-2 border-indigo-500' : 'text-slate-500'}`}
+                >
+                    {t('admin.tab_clubs')}
+                </button>
+                <button
                     onClick={() => setActiveTab('activity')}
                     className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'activity' ? 'text-white border-b-2 border-blue-500' : 'text-slate-500'}`}
                 >
                     {t('admin.tab_activity')}
+                </button>
+                <button
+                    onClick={() => setActiveTab('maintenance')}
+                    className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'maintenance' ? 'text-white border-b-2 border-orange-500' : 'text-slate-500'}`}
+                >
+                    {t('admin.tab_maintenance') || 'Maintenance'}
+                </button>
+                <button
+                    onClick={() => navigate('/admin/suspicious')}
+                    className={`px-4 py-2 font-bold whitespace-nowrap text-slate-500 hover:text-red-400 border-b-2 border-transparent hover:border-red-400`}
+                >
+                    {t('admin.suspicious_activity') || 'Suspicious Activity'}
                 </button>
             </div>
 
@@ -514,6 +601,9 @@ const Admin = () => {
                                                 {isExpired ? '⚠️ Expired' : '✅ Active'}
                                                 {p.subscription_end_date ? ` (${new Date(p.subscription_end_date).toLocaleDateString()})` : ' (No Date)'}
                                                 {!isExpired && <span className="text-slate-500 font-normal">[{daysLeft}d left]</span>}
+                                            </p>
+                                            <p className="text-[10px] text-slate-500 mt-1">
+                                                Terms: {p.terms_accepted_at ? <span className="text-green-500" title={new Date(p.terms_accepted_at).toLocaleString()}>Accepted ✅</span> : <span className="text-red-500">Not Accepted ❌</span>}
                                             </p>
                                         </div>
                                     </div>
@@ -607,10 +697,10 @@ const Admin = () => {
 
                     <div className="space-y-2">
                         {filteredMatches.map(m => {
-                            const p1 = players.find(p => p.id === m.team1_p1)?.username || 'Unknown';
-                            const p2 = players.find(p => p.id === m.team1_p2)?.username || 'Unknown';
-                            const p3 = players.find(p => p.id === m.team2_p1)?.username || 'Unknown';
-                            const p4 = players.find(p => p.id === m.team2_p2)?.username || 'Unknown';
+                            const p1 = players.find(p => p.id === m.team1_p1)?.username || t('common.deleted_user');
+                            const p2 = players.find(p => p.id === m.team1_p2)?.username || t('common.deleted_user');
+                            const p3 = players.find(p => p.id === m.team2_p1)?.username || t('common.deleted_user');
+                            const p4 = players.find(p => p.id === m.team2_p2)?.username || t('common.deleted_user');
 
                             const scoreList = Array.isArray(m.score) ? m.score : [];
 
@@ -743,7 +833,7 @@ const Admin = () => {
                     <div className="space-y-2">
                         {logs
                             .filter(l => selectedActions.includes(l.action as ActivityAction))
-                            .filter(l => JSON.stringify(l).toLowerCase().includes(logSearch.toLowerCase()))
+                            .filter(l => normalizeForSearch(JSON.stringify(l)).includes(normalizeForSearch(logSearch)))
                             .map(log => {
                                 const isError = log.action.includes('REJECT') || log.action.includes('DELETE');
                                 const isCreate = log.action.includes('CREATE') || log.action.includes('REGISTER');
@@ -765,7 +855,7 @@ const Admin = () => {
                                             </div>
                                             {log.actor && (
                                                 <span className="text-xs text-slate-500 font-mono">
-                                                    By: {log.actor?.username || 'Unknown'}
+                                                    By: {log.actor?.username || t('common.deleted_user')}
                                                 </span>
                                             )}
                                         </div>
@@ -783,11 +873,50 @@ const Admin = () => {
                 </div>
             )}
 
+            {/* MAINTENANCE TAB */}
+            {activeTab === 'maintenance' && (
+                <div className="space-y-6">
+                    <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
+                        <h3 className="text-white font-bold mb-4 text-lg flex items-center gap-2">
+                            <Trash2 size={20} className="text-orange-500" />
+                            {t('admin.maintenance_title') || 'Message Cleanup'}
+                        </h3>
+                        <p className="text-slate-400 text-sm mb-6">
+                            {t('admin.maintenance_desc') || 'Delete old messages to save database space. This action is irreversible.'}
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <button
+                                onClick={() => handleCleanupMessages(30)}
+                                className="flex flex-col items-center justify-center p-4 bg-slate-900 border border-slate-700 hover:border-orange-500/50 rounded-xl transition-all hover:bg-slate-800 group"
+                            >
+                                <span className="text-2xl font-bold text-slate-200 group-hover:text-orange-400 mb-1">30 Days</span>
+                                <span className="text-xs text-slate-500">Delete older than 30 days</span>
+                            </button>
+                            <button
+                                onClick={() => handleCleanupMessages(60)}
+                                className="flex flex-col items-center justify-center p-4 bg-slate-900 border border-slate-700 hover:border-orange-500/50 rounded-xl transition-all hover:bg-slate-800 group"
+                            >
+                                <span className="text-2xl font-bold text-slate-200 group-hover:text-orange-400 mb-1">60 Days</span>
+                                <span className="text-xs text-slate-500">Delete older than 60 days</span>
+                            </button>
+                            <button
+                                onClick={() => handleCleanupMessages(90)}
+                                className="flex flex-col items-center justify-center p-4 bg-slate-900 border border-slate-700 hover:border-orange-500/50 rounded-xl transition-all hover:bg-slate-800 group"
+                            >
+                                <span className="text-2xl font-bold text-slate-200 group-hover:text-orange-400 mb-1">90 Days</span>
+                                <span className="text-xs text-slate-500">Delete older than 90 days</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* EDIT PLAYER MODAL */}
             {editingPlayer && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative">
-                        <button onClick={() => setEditingPlayer(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
+                        <button onClick={() => { setEditingPlayer(null); setNewPassword(''); }} className="absolute top-4 right-4 text-slate-500 hover:text-white">
                             <X size={24} />
                         </button>
                         <h2 className="text-xl font-bold text-white mb-6">{t('admin.edit_player')}</h2>
@@ -799,6 +928,16 @@ const Admin = () => {
                                     className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
                                     value={editingPlayer.username}
                                     onChange={(e) => setEditingPlayer({ ...editingPlayer, username: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">New Password (Optional)</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white placeholder-slate-600"
+                                    placeholder="Leave empty to keep current"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
                                 />
                             </div>
                             <div>

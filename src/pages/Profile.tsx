@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
-import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck, Flame, Swords, X } from 'lucide-react';
+import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck, Flame, Swords, X, ShieldHalf, Moon, Bird, Pickaxe, Crown, Rocket, LandPlot, Castle, Crosshair, HandFist, Drum } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { checkAchievements } from '../lib/achievements';
@@ -10,19 +10,33 @@ import { AchievementModal } from '../components/Modals/AchievementModal';
 import { APP_FULL_VERSION } from '../lib/constants';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 const iconMap: Record<string, any> = {
     'Trophy': Trophy,
     'Medal': Medal,
     'Flame': Flame,
     'Camera': Camera,
-    'Sword': Swords
+    'Sword': Swords,
+    'ShieldHalf': ShieldHalf,
+    'Moon': Moon,
+    'Bird': Bird,
+    'Pickaxe': Pickaxe,
+    'Crown': Crown,
+    'Rocket': Rocket,
+    'LandPlot': LandPlot,
+    'Castle': Castle,
+    'Crosshair': Crosshair,
+    'HandFist': HandFist,
+    'ShieldCheck': ShieldCheck,
+    'Drum': Drum,
 };
 
 const Profile = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { alert } = useModal();
+    const queryClient = useQueryClient();
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [allAchievements, setAllAchievements] = useState<any[]>([]);
@@ -36,6 +50,8 @@ const Profile = () => {
         id: string;
         username: string;
         email: string;
+        first_name?: string;
+        last_name?: string;
         elo: number;
         avatar_url: string | null;
         is_admin?: boolean;
@@ -72,6 +88,8 @@ const Profile = () => {
                 id: profileData.id,
                 username: profileData.username,
                 email: authUser.email || '',
+                first_name: profileData.first_name,
+                last_name: profileData.last_name,
                 elo: profileData.elo,
                 avatar_url: profileData.avatar_url,
                 is_admin: profileData.is_admin
@@ -97,13 +115,20 @@ const Profile = () => {
             // 3. Fetch Matches
             const { data: matches } = await supabase
                 .from('matches')
-                .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2, created_at, score, elo_snapshot')
+                .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2, created_at, score, elo_snapshot, club_id')
                 .or(`team1_p1.eq.${profileData.id},team1_p2.eq.${profileData.id},team2_p1.eq.${profileData.id},team2_p2.eq.${profileData.id}`)
                 .eq('status', 'confirmed')
                 .order('created_at', { ascending: false }); // Newest first
 
+            // 3b. Fetch Clubs
+            let clubsMap: Record<number, string> = {};
+            const { data: clubs } = await supabase.from('clubs').select('id, name');
+            if (clubs) {
+                clubs.forEach(c => clubsMap[c.id] = c.name);
+            }
+
             if (matches) {
-                setAllMatches(matches);
+                setAllMatches(matches.map(m => ({ ...m, club_name: m.club_id ? clubsMap[m.club_id] : null })));
                 // Extract unique years
                 const uniqueYears = Array.from(new Set(matches.map(m => new Date(m.created_at).getFullYear()))).sort((a, b) => b - a);
                 setYears(uniqueYears);
@@ -129,7 +154,8 @@ const Profile = () => {
             setsWon: 0,
             gamesWon: 0,
             eloHistory: [] as any[],
-            bestStreak: 0
+            bestStreak: 0,
+            clubStats: [] as { name: string, count: number }[]
         };
 
         if (allMatches.length === 0) return defaultStats;
@@ -187,6 +213,9 @@ const Profile = () => {
         let totalSetsWon = 0;
         let totalGamesWon = 0;
 
+        // Matches per Club Stats
+        const clubCounts: Record<string, number> = {};
+
         // Calculate stats on the filtered set (Newest -> Oldest for structure, but Streak usually calc'd chronologically or reverse-check)
         // Let's iterate Filtered Reverse (Chronological) for stats like Streak
         const filteredChronological = [...filteredMatches].reverse();
@@ -212,7 +241,16 @@ const Profile = () => {
                     if (myScore > oppScore) totalSetsWon++;
                 });
             }
+
+            // Club Stats
+            // Use club name or fallback to "No Club"
+            const clubName = m.club_name || t('clubs.no_club');
+            clubCounts[clubName] = (clubCounts[clubName] || 0) + 1;
         });
+
+        const sortedClubStats = Object.entries(clubCounts)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count);
 
         const totalMatchesCount = filteredMatches.length;
         const winRate = totalMatchesCount > 0 ? Math.round((wins / totalMatchesCount) * 100) : 0;
@@ -225,7 +263,8 @@ const Profile = () => {
             setsWon: totalSetsWon,
             gamesWon: totalGamesWon,
             eloHistory: filteredEloHistory,
-            bestStreak // Note: 'Current Streak' is tricky in historical view. Let's just show Best Streak for that period.
+            bestStreak, // Note: 'Current Streak' is tricky in historical view. Let's just show Best Streak for that period.
+            clubStats: sortedClubStats
         };
 
     }, [profile, allMatches, selectedYear]);
@@ -273,6 +312,8 @@ const Profile = () => {
     };
 
     const handleLogout = async () => {
+        // Clear all caches to prevent next user from seeing previous user's data
+        queryClient.removeQueries();
         await supabase.auth.signOut();
         navigate('/auth');
     };
@@ -406,6 +447,11 @@ const Profile = () => {
                             </span>
                         )}
                     </h2>
+                    {(profile.first_name || profile.last_name) && (
+                        <p className="text-lg text-slate-300 font-medium">
+                            {profile.first_name} {profile.last_name}
+                        </p>
+                    )}
                     <p className="text-sm font-medium text-slate-400">{profile.email}</p>
                 </div>
                 <div className="rounded-full bg-slate-700/50 px-4 py-1.5 text-sm font-bold border border-green-500/20 text-white flex items-center gap-2">
@@ -521,6 +567,29 @@ const Profile = () => {
                 </div>
             )}
 
+            {/* Club Stats Section */}
+            {stats && stats.clubStats.length > 0 && (
+                <div className="rounded-xl bg-slate-800 p-5 border border-slate-700/50">
+                    <h3 className="mb-4 text-sm font-semibold uppercase text-slate-400 tracking-wider flex items-center gap-2">
+                        {t('profile.my_clubs')}
+                        <span className="text-xs bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">{stats.clubStats.length}</span>
+                    </h3>
+                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        {stats.clubStats.map((club, i) => (
+                            <div key={i} className="flex-shrink-0 auto-width bg-slate-700/50 rounded-lg p-3 flex flex-col items-center justify-center text-center border border-slate-700">
+                                <div className="p-3 rounded-full bg-slate-800 mb-3 shadow-sm">
+                                    <img src="padel-court.png" alt="" className="w-10 h-10 object-cover" />
+                                </div>
+                                <h4 className="font-bold text-white text-sm line-clamp-2 min-h-[2.5em] flex items-center justify-center">{club.name}</h4>
+                                <div className="mt-2 text-xs font-medium text-green-400 bg-green-900/20 px-2 py-1 rounded-full">
+                                    {t('profile.club_matches', { count: club.count })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* MATCH JOURNEY GRAPH */}
             <div className="rounded-xl bg-slate-800/80 p-5 border border-slate-700/50">
                 <div className="flex items-center justify-between mb-4">
@@ -528,7 +597,7 @@ const Profile = () => {
                         <BarChart3 size={16} />
                         {t('profile.performance_trend')}
                     </h3>
-                    <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] text-center bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">
                         {selectedYear === 'all' ? t('profile.last_20') : t('profile.year', { year: selectedYear })}
                     </span>
                 </div>
@@ -544,6 +613,7 @@ const Profile = () => {
                         {allAchievements.filter(a => userAchievementIds.has(a.id)).reduce((acc, curr) => acc + (curr.point_value || 0), 0)} pts / {allAchievements.reduce((acc, curr) => acc + (curr.point_value || 0), 0)} pts
                     </span>
                 </h3>
+                <h2 className="text-xs text-slate-500 mb-4">{t('profile.points_info')}</h2>
 
                 {allAchievements.length === 0 ? (
                     <div className="text-center py-6 text-slate-500 text-sm">

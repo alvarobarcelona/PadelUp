@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict vV18q9KnMm0GJe2JDf3Mp8e8oGouvD9MhU428JW4PXoHHpOjiSkSKjwdzJjrUYu
+\restrict xCxc9KO59sfc5DQ39IHqakoAtI6rbTV0Szb46jWM23j7kXitnO41dulpGXlc6V7
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Ubuntu 17.7-3.pgdg24.04+1)
@@ -41,9 +41,10 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 
 CREATE FUNCTION public.are_friends(u1 uuid, u2 uuid) RETURNS boolean
     LANGUAGE sql SECURITY DEFINER
+    SET search_path TO 'public'
     AS $$
   select exists (
-    select 1 from friendships
+    select 1 from public.friendships
     where status = 'accepted'
     and (
       (user_id_1 = u1 and user_id_2 = u2) or
@@ -61,12 +62,13 @@ ALTER FUNCTION public.are_friends(u1 uuid, u2 uuid) OWNER TO postgres;
 
 CREATE FUNCTION public.check_is_admin() RETURNS boolean
     LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
     AS $$
 BEGIN
   -- Check if the current user (auth.uid()) exists in profiles with is_admin = true
   RETURN EXISTS (
     SELECT 1
-    FROM profiles
+    FROM public.profiles
     WHERE id = auth.uid() 
     AND is_admin = true
   );
@@ -82,10 +84,12 @@ ALTER FUNCTION public.check_is_admin() OWNER TO postgres;
 
 CREATE FUNCTION public.confirm_match(match_id bigint) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
     AS $$
 DECLARE
   m record;
   snap jsonb;
+  confirmator_id uuid;
 BEGIN
   -- Get match data
   SELECT * INTO m FROM public.matches WHERE id = match_id;
@@ -96,6 +100,7 @@ BEGIN
   END IF;
 
   snap := m.elo_snapshot;
+  confirmator_id := auth.uid();
 
   -- Update Players ELO from the snapshot
   -- Snapshot format expected: { "t1p1": 1200, "t1p2": 1150, ... } (Calculated NEW ELOs)
@@ -111,6 +116,15 @@ BEGIN
   -- Mark as Confirmed
   UPDATE public.matches SET status = 'confirmed' WHERE id = match_id;
 
+  -- Increment Validation Counter for the user confirming
+  -- Note: If triggered by system (auto-confirm), auth.uid() might be null or system user.
+  -- We only increment if a real user is performing the action.
+  IF confirmator_id IS NOT NULL THEN
+      UPDATE public.profiles 
+      SET matches_validated = matches_validated + 1 
+      WHERE id = confirmator_id;
+  END IF;
+
 END;
 $$;
 
@@ -123,6 +137,7 @@ ALTER FUNCTION public.confirm_match(match_id bigint) OWNER TO postgres;
 
 CREATE FUNCTION public.handle_new_user() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
     AS $$
 BEGIN
   INSERT INTO public.profiles (id, username, email, approved)
@@ -140,6 +155,7 @@ ALTER FUNCTION public.handle_new_user() OWNER TO postgres;
 
 CREATE FUNCTION public.process_expired_matches() RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
     AS $$
 DECLARE
   m record;
@@ -155,20 +171,67 @@ $$;
 ALTER FUNCTION public.process_expired_matches() OWNER TO postgres;
 
 --
--- Name: reject_match(bigint); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: reject_match(bigint, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.reject_match(match_id bigint) RETURNS void
+CREATE FUNCTION public.reject_match(match_id bigint, reason text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
     AS $$
+DECLARE
+  m record;
+  snap jsonb;
+  admin_id uuid;
+  rejector_id uuid;
 BEGIN
-  -- Perform a hard delete of the match
+  -- Get match data
+  SELECT * INTO m FROM public.matches WHERE id = match_id;
+  
+  -- Validation
+  IF m.status != 'pending' THEN
+    RAISE EXCEPTION 'Match is not pending.';
+  END IF;
+
+  snap := m.elo_snapshot;
+  rejector_id := auth.uid();
+
+  -- 1. Log to activity_logs
+  INSERT INTO public.activity_logs (actor_id, action, target_id, details)
+  VALUES (
+    rejector_id, 
+    'MATCH_REJECT', 
+    match_id::text, 
+    jsonb_build_object(
+      'reason', reason,
+      'match_snapshot', row_to_json(m)
+    )
+  );
+
+  -- 2. Increment Rejection Counter for the user performing the action
+  UPDATE public.profiles 
+  SET matches_rejected = matches_rejected + 1 
+  WHERE id = rejector_id;
+
+  -- 3. Notify Admin (Internal Message)
+  -- Find the first admin (or a specific system admin)
+  SELECT id INTO admin_id FROM public.profiles WHERE is_admin = true LIMIT 1;
+  
+  IF admin_id IS NOT NULL THEN
+    INSERT INTO public.messages (content, sender_id, receiver_id)
+    VALUES (
+      'Match #' || match_id || ' was rejected by user. Reason: ' || reason, 
+      rejector_id, -- Sender is the user rejecting
+      admin_id
+    );
+  END IF;
+
+  -- 4. Perform a hard delete of the match
   DELETE FROM public.matches WHERE id = match_id;
 END;
 $$;
 
 
-ALTER FUNCTION public.reject_match(match_id bigint) OWNER TO postgres;
+ALTER FUNCTION public.reject_match(match_id bigint, reason text) OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -204,6 +267,34 @@ CREATE TABLE public.activity_logs (
 
 
 ALTER TABLE public.activity_logs OWNER TO postgres;
+
+--
+-- Name: clubs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.clubs (
+    id bigint NOT NULL,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    name text NOT NULL,
+    location text
+);
+
+
+ALTER TABLE public.clubs OWNER TO postgres;
+
+--
+-- Name: clubs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.clubs ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.clubs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
 
 --
 -- Name: friendships; Type: TABLE; Schema: public; Owner: postgres
@@ -253,6 +344,7 @@ CREATE TABLE public.matches (
     auto_confirm_at timestamp with time zone DEFAULT (now() + '24:00:00'::interval),
     elo_snapshot jsonb,
     created_by uuid,
+    club_id bigint,
     CONSTRAINT matches_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'rejected'::text])))
 );
 
@@ -306,7 +398,10 @@ CREATE TABLE public.profiles (
     banned boolean DEFAULT false,
     email text,
     banned_until timestamp with time zone,
-    member_id bigint NOT NULL
+    member_id bigint NOT NULL,
+    matches_validated integer DEFAULT 0,
+    matches_rejected integer DEFAULT 0,
+    main_club_id bigint
 );
 
 
@@ -411,6 +506,104 @@ f0fbfa17-7f02-47ff-b586-40decac06920	2026-01-12 01:03:27.046429+00	8adcf3fc-a01c
 5276e4e6-c393-4253-b181-36647022ce6d	2026-01-12 10:14:40.838097+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
 90c1463f-a9c8-4dab-8191-1fcd7e23ef41	2026-01-12 13:10:15.627909+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
 09d33563-b512-4d2f-a64c-ca82c78428a8	2026-01-12 13:54:29.195307+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+7b7bea1b-dd28-415c-bba1-f783043dd7e0	2026-01-13 08:17:05.946862+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+3438b429-e573-404b-8dba-165d56e47e48	2026-01-13 10:18:32.531978+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+76ca55a9-0553-47f5-849a-753f8629e342	2026-01-13 10:32:00.928969+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+d277a632-c90e-4d8b-add2-519baa8614e3	2026-01-13 12:18:02.348083+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_APPROVE_USER	60b18c8c-4f75-4382-b058-06c3f6e4dc28	{"username": "Barce"}
+f9fbeb80-676d-4396-9d11-c9afadd7397d	2026-01-13 18:30:05.023665+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_APPROVE_USER	83d7a5ba-932f-4093-a31e-2c7820ba0af5	{"username": "John Doe"}
+62e8327c-66c2-48d8-9443-c6e793012216	2026-01-13 18:31:37.777871+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+5f4bb67d-05e6-4146-8d36-3dbe068a6da6	2026-01-13 18:38:17.342429+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+b99f48ef-2d61-4376-a332-e3d04fb02073	2026-01-13 18:39:40.569569+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+dd9eabcf-db60-4be0-9137-bec5a47c35e1	2026-01-13 18:41:16.312161+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+c123e93b-fdf2-4132-a5cf-55c54e2809ce	2026-01-13 18:48:38.601325+00	83d7a5ba-932f-4093-a31e-2c7820ba0af5	USER_LOGIN	83d7a5ba-932f-4093-a31e-2c7820ba0af5	{"email": "johndoe2k01@gmail.com"}
+a8b8ff07-cea9-487c-828b-f9cce6e5d73b	2026-01-13 18:53:34.598888+00	83d7a5ba-932f-4093-a31e-2c7820ba0af5	MATCH_CREATE	22	{"t1": ["Barce", "Alvaro"], "t2": ["Carlos", "John Doe"], "winner": 2}
+0703b909-f170-43ee-85af-56f586040abf	2026-01-13 19:09:13.080139+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+6ed1d32e-421a-4f32-9e9e-968b4d56ece0	2026-01-13 19:30:18.674481+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+84d47a3c-aa82-4e78-a3a2-bad7818d3cd3	2026-01-13 19:33:41.234922+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	MATCH_REJECT	22	{"reason": "Testing", "match_snapshot": {"id": 22, "t1p1": {"username": "Barce"}, "t1p2": {"username": "Alvaro"}, "t2p1": {"username": "Carlos"}, "t2p2": {"username": "John Doe"}, "score": [{"t1": 0, "t2": 7}, {"t1": 7, "t2": 7}, {"t1": 7, "t2": 0}], "status": "pending", "team1_p1": "60b18c8c-4f75-4382-b058-06c3f6e4dc28", "team1_p2": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "team2_p1": "3801a795-759b-42a2-85d3-7771f2aa923d", "team2_p2": "83d7a5ba-932f-4093-a31e-2c7820ba0af5", "commentary": "Klasse Spiel!!!", "created_at": "2026-01-13T18:53:34.279934+00:00", "created_by": "83d7a5ba-932f-4093-a31e-2c7820ba0af5", "winner_team": 2}}
+367894d4-58d3-4a38-a7e4-22cf821e8598	2026-01-13 22:35:56.271844+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+6a4e891b-bd27-45e0-b2a8-9aaed7ea21ad	2026-01-13 22:36:59.304854+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_DELETE_USER	60b18c8c-4f75-4382-b058-06c3f6e4dc28	{"deleted_id": "60b18c8c-4f75-4382-b058-06c3f6e4dc28"}
+e71d7c3c-fe22-4e28-b443-68e182f3dbd9	2026-01-13 23:02:15.370935+00	6331ce5b-9438-4615-9d98-03259fb94ecb	USER_LOGIN	6331ce5b-9438-4615-9d98-03259fb94ecb	{"email": "camase@hotmail.com"}
+830abf84-f084-4080-b96d-ee8d369b0172	2026-01-13 23:03:50.340953+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+78715991-1c81-4721-b03a-15b22f409630	2026-01-13 23:04:05.976711+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_APPROVE_USER	6331ce5b-9438-4615-9d98-03259fb94ecb	{"username": "Barce"}
+8214701c-bfec-46f9-9164-8b3ac8313982	2026-01-14 00:19:15.264016+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+de1384e3-53d2-44e2-8ed6-5e78eb3ad2d8	2026-01-14 07:57:14.511066+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+5de474a8-e82e-4386-9db7-6437d828ccd7	2026-01-14 08:04:43.036123+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	MATCH_CREATE	23	{"t1": ["Alvaro", "Barce"], "t2": ["Carlos", "Maria"], "winner": 1}
+f2118f21-0fcd-4964-b879-2d5d56abaf3b	2026-01-14 08:05:35.806519+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+13420603-6086-41ab-88ed-2e5b11544463	2026-01-14 13:01:09.659635+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+8be969f9-beef-4d95-909e-12f0893d1873	2026-01-14 13:18:11.046634+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_MATCH_CREATE	8	{"t1": ["Barce", "Alvaro"], "t2": ["Maria", "Carlos"], "winner": 1}
+69775fc5-92e8-421c-bd13-3ca345782ca7	2026-01-14 13:19:34.655554+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+7bcc4cfd-7306-419d-aac6-089e002b1df4	2026-01-14 13:21:10.003006+00	14244878-d464-469e-8204-e5e5803960ff	USER_LOGIN	14244878-d464-469e-8204-e5e5803960ff	{"email": "yube.usk@gmail.com"}
+9ac2273b-a1f3-4041-bd5e-2737e0b1fc93	2026-01-14 08:05:49.814408+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_DELETE_MATCH	23	{"original_match": {"id": 23, "score": [{"t1": 6, "t2": 3}, {"t1": 0, "t2": 0}, {"t1": 0, "t2": 0}], "status": "pending", "team1_p1": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "team1_p2": "6331ce5b-9438-4615-9d98-03259fb94ecb", "team2_p1": "3801a795-759b-42a2-85d3-7771f2aa923d", "team2_p2": "14244878-d464-469e-8204-e5e5803960ff", "commentary": null, "created_at": "2026-01-14T08:04:42.878097+00:00", "created_by": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "winner_team": 1, "elo_snapshot": {"t1p1": 1174, "t1p2": 1174, "t2p1": 1126, "t2p2": 1126}, "auto_confirm_at": "2026-01-15T08:04:42.878097+00:00"}}
+6b280030-a94c-4d9a-ad39-3b37a0302f51	2026-01-14 08:06:07.91986+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+534457bb-10c2-4e8a-b46b-8dd9be0cb13f	2026-01-14 08:14:09.30492+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	MATCH_CREATE	24	{"t1": ["Alvaro", "Barce"], "t2": ["Carlos", "Maria"], "winner": 1}
+8c1cdfac-766d-47d9-9be0-f557a46c84c7	2026-01-14 08:15:00.202835+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_DELETE_MATCH	24	{"original_match": {"id": 24, "score": [{"t1": 6, "t2": 2}, {"t1": 0, "t2": 0}, {"t1": 0, "t2": 0}], "status": "pending", "team1_p1": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "team1_p2": "6331ce5b-9438-4615-9d98-03259fb94ecb", "team2_p1": "3801a795-759b-42a2-85d3-7771f2aa923d", "team2_p2": "14244878-d464-469e-8204-e5e5803960ff", "commentary": null, "created_at": "2026-01-14T08:14:09.084074+00:00", "created_by": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "winner_team": 1, "elo_snapshot": {"t1p1": 1160, "t1p2": 1160, "t2p1": 1140, "t2p2": 1140}, "auto_confirm_at": "2026-01-15T08:14:09.084074+00:00"}}
+d77b72bb-4211-4708-8c7b-1bbf56944388	2026-01-14 09:53:07.690815+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+e144e089-a403-4e29-a2cc-95fac7a2be25	2026-01-14 09:56:18.697731+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+55c7e986-9885-4ab4-90a9-1eb4d410a3ba	2026-01-14 10:01:46.272992+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	PROFILE_UPDATE	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"username": "Alvaro"}
+f6bb91ae-98a4-40d8-9847-ff425dab462b	2026-01-14 10:41:04.146185+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	PROFILE_UPDATE	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"username": "Alvaro"}
+23c4d19a-c6ef-4cbd-8d3d-a52ec42d7e2c	2026-01-14 10:42:50.517595+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	PROFILE_UPDATE	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"username": "Alvaro"}
+31911cbf-5887-44b8-8f98-6ec03d7732a6	2026-01-14 10:51:47.02721+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	MATCH_CREATE	25	{"t1": ["Alvaro", "Barce"], "t2": ["Carlos", "Maria"], "winner": 1}
+25b0c85d-c5b0-4aa8-9dd2-ff9445210cae	2026-01-14 11:07:44.752875+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	MATCH_CREATE	2	{"t1": ["Alvaro", "Carlos"], "t2": ["Barce", "Maria"], "winner": 1}
+74b4e8cd-54ff-45cd-a814-d63c3b593b1e	2026-01-14 11:16:06.704984+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	MATCH_CREATE	3	{"t1": ["Alvaro", "Barce"], "t2": ["Carlos", "Maria"], "winner": 1}
+55b7f315-091c-473d-8691-eecfe3f495c2	2026-01-14 11:30:46.525022+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	MATCH_CREATE	4	{"t1": ["Alvaro", "Barce"], "t2": ["Carlos", "Maria"], "winner": 1}
+c00b1d0e-cfa3-4c83-b9ae-68d85deb6f55	2026-01-14 11:39:11.04966+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	MATCH_CREATE	5	{"t1": ["Alvaro", "Barce"], "t2": ["Carlos", "Maria"], "winner": 1}
+30cbbb65-3f52-485e-b14a-e470c331db6e	2026-01-14 11:41:50.965605+00	14244878-d464-469e-8204-e5e5803960ff	USER_LOGIN	14244878-d464-469e-8204-e5e5803960ff	{"email": "yube.usk@gmail.com"}
+601feedc-6587-4b68-a661-4203d6cb5ded	2026-01-14 11:43:29.02536+00	14244878-d464-469e-8204-e5e5803960ff	MATCH_CONFIRM	5	{}
+5f78aaf0-caca-4ce1-82c4-6fb5c47c6f65	2026-01-14 11:47:34.040804+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+9864009d-074b-46b4-8a47-3f19a3efe3a2	2026-01-14 11:55:27.307528+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+f6255911-4c98-4d2d-ba14-31864d286c38	2026-01-14 11:57:21.295974+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_DELETE_MATCH	5	{"original_match": {"id": 5, "score": [{"t1": 6, "t2": 3}, {"t1": 6, "t2": 3}, {"t1": 0, "t2": 0}], "status": "confirmed", "club_id": 1, "team1_p1": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "team1_p2": "6331ce5b-9438-4615-9d98-03259fb94ecb", "team2_p1": "3801a795-759b-42a2-85d3-7771f2aa923d", "team2_p2": "14244878-d464-469e-8204-e5e5803960ff", "commentary": null, "created_at": "2026-01-14T11:39:10.898989+00:00", "created_by": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "winner_team": 1, "elo_snapshot": {"t1p1": 1174, "t1p2": 1174, "t2p1": 1126, "t2p2": 1126}, "auto_confirm_at": "2026-01-15T11:39:10.898989+00:00"}}
+d704d09c-7bec-463f-b21c-836ea0ed8624	2026-01-14 12:11:30.825992+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_MATCH_CREATE	6	{"t1": ["Alvaro", "Barce"], "t2": ["Carlos", "Maria"], "winner": 1}
+27a7a86e-8038-4f77-9584-7e00ba251673	2026-01-14 12:12:35.619133+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+992bef5e-d4e8-47ed-a273-1fddeed747dd	2026-01-14 12:17:31.742117+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+bccef7e9-8dca-45e3-b99a-7269e8f99059	2026-01-14 12:18:01.012978+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_DELETE_MATCH	6	{"original_match": {"id": 6, "score": [{"t1": 6, "t2": 3}, {"t1": 6, "t2": 3}, {"t1": 0, "t2": 0}], "status": "confirmed", "club_id": null, "team1_p1": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "team1_p2": "6331ce5b-9438-4615-9d98-03259fb94ecb", "team2_p1": "3801a795-759b-42a2-85d3-7771f2aa923d", "team2_p2": "14244878-d464-469e-8204-e5e5803960ff", "commentary": null, "created_at": "2026-01-14T12:11:30.42566+00:00", "created_by": "8adcf3fc-a01c-4078-8c01-51696e12d18e", "winner_team": 1, "elo_snapshot": {"t1p1": 1174, "t1p2": 1174, "t2p1": 1126, "t2p2": 1126}, "auto_confirm_at": "2026-01-15T12:11:30.42566+00:00"}}
+816e662a-3ab1-490c-8870-bf94b3f3c299	2026-01-14 12:20:29.146129+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+177945c8-64f7-4c15-a7b7-e840190cd683	2026-01-14 12:29:32.137062+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_MATCH_CREATE	7	{"t1": ["Alvaro", "Barce"], "t2": ["Carlos", "Maria"], "winner": 1}
+73ca440d-87f4-4154-97dc-205aeec856b2	2026-01-14 12:29:57.631854+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_DELETE_MATCH	7	{"original_match": {"id": 7, "score": [{"t1": 6, "t2": 3}, {"t1": 6, "t2": 3}, {"t1": 0, "t2": 0}], "status": "confirmed", "club_id": null, "team1_p1": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "team1_p2": "6331ce5b-9438-4615-9d98-03259fb94ecb", "team2_p1": "3801a795-759b-42a2-85d3-7771f2aa923d", "team2_p2": "14244878-d464-469e-8204-e5e5803960ff", "commentary": null, "created_at": "2026-01-14T12:29:31.843003+00:00", "created_by": "8adcf3fc-a01c-4078-8c01-51696e12d18e", "winner_team": 1, "elo_snapshot": {"t1p1": 1174, "t1p2": 1174, "t2p1": 1126, "t2p2": 1126}, "auto_confirm_at": "2026-01-15T12:29:31.843003+00:00"}}
+398382b3-67ce-4422-865d-d6eaf19041a4	2026-01-14 12:37:53.619623+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+a86f6647-e936-4c15-b74e-effcbec0d347	2026-01-14 12:40:35.199871+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+c5a7f7ec-ad33-4a38-9b3b-c17e04bcd797	2026-01-14 12:52:05.032939+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+34e58759-315f-451b-8f36-ec72561bbd56	2026-01-14 13:23:56.155646+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+dfdd1a37-7bf7-4f92-a2a7-e70df8662c9d	2026-01-14 13:26:09.720097+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_DELETE_MATCH	8	{"original_match": {"id": 8, "score": [{"t1": 6, "t2": 4}, {"t1": 6, "t2": 2}, {"t1": 0, "t2": 0}], "status": "confirmed", "club_id": null, "team1_p1": "6331ce5b-9438-4615-9d98-03259fb94ecb", "team1_p2": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "team2_p1": "14244878-d464-469e-8204-e5e5803960ff", "team2_p2": "3801a795-759b-42a2-85d3-7771f2aa923d", "commentary": null, "created_at": "2026-01-14T13:18:10.738222+00:00", "created_by": "8adcf3fc-a01c-4078-8c01-51696e12d18e", "winner_team": 1, "elo_snapshot": {"t1p1": 1174, "t1p2": 1174, "t2p1": 1126, "t2p2": 1126}, "auto_confirm_at": "2026-01-15T13:18:10.738222+00:00"}}
+bcb55a35-eea4-428e-9be5-a53c9f737d52	2026-01-14 13:26:50.398583+00	14244878-d464-469e-8204-e5e5803960ff	USER_LOGIN	14244878-d464-469e-8204-e5e5803960ff	{"email": "yube.usk@gmail.com"}
+fe8c94e1-957f-40de-a120-7a2faaced925	2026-01-14 13:29:02.203731+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+375779d0-4c90-4b9c-962c-9b9bc9d61429	2026-01-14 13:33:22.975954+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_MATCH_CREATE	9	{"t1": ["Alvaro", "Barce"], "t2": ["Maria", "Carlos"], "winner": 1}
+5d081b07-fe60-4741-81ae-29f02e736f7a	2026-01-14 13:33:50.664093+00	14244878-d464-469e-8204-e5e5803960ff	USER_LOGIN	14244878-d464-469e-8204-e5e5803960ff	{"email": "yube.usk@gmail.com"}
+4ff4e56c-e1ec-4d78-a10d-722791b02991	2026-01-14 13:35:24.242505+00	3801a795-759b-42a2-85d3-7771f2aa923d	USER_LOGIN	3801a795-759b-42a2-85d3-7771f2aa923d	{"email": "caryuse@gmail.com"}
+098eef9a-3e3e-41d7-afae-479d40d6796c	2026-01-14 13:36:00.379482+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+760c1064-7e80-4b8d-a896-4a7c24a2c563	2026-01-14 13:36:10.434286+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_DELETE_MATCH	9	{"original_match": {"id": 9, "score": [{"t1": 6, "t2": 4}, {"t1": 6, "t2": 3}, {"t1": 0, "t2": 0}], "status": "confirmed", "club_id": null, "team1_p1": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "team1_p2": "6331ce5b-9438-4615-9d98-03259fb94ecb", "team2_p1": "14244878-d464-469e-8204-e5e5803960ff", "team2_p2": "3801a795-759b-42a2-85d3-7771f2aa923d", "commentary": null, "created_at": "2026-01-14T13:33:22.702538+00:00", "created_by": "8adcf3fc-a01c-4078-8c01-51696e12d18e", "winner_team": 1, "elo_snapshot": {"t1p1": 1174, "t1p2": 1174, "t2p1": 1126, "t2p2": 1126}, "auto_confirm_at": "2026-01-15T13:33:22.702538+00:00"}}
+70cc7c7d-b733-45ab-86e7-3906c06de21c	2026-01-14 13:37:00.937494+00	14244878-d464-469e-8204-e5e5803960ff	USER_LOGIN	14244878-d464-469e-8204-e5e5803960ff	{"email": "yube.usk@gmail.com"}
+9ab2ca78-c1c2-46eb-a4b5-887f0b3e5a13	2026-01-14 13:47:07.605596+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+f1014265-550e-43e5-867b-e73f712ac2fb	2026-01-14 13:47:35.266666+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_MATCH_CREATE	10	{"t1": ["Alvaro", "Barce"], "t2": ["Carlos", "Maria"], "winner": 1}
+a7b62ed8-f680-422f-a039-c105d604feb8	2026-01-14 13:48:30.601027+00	14244878-d464-469e-8204-e5e5803960ff	USER_LOGIN	14244878-d464-469e-8204-e5e5803960ff	{"email": "yube.usk@gmail.com"}
+09c8ea66-e513-4f0f-9b11-fd4003405992	2026-01-14 13:49:19.489462+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+71b14233-bee1-4bb4-8374-5b80748fbe0a	2026-01-14 13:49:28.430597+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	ADMIN_DELETE_MATCH	10	{"original_match": {"id": 10, "score": [{"t1": 6, "t2": 3}, {"t1": 6, "t2": 3}, {"t1": 0, "t2": 0}], "status": "confirmed", "club_id": null, "team1_p1": "d7848f49-4f9b-4b6b-9826-51960ebfb110", "team1_p2": "6331ce5b-9438-4615-9d98-03259fb94ecb", "team2_p1": "3801a795-759b-42a2-85d3-7771f2aa923d", "team2_p2": "14244878-d464-469e-8204-e5e5803960ff", "commentary": null, "created_at": "2026-01-14T13:47:35.027833+00:00", "created_by": "8adcf3fc-a01c-4078-8c01-51696e12d18e", "winner_team": 1, "elo_snapshot": {"t1p1": 1174, "t1p2": 1174, "t2p1": 1126, "t2p2": 1126}, "auto_confirm_at": "2026-01-15T13:47:35.027833+00:00"}}
+e0137766-f9cd-4838-88ca-2b2d8cec719c	2026-01-14 13:57:00.230636+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+ecc7bda4-0656-4fee-8dca-1611226ed8d8	2026-01-14 14:00:30.044865+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+07d63554-a2c7-4427-b795-05dc6f585e0b	2026-01-14 18:31:19.388422+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+e0fbaa57-9be7-4615-ae00-db4fd75dedcc	2026-01-14 19:42:38.407786+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+3c7cb373-9f05-4b4b-90f9-27bd933982c4	2026-01-15 07:24:10.809283+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+3f80396c-d23a-4cac-bc04-09edc7abcf41	2026-01-15 12:02:46.958242+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+fe685768-7387-45ea-9edf-1c75c86492b0	2026-01-15 12:18:05.283596+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+758a92e9-17fa-4d6c-af66-a24c0f32851f	2026-01-15 12:20:22.358283+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+3367d201-ef56-4135-80f4-901eb8919440	2026-01-15 14:50:14.762374+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+e1252f2b-a281-476a-81f8-90319d51566e	2026-01-16 16:46:15.087118+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+4dffeefb-7839-4975-b720-4adff170110b	2026-01-16 16:46:49.192214+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+a81e8abf-4c2f-40f2-87bb-90ca39540506	2026-01-16 18:43:57.379273+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+861af7e5-cc38-4df3-abaf-4c3c941c87c0	2026-01-16 21:07:00.933935+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+b474245e-cbb8-4d53-b4a1-346c317d485b	2026-01-16 21:21:24.097781+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+c774f7ae-642c-4b24-9187-6cd826e325af	2026-01-16 21:34:35.557018+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+5577e805-e528-4dee-ac2a-30e2ca486a6f	2026-01-16 23:10:43.2236+00	8adcf3fc-a01c-4078-8c01-51696e12d18e	USER_LOGIN	8adcf3fc-a01c-4078-8c01-51696e12d18e	{"email": "alvaro90barcelona@gmail.com"}
+3823c2b1-93dc-4f86-9d63-6a56b2075c46	2026-01-16 23:11:39.420224+00	d7848f49-4f9b-4b6b-9826-51960ebfb110	USER_LOGIN	d7848f49-4f9b-4b6b-9826-51960ebfb110	{"email": "camase1990@gmail.com"}
+\.
+
+
+--
+-- Data for Name: clubs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.clubs (id, created_at, name, location) FROM stdin;
+2	2026-01-14 12:34:39.303705+00	Hall of Padel | WF	Wollfenbüttel || Germany
+1	2026-01-14 09:45:03.836814+00	Hall of Padel | BS	Braunschweig || Germany
 \.
 
 
@@ -419,6 +612,7 @@ f0fbfa17-7f02-47ff-b586-40decac06920	2026-01-12 01:03:27.046429+00	8adcf3fc-a01c
 --
 
 COPY public.friendships (id, user_id_1, user_id_2, status, created_at) FROM stdin;
+9	d7848f49-4f9b-4b6b-9826-51960ebfb110	14244878-d464-469e-8204-e5e5803960ff	accepted	2026-01-14 13:20:24.967708+00
 \.
 
 
@@ -426,7 +620,7 @@ COPY public.friendships (id, user_id_1, user_id_2, status, created_at) FROM stdi
 -- Data for Name: matches; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.matches (id, created_at, team1_p1, team1_p2, team2_p1, team2_p2, score, winner_team, commentary, status, auto_confirm_at, elo_snapshot, created_by) FROM stdin;
+COPY public.matches (id, created_at, team1_p1, team1_p2, team2_p1, team2_p2, score, winner_team, commentary, status, auto_confirm_at, elo_snapshot, created_by, club_id) FROM stdin;
 \.
 
 
@@ -435,6 +629,7 @@ COPY public.matches (id, created_at, team1_p1, team1_p2, team2_p1, team2_p2, sco
 --
 
 COPY public.messages (id, content, sender_id, receiver_id, created_at, is_read) FROM stdin;
+e8bf9eb1-dbad-46d9-b40c-d4ed1a1d8b6c	hola alvaro, que tal te parece la nueva app de PadelUp?	14244878-d464-469e-8204-e5e5803960ff	d7848f49-4f9b-4b6b-9826-51960ebfb110	2026-01-14 13:22:42.214906+00	t
 \.
 
 
@@ -442,12 +637,13 @@ COPY public.messages (id, content, sender_id, receiver_id, created_at, is_read) 
 -- Data for Name: profiles; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.profiles (id, username, avatar_url, elo, created_at, is_admin, approved, notifications_enabled, subscription_end_date, banned, email, banned_until, member_id) FROM stdin;
-60b18c8c-4f75-4382-b058-06c3f6e4dc28	Barce	\N	1150	2026-01-12 01:21:05.674883+00	f	f	t	2026-02-11 01:21:05.674883+00	f	camase@hotmail.com	\N	11
-8adcf3fc-a01c-4078-8c01-51696e12d18e	Administrator	\N	0	2026-01-06 09:43:33.270665+00	t	t	t	2028-01-05 00:00:00+00	f	alvaro90barcelona@gmail.com	\N	2
-14244878-d464-469e-8204-e5e5803960ff	Maria	\N	1150	2025-12-30 21:25:01.546396+00	f	t	t	2026-01-29 21:25:01.546396+00	f	yube.usk@gmail.com	\N	3
-3801a795-759b-42a2-85d3-7771f2aa923d	Carlos	\N	1150	2025-12-30 14:42:58.591527+00	f	t	t	2026-02-04 20:37:32.07+00	f	caryuse@gmail.com	\N	5
-d7848f49-4f9b-4b6b-9826-51960ebfb110	Alvaro	https://pkgmrvalcppskxdusqni.supabase.co/storage/v1/object/public/avatars/233b46e0-d40a-489f-9b9c-931b2f96083f/0.03762533311400529.jpg	1150	2025-12-29 16:23:31.67152+00	f	t	t	2027-01-29 00:00:00+00	f	camase1990@gmail.com	\N	4
+COPY public.profiles (id, username, avatar_url, elo, created_at, is_admin, approved, notifications_enabled, subscription_end_date, banned, email, banned_until, member_id, matches_validated, matches_rejected, main_club_id) FROM stdin;
+8adcf3fc-a01c-4078-8c01-51696e12d18e	Administrator	\N	0	2026-01-06 09:43:33.270665+00	t	t	t	2028-01-05 00:00:00+00	f	alvaro90barcelona@gmail.com	\N	2	0	0	\N
+3801a795-759b-42a2-85d3-7771f2aa923d	Carlos	\N	1150	2025-12-30 14:42:58.591527+00	f	t	t	2026-02-04 20:37:32.07+00	f	caryuse@gmail.com	\N	5	0	0	\N
+83d7a5ba-932f-4093-a31e-2c7820ba0af5	John Doe	\N	1150	2026-01-13 18:22:25.744637+00	f	t	t	2026-02-12 18:22:25.744637+00	f	johndoe2k01@gmail.com	\N	12	0	0	\N
+14244878-d464-469e-8204-e5e5803960ff	Maria	\N	1150	2025-12-30 21:25:01.546396+00	f	t	t	2026-01-29 21:25:01.546396+00	f	yube.usk@gmail.com	\N	3	1	0	\N
+6331ce5b-9438-4615-9d98-03259fb94ecb	Barce	\N	1150	2026-01-13 23:00:18.259204+00	f	t	t	2026-02-12 23:00:18.259204+00	f	camase@hotmail.com	\N	14	0	0	\N
+d7848f49-4f9b-4b6b-9826-51960ebfb110	Alvaro	https://pkgmrvalcppskxdusqni.supabase.co/storage/v1/object/public/avatars/233b46e0-d40a-489f-9b9c-931b2f96083f/0.03762533311400529.jpg	1150	2025-12-29 16:23:31.67152+00	f	t	t	2027-01-29 00:00:00+00	f	camase1990@gmail.com	\N	4	0	0	1
 \.
 
 
@@ -461,24 +657,31 @@ d7848f49-4f9b-4b6b-9826-51960ebfb110	socialite	2026-01-11 14:58:58.639917+00
 
 
 --
+-- Name: clubs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.clubs_id_seq', 2, true);
+
+
+--
 -- Name: friendships_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.friendships_id_seq', 8, true);
+SELECT pg_catalog.setval('public.friendships_id_seq', 9, true);
 
 
 --
 -- Name: matches_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.matches_id_seq', 21, true);
+SELECT pg_catalog.setval('public.matches_id_seq', 10, true);
 
 
 --
 -- Name: profiles_member_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.profiles_member_id_seq', 11, true);
+SELECT pg_catalog.setval('public.profiles_member_id_seq', 14, true);
 
 
 --
@@ -495,6 +698,22 @@ ALTER TABLE ONLY public.achievements
 
 ALTER TABLE ONLY public.activity_logs
     ADD CONSTRAINT activity_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: clubs clubs_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.clubs
+    ADD CONSTRAINT clubs_name_key UNIQUE (name);
+
+
+--
+-- Name: clubs clubs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.clubs
+    ADD CONSTRAINT clubs_pkey PRIMARY KEY (id);
 
 
 --
@@ -579,7 +798,7 @@ CREATE INDEX idx_profiles_member_id ON public.profiles USING btree (member_id);
 --
 
 ALTER TABLE ONLY public.activity_logs
-    ADD CONSTRAINT activity_logs_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES public.profiles(id);
+    ADD CONSTRAINT activity_logs_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
 
 --
@@ -596,6 +815,14 @@ ALTER TABLE ONLY public.friendships
 
 ALTER TABLE ONLY public.friendships
     ADD CONSTRAINT friendships_user_id_2_fkey FOREIGN KEY (user_id_2) REFERENCES public.profiles(id);
+
+
+--
+-- Name: matches matches_club_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_club_id_fkey FOREIGN KEY (club_id) REFERENCES public.clubs(id);
 
 
 --
@@ -655,6 +882,14 @@ ALTER TABLE ONLY public.messages
 
 
 --
+-- Name: profiles profiles_main_club_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.profiles
+    ADD CONSTRAINT profiles_main_club_id_fkey FOREIGN KEY (main_club_id) REFERENCES public.clubs(id);
+
+
+--
 -- Name: user_achievements user_achievements_achievement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -678,6 +913,24 @@ CREATE POLICY "Admins can delete users" ON public.profiles FOR DELETE USING (pub
 
 
 --
+-- Name: user_achievements Admins can manage all user_achievements; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admins can manage all user_achievements" ON public.user_achievements USING ((auth.uid() IN ( SELECT profiles.id
+   FROM public.profiles
+  WHERE (profiles.is_admin = true))));
+
+
+--
+-- Name: clubs Admins can manage clubs; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admins can manage clubs" ON public.clubs USING ((auth.uid() IN ( SELECT profiles.id
+   FROM public.profiles
+  WHERE (profiles.is_admin = true))));
+
+
+--
 -- Name: profiles Admins can update anyone; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -698,6 +951,13 @@ CREATE POLICY "Admins view all logs" ON public.activity_logs FOR SELECT USING ((
 --
 
 CREATE POLICY "Authenticated users can insert messages" ON public.messages FOR INSERT WITH CHECK ((auth.uid() = sender_id));
+
+
+--
+-- Name: clubs Clubs are viewable by everyone; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Clubs are viewable by everyone" ON public.clubs FOR SELECT USING (true);
 
 
 --
@@ -839,6 +1099,12 @@ ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: clubs; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.clubs ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: friendships; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
@@ -924,12 +1190,12 @@ GRANT ALL ON FUNCTION public.process_expired_matches() TO service_role;
 
 
 --
--- Name: FUNCTION reject_match(match_id bigint); Type: ACL; Schema: public; Owner: postgres
+-- Name: FUNCTION reject_match(match_id bigint, reason text); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.reject_match(match_id bigint) TO anon;
-GRANT ALL ON FUNCTION public.reject_match(match_id bigint) TO authenticated;
-GRANT ALL ON FUNCTION public.reject_match(match_id bigint) TO service_role;
+GRANT ALL ON FUNCTION public.reject_match(match_id bigint, reason text) TO anon;
+GRANT ALL ON FUNCTION public.reject_match(match_id bigint, reason text) TO authenticated;
+GRANT ALL ON FUNCTION public.reject_match(match_id bigint, reason text) TO service_role;
 
 
 --
@@ -948,6 +1214,24 @@ GRANT ALL ON TABLE public.achievements TO service_role;
 GRANT ALL ON TABLE public.activity_logs TO anon;
 GRANT ALL ON TABLE public.activity_logs TO authenticated;
 GRANT ALL ON TABLE public.activity_logs TO service_role;
+
+
+--
+-- Name: TABLE clubs; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.clubs TO anon;
+GRANT ALL ON TABLE public.clubs TO authenticated;
+GRANT ALL ON TABLE public.clubs TO service_role;
+
+
+--
+-- Name: SEQUENCE clubs_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public.clubs_id_seq TO anon;
+GRANT ALL ON SEQUENCE public.clubs_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.clubs_id_seq TO service_role;
 
 
 --
@@ -1086,5 +1370,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict vV18q9KnMm0GJe2JDf3Mp8e8oGouvD9MhU428JW4PXoHHpOjiSkSKjwdzJjrUYu
+\unrestrict xCxc9KO59sfc5DQ39IHqakoAtI6rbTV0Szb46jWM23j7kXitnO41dulpGXlc6V7
 

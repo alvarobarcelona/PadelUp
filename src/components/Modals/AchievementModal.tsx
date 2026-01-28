@@ -1,4 +1,4 @@
-import { X, Trophy, Medal, Flame, Camera, Swords, CheckCircle2 } from 'lucide-react';
+import { X, Trophy, Medal, Flame, Camera, Swords, CheckCircle2 , ShieldHalf, Moon, Bird, Pickaxe, Crown, Rocket, LandPlot, Castle, Crosshair, HandFist, ShieldCheck, Drum } from 'lucide-react';
 
 
 interface Achievement {
@@ -21,7 +21,19 @@ const iconMap: Record<string, any> = {
     'Medal': Medal,
     'Flame': Flame,
     'Camera': Camera,
-    'Sword': Swords
+    'Sword': Swords,
+    'ShieldHalf': ShieldHalf,
+    'Moon': Moon,
+    'Bird': Bird,
+    'Pickaxe': Pickaxe,
+    'Crown': Crown,
+    'Rocket': Rocket,
+    'LandPlot': LandPlot,
+    'Castle': Castle,
+    'Crosshair': Crosshair,
+    'HandFist': HandFist,
+    'ShieldCheck': ShieldCheck,
+    'Drum': Drum,
 };
 
 export const AchievementModal = ({ isOpen, onClose, achievement, isUnlocked }: AchievementModalProps) => {
@@ -38,7 +50,7 @@ export const AchievementModal = ({ isOpen, onClose, achievement, isUnlocked }: A
             />
 
             {/* Modal Content */}
-            <div className="relative w-full max-w-sm transform overflow-hidden rounded-3xl bg-slate-900 p-6 text-left align-middle shadow-2xl transition-all border border-slate-700/50 animate-scale-in">
+            <div className="relative w-full max-w-sm transform overflow-hidden rounded-3xl bg-slate-900 p-6 text-left align-middle shadow-2xl transition-all border border-slate-700/50 animate-scale-in mt-96">
 
                 {/* Close Button */}
                 <button
