@@ -85,6 +85,12 @@
       "resend_confirmation": "Reenviar email de confirmación"
     }
   },
+
+  "badges": {
+    "heavy_hitter": "Jugador muy activo",
+    "regular": "Regular",
+    "info": "Basado en partidos jugados en los últimos 30 días"
+  },
   "home": {
     "welcome_user": "Bienvenido, {{name}}",
     "welcome_guest": "Bienvenido Invitado",

@@ -94,6 +94,13 @@
     "main_club": "Main Club",
     "no_club_selected": "No club "
   },
+
+  "badges": {
+    "heavy_hitter": "Highly active player",
+    "regular": "Regular",
+    "info": "Based on matches played in the last 30 days"
+  },
+
   "home": {
     "welcome_user": "Welcome back, {{name}}",
     "welcome_guest": "Welcome Guest",

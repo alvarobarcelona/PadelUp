@@ -82,6 +82,11 @@
       "resend_confirmation": "Bestätigungs-E-Mail erneut senden"
     }
   },
+  "badges": {
+    "heavy_hitter": "Sehr aktiver Spieler",
+    "regular": "Regelmäßig",
+    "info": "Basierend auf Spielen der letzten 30 Tage"
+  },
   "home": {
     "welcome_user": "Willkommen zurück, {{name}}",
     "welcome_guest": "Willkommen Gast",

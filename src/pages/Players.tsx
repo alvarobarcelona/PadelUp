@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, UserPlus, MessageCircle } from 'lucide-react';
+import { GiMuscleUp } from "react-icons/gi";
+import { MdEventAvailable } from "react-icons/md";
 import { getLevelFromElo } from '../lib/elo';
 import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -147,6 +149,32 @@ const Players = () => {
         }
     });
 
+    // 5. Activity Stats (Last 30 Days)
+    const { data: activityStartMap = {} } = useQuery({
+        queryKey: ['activityStats'],
+        queryFn: async () => {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const { data: recentMatches } = await supabase
+                .from('matches')
+                .select('team1_p1, team1_p2, team2_p1, team2_p2')
+                .eq('status', 'confirmed')
+                .gte('created_at', thirtyDaysAgo.toISOString());
+
+            if (!recentMatches) return {};
+
+            const counts: Record<string, number> = {};
+            recentMatches.forEach(m => {
+                [m.team1_p1, m.team1_p2, m.team2_p1, m.team2_p2].forEach(pid => {
+                    if (pid) counts[pid] = (counts[pid] || 0) + 1;
+                });
+            });
+            return counts;
+        },
+        staleTime: 1000 * 60 * 60 // 1 hour
+    });
+
     const acceptMutation = useMutation({
         mutationFn: async (friendshipId: number) => {
             const { error } = await supabase
@@ -268,6 +296,19 @@ const Players = () => {
                         {t('community.tab_friends')}
                     </button>
                 </div>
+
+                {/* Legend */}
+                <div className="flex justify-center gap-4 mt-2">
+                    <div className="flex items-center gap-1.5 opacity-80">
+                        <GiMuscleUp size={16} className="text-amber-500" />
+                        <span className="text-[10px] uppercase font-bold text-slate-400">{t('badges.heavy_hitter')}</span>
+                    </div>
+                        <div className="flex items-center gap-1.5 opacity-80">
+                            <MdEventAvailable size={16} className="text-blue-400" />
+                            <span className="text-[10px] uppercase font-bold text-slate-400">{t('badges.regular')}</span>
+                        </div>
+                    </div>
+                    <div className="text-center text-xs opacity-80"> {t('badges.info')}</div>
             </header>
 
             <div className="space-y-2">
@@ -280,6 +321,20 @@ const Players = () => {
                 ) : (
                     filteredPlayers.map(player => {
                         const status = friendMap[player.id] || 'none';
+                        const matchCount = activityStartMap[player.id] || 0;
+                        let BadgeIcon = null;
+                        let badgeColor = "";
+                        let badgeLabel = "";
+
+                        if (matchCount >= 8) {
+                            BadgeIcon = GiMuscleUp;
+                            badgeColor = "text-amber-500";
+                            badgeLabel = t('badges.heavy_hitter');
+                        } else if (matchCount >= 4) {
+                            BadgeIcon = MdEventAvailable;
+                            badgeColor = "text-blue-400";
+                            badgeLabel = t('badges.regular');
+                        }
 
                         return (
                             <div key={player.id} className="flex items-center justify-between rounded-xl bg-slate-800/50 p-4 border border-slate-700/30 hover:bg-slate-800 transition-colors">
@@ -287,8 +342,13 @@ const Players = () => {
                                     <Link to={`/user/${player.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                                         <Avatar fallback={player.username} src={player.avatar_url} />
                                         <div>
-                                            <span className="font-semibold text-slate-200 block">{player.username}</span>
-                                            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold text-slate-200 block">{player.username}</span>
+                                                {BadgeIcon && (
+                                                    <BadgeIcon size={16} className={badgeColor} title={badgeLabel} />
+                                                )}
+                                            </div>
+                                            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block mt-0.5">
                                                 ELO {player.elo} • Lvl {getLevelFromElo(player.elo).level}
                                             </span>
                                         </div>
