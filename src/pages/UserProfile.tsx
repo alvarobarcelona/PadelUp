@@ -428,7 +428,14 @@ export default function UserProfile() {
                             <div key={partner.id} onClick={() => navigate(`/user/${partner.id}`)} className="flex items-center justify-between bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-all cursor-pointer group">
                                 <div className="flex items-center gap-3">
                                     <div className="relative">
-                                        <img src={partner.avatar_url || ''} alt={partner.username} className="w-10 h-10 rounded-full object-cover bg-slate-700" />
+
+                                        {partner.avatar_url ? (
+                                            <img src={partner.avatar_url} alt={partner.username} className="w-10 h-10 rounded-full object-cover bg-slate-700" />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white border border-slate-600">
+                                                {partner.username.substring(0, 2).toUpperCase()}
+                                            </div>
+                                        )}
                                         <div className={cn("absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-800 flex items-center justify-center text-[8px] font-bold text-white",
                                             partner.winRate >= 60 ? "bg-green-500" : partner.winRate <= 40 ? "bg-red-500" : "bg-yellow-500"
                                         )}>
