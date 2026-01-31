@@ -179,9 +179,15 @@ const Profile = () => {
                 else if (m.team2_p1 === profile.id) myKey = 't2p1';
                 else if (m.team2_p2 === profile.id) myKey = 't2p2';
 
-                if (myKey && m.elo_snapshot[myKey]) {
+                // CHECK FOR DIFFS (Preferred method for correct chronological graph)
+                if (myKey && m.elo_snapshot.diffs && m.elo_snapshot.diffs[myKey] !== undefined) {
+                    delta = m.elo_snapshot.diffs[myKey];
+                    newElo = simulatedElo + delta;
+                }
+                // Fallback to absolute value (Legacy) - ONLY if diffs not present
+                else if (myKey && m.elo_snapshot[myKey]) {
+                
                     newElo = m.elo_snapshot[myKey];
-                    // Re-align delta
                     delta = newElo - simulatedElo;
                 } else {
                     delta = won ? 16 : -16;
