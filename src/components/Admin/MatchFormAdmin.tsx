@@ -40,13 +40,33 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
     const [sets, setSets] = useState([{ t1: 0, t2: 0 }, { t1: 0, t2: 0 }, { t1: 0, t2: 0 }]);
     const [commentary, setCommentary] = useState('');
 
+    // Club State
+    const [clubs, setClubs] = useState<any[]>([]);
+    const [selectedClubId, setSelectedClubId] = useState<number | string>('');
+
     // Selection Modal State
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [activePosition, setActivePosition] = useState<keyof typeof selectedPlayers | null>(null);
 
     useEffect(() => {
         fetchPlayers();
+        fetchClubs();
     }, []);
+
+    const fetchClubs = async () => {
+        const { data: clubsData } = await supabase.from('clubs').select('*').order('id');
+        if (clubsData) {
+            setClubs(clubsData);
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('main_club_id').eq('id', user.id).single();
+                if (profile?.main_club_id) {
+                    setSelectedClubId(profile.main_club_id);
+                }
+            }
+        }
+    };
 
     const fetchPlayers = async () => {
         try {
@@ -173,7 +193,8 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 commentary: commentary.trim() || null,
                 status: 'pending', // IMPORTANT: Start as pending
                 elo_snapshot: {}, // Will be populated by confirm_match
-                created_by: user?.id
+                created_by: user?.id,
+                club_id: selectedClubId ? Number(selectedClubId) : null
             }).select().single();
 
             if (matchError) throw matchError;
@@ -274,6 +295,24 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 </header>
 
                 <section className="space-y-3">
+                    {clubs.length > 0 && (
+                        <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <label className="block text-sm font-medium text-slate-400 mb-2">{t('clubs.select_club') || 'Select Club'}</label>
+                            <select
+                                className="block w-full rounded-lg bg-slate-900 border-transparent focus:border-green-500 focus:bg-slate-900 focus:ring-0 text-white p-3 transition-colors"
+                                value={selectedClubId}
+                                onChange={(e) => setSelectedClubId(e.target.value)}
+                            >
+                                <option value="">{t('clubs.no_club') || 'No Club'}</option>
+                                {clubs.map(club => (
+                                    <option key={club.id} value={club.id}>
+                                        {club.name} ({club.location})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <h2 className="text-sm font-semibold uppercase text-green-400 tracking-wider">{t('new_match.team_1')}</h2>
                     <div className="grid grid-cols-2 gap-4">
                         <PlayerSelector label={t('new_match.player_1')} player={selectedPlayers.t1p1} onClick={() => openSelection('t1p1')} />
