@@ -216,7 +216,7 @@
     "confirm_prompt": "¿Estás seguro de que deseas continuar?",
     "confirm": "Confirmar",
     "cancel": "Cancelar",
-    "beta_message": "Esta aplicación está en periodo de pruebas. En los próximos días se hará pública.",
+    "beta_message": "Esta aplicación está en fase beta.",
     "validation_error": "Error de Validación",
     "invalid_score": "Puntuación Inválida",
     "draw": "Empate",
