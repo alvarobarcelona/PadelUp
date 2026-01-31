@@ -3,7 +3,7 @@ import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor, getLevelFromElo } from '../../lib/elo';
+import { getLevelFromElo } from '../../lib/elo';
 import { normalizeForSearch } from '../../lib/utils';
 import { logActivity } from '../../lib/logger';
 import { useTranslation } from 'react-i18next';
@@ -158,53 +158,11 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
             const winnerTeam = t1Sets > t2Sets ? 1 : 2;
 
-            // --- ELO CALCULATION START ---
-            const fetchMatchCount = async (pid: string) => {
-                const { count } = await supabase
-                    .from('matches')
-                    .select('id', { count: 'exact', head: true })
-                    .or(`team1_p1.eq.${pid},team1_p2.eq.${pid},team2_p1.eq.${pid},team2_p2.eq.${pid}`);
-                return count || 0;
-            };
-
-            const [count1, count2, count3, count4] = await Promise.all([
-                fetchMatchCount(selectedPlayers.t1p1.id),
-                fetchMatchCount(selectedPlayers.t1p2.id),
-                fetchMatchCount(selectedPlayers.t2p1.id),
-                fetchMatchCount(selectedPlayers.t2p2.id)
-            ]);
-
-            const k1 = getKFactor(count1);
-            const k2 = getKFactor(count2);
-            const k3 = getKFactor(count3);
-            const k4 = getKFactor(count4);
-
-            const t1Avg = calculateTeamAverage(selectedPlayers.t1p1.elo, selectedPlayers.t1p2.elo);
-            const t2Avg = calculateTeamAverage(selectedPlayers.t2p1.elo, selectedPlayers.t2p2.elo);
-
-            const t1Score = winnerTeam === 1 ? 1 : 0;
-            const t2Score = winnerTeam === 2 ? 1 : 0;
-
-            const t1Expected = calculateExpectedScore(t1Avg, t2Avg);
-            const t2Expected = calculateExpectedScore(t2Avg, t1Avg);
-
-            const newRatings = {
-                t1p1: calculateNewRating(selectedPlayers.t1p1.elo, t1Score, t1Expected, k1),
-                t1p2: calculateNewRating(selectedPlayers.t1p2.elo, t1Score, t1Expected, k2),
-                t2p1: calculateNewRating(selectedPlayers.t2p1.elo, t2Score, t2Expected, k3),
-                t2p2: calculateNewRating(selectedPlayers.t2p2.elo, t2Score, t2Expected, k4),
-            };
-            // --- ELO CALCULATION END ---
-
-            // 1. Prepare Match Data
+            // 1. Prepare Match Data (PENDING)
             const { data: { user } } = await supabase.auth.getUser();
-            const eloSnapshot = {
-                t1p1: newRatings.t1p1,
-                t1p2: newRatings.t1p2,
-                t2p1: newRatings.t2p1,
-                t2p2: newRatings.t2p2
-            };
 
+            // Insert match as PENDING. 
+            // We do NOT calculate ELO here. We let the DB do it safely.
             const { data: newMatch, error: matchError } = await supabase.from('matches').insert({
                 team1_p1: selectedPlayers.t1p1.id,
                 team1_p2: selectedPlayers.t1p2.id,
@@ -213,20 +171,22 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 score: sets,
                 winner_team: winnerTeam,
                 commentary: commentary.trim() || null,
-                status: 'confirmed', // DIRECT MATCH
-                elo_snapshot: eloSnapshot,
+                status: 'pending', // IMPORTANT: Start as pending
+                elo_snapshot: {}, // Will be populated by confirm_match
                 created_by: user?.id
             }).select().single();
 
             if (matchError) throw matchError;
 
-            // UPDATE PROFILES IMMEDIATELY
-            await Promise.all([
-                supabase.from('profiles').update({ elo: newRatings.t1p1 }).eq('id', selectedPlayers.t1p1.id),
-                supabase.from('profiles').update({ elo: newRatings.t1p2 }).eq('id', selectedPlayers.t1p2.id),
-                supabase.from('profiles').update({ elo: newRatings.t2p1 }).eq('id', selectedPlayers.t2p1.id),
-                supabase.from('profiles').update({ elo: newRatings.t2p2 }).eq('id', selectedPlayers.t2p2.id),
-            ]);
+            // 2. Execute SAFE Confirmation via RPC
+            // This ensures we use the Race-Condition-Proof logic we built.
+            const { error: confirmError } = await supabase.rpc('confirm_match', { match_id: newMatch.id });
+
+            if (confirmError) {
+                // If confirmation fails, we might want to delete the pending match or alert admin
+                // For now, let's throw and show the error.
+                throw confirmError;
+            }
 
             // LOG ADMIN MATCH CREATE
             if (newMatch) {
