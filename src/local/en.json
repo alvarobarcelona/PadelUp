@@ -285,7 +285,7 @@
     "no_activity": "No activity recorded yet.",
     "banned": "Banned",
     "not_banned": "Not banned",
-    "subscribed_until": "Subscribed until: ",
+    "subscribed_until": "Subscribed until: {{date}}",
     "not_subscribed": "Not subscribed",
     "filters": "Filters",
     "select_all": "Select All",
@@ -372,7 +372,8 @@
     "confirmed_by": "Confirmed by:",
     "previous": "Previous",
     "next": "Next",
-    "page_info": "Page {{current}} of {{total}}"
+    "page_info": "Page {{current}} of {{total}}",
+    "filter_my_matches": "My Matches"
   },
   "levels": {
     "title": "ELO Levels",

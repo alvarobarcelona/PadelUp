@@ -4,23 +4,34 @@ import { supabase } from '../lib/supabase';
 import { normalizeForSearch } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';
 import { Loader2, Calendar, AlertCircle, Search, X, MapPin } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { cn } from '../components/ui/Button';
 import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from 'react-router-dom';
+
+
+
+interface MatchPlayer {
+    username: string;
+    avatar_url: string | null;
+}
 
 interface Match {
     id: number;
     created_at: string;
-    score: any;
+    score: { t1: number, t2: number }[];
     winner_team: number;
-    commentary: string;
-    // Raw foreign key objects (Supabase returns them nested under column name usually)
-    team1_p1: { username: string, avatar_url: string | null } | null;
-    team1_p2: { username: string, avatar_url: string | null } | null;
-    team2_p1: { username: string, avatar_url: string | null } | null;
-    team2_p2: { username: string, avatar_url: string | null } | null;
-    created_by?: string;
+    commentary: string | null;
+    created_by: string | null;
+    club_id: number | null;
+
+    // Relation fields
+    team1_p1: MatchPlayer | null;
+    team1_p2: MatchPlayer | null;
+    team2_p1: MatchPlayer | null;
+    team2_p2: MatchPlayer | null;
+
+    // Augmented fields
     creator_username?: string;
-    club_id?: number | null;
     club_name?: string;
 }
 
@@ -32,38 +43,45 @@ const History = () => {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [filterMyMatches, setFilterMyMatches] = useState(true);
+    const [userId, setUserId] = useState<string | null>(null);
     const ITEMS_PER_PAGE = 10;
 
 
     useEffect(() => {
-        fetchMatches();
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) setUserId(user.id);
+        });
     }, []);
+
+    useEffect(() => {
+        if (userId || !filterMyMatches) {
+            fetchMatches();
+        }
+    }, [userId, filterMyMatches]);
 
     const fetchMatches = async () => {
         try {
             setLoading(true);
             setErrorMsg(null);
 
-            // We simply select the relation using the column name.
-            // Supabase (PostgREST) maps this to the relation.
-            // Note: We are NOT using aliases ("t1p1:...") to reduce complexity/risk of error.
-            const { data, error } = await supabase
+            let query = supabase
                 .from('matches')
                 .select(`
-          id,
-          created_at,
-          score,
-          winner_team,
-          commentary,
-          created_by,
-          club_id,
-          team1_p1(username, avatar_url),
-          team1_p2(username, avatar_url),
-          team2_p1(username, avatar_url),
-          team2_p2(username, avatar_url)
-        `)
+                  id, created_at, score, winner_team, commentary, created_by, club_id,
+                  team1_p1(username, avatar_url),
+                  team1_p2(username, avatar_url),
+                  team2_p1(username, avatar_url),
+                  team2_p2(username, avatar_url)
+                `)
                 .eq('status', 'confirmed')
                 .order('created_at', { ascending: false });
+
+            if (filterMyMatches && userId) {
+                query = query.or(`team1_p1.eq.${userId},team1_p2.eq.${userId},team2_p1.eq.${userId},team2_p2.eq.${userId}`);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
 
@@ -138,7 +156,7 @@ const History = () => {
     // Reset pagination when search changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery]);
+    }, [searchQuery, filterMyMatches]);
 
     // Pagination Logic
     const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE);
@@ -161,7 +179,7 @@ const History = () => {
         }
     };
 
-    if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-green-500" /></div>;
+    if (loading && !matches.length) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-green-500" /></div>;
 
     return (
         <div className="space-y-6 animate-fade-in pb-20">
@@ -169,6 +187,29 @@ const History = () => {
                 <h1 className="text-3xl font-bold text-white">{t('history.title')}</h1>
                 <button onClick={() => navigate('/')} className="text-slate-500 hover:text-slate-300 transition-colors"><X className="w-6 h-6" /></button>
             </header>
+
+            {/* Toggle Filter */}
+            <div className="flex bg-slate-900 rounded-xl p-1 border border-slate-700">
+                <button
+                    onClick={() => setFilterMyMatches(true)}
+                    className={cn(
+                        "flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all",
+                        filterMyMatches ? "bg-slate-700 text-white shadow" : "text-slate-500 hover:text-slate-300"
+                    )}
+                >
+                    {t('history.filter_my_matches', { defaultValue: 'My Matches' })}
+                </button>
+                <button
+                    onClick={() => setFilterMyMatches(false)}
+                    className={cn(
+                        "flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all",
+                        !filterMyMatches ? "bg-shared-700 text-white shadow" : "text-slate-500 hover:text-slate-300",
+                        !filterMyMatches && "bg-slate-700"
+                    )}
+                >
+                    {t('rankings.global', { defaultValue: 'Global' })}
+                </button>
+            </div>
 
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={20} />

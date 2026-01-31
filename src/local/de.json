@@ -309,7 +309,7 @@
     "no_clubs": "Keine Clubs gefunden.",
     "banned": "Gesperrt",
     "not_banned": "Nicht gesperrt",
-    "subscribed_until": "Abonniert bis: ",
+    "subscribed_until": "Abonniert bis: {{date}}",
     "not_subscribed": "Nicht abonniert",
     "suspicious_activity": "Sicherheitsverletzung",
     "suspicious_desc": "Sicherheitsverletzung erkannt.",
@@ -377,7 +377,8 @@
     "close": "Schließen",
     "previous": "Zurück",
     "next": "Weiter",
-    "page_info": "Seite {{current}} von {{total}}"
+    "page_info": "Seite {{current}} von {{total}}",
+    "filter_my_matches": "Meine Spiele"
   },
   "levels": {
     "title": "ELO-Stufen",

@@ -231,10 +231,10 @@ const Home = () => {
                 .from('matches')
                 .select(`
                     id, created_at, winner_team, commentary, status, score,
-                    t1p1:team1_p1(username),
-                    t1p2:team1_p2(username),
-                    t2p1:team2_p1(username),
-                    t2p2:team2_p2(username)
+                    t1p1:team1_p1(username, elo),
+                    t1p2:team1_p2(username, elo),
+                    t2p1:team2_p1(username, elo),
+                    t2p2:team2_p2(username, elo)
                 `)
                 .eq('status', 'confirmed')
                 .order('created_at', { ascending: false })

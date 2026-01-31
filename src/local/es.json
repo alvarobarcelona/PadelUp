@@ -278,7 +278,7 @@
     "no_clubs": "No hay clubs registrados.",
     "banned": "Baneado",
     "not_banned": "No baneado",
-    "subscribed_until": "Abonado hasta: ",
+    "subscribed_until": "Abonado hasta: {{date}}",
     "not_subscribed": "No abonado",
     "approve": "Aprobar",
     "reject": "Rechazar",
@@ -372,7 +372,8 @@
     "close": "Cerrar",
     "previous": "Anterior",
     "next": "Siguiente",
-    "page_info": "Página {{current}} de {{total}}"
+    "page_info": "Página {{current}} de {{total}}",
+    "filter_my_matches": "Mis Partidos"
   },
   "levels": {
     "title": "Niveles ELO",

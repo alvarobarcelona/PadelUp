@@ -191,6 +191,8 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
             // LOG ADMIN MATCH CREATE
             if (newMatch) {
                 logActivity('ADMIN_MATCH_CREATE', newMatch.id.toString(), {
+                    elo_snapshot: newMatch.elo_snapshot,
+                    score: sets,
                     winner: winnerTeam,
                     t1: [selectedPlayers.t1p1.username, selectedPlayers.t1p2.username],
                     t2: [selectedPlayers.t2p1.username, selectedPlayers.t2p2.username]
@@ -248,7 +250,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                             <span className="text-sm font-medium text-slate-200">{player.username}</span>
                             <span className="text-[10px] text-slate-500">ELO {player.elo}</span>
                             <span className="text-[10px] text-slate-500">Level {getLevelFromElo(player.elo).level}</span>
-                            <span className="text-[10px] text-slate-500">{player.subscription_end_date ? t('admin.subscribed_until', { date: player.subscription_end_date }) : t('admin.not_subscribed')}</span>
+                            <span className="text-[10px] text-slate-500">{player.subscription_end_date ? t('admin.subscribed_until', { date: new Date(player.subscription_end_date).toLocaleDateString() }) : t('admin.not_subscribed')}</span>
                             <span className="text-[10px] text-slate-500"><span className="text-red-500">{player.banned ? t('admin.banned') : <span className="text-green-500">{t('admin.not_banned')}</span>}</span></span>
                         </div>
                     ))}
@@ -378,7 +380,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
             </div>
 
             <div className="pt-8 space-y-3">
-                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm={t('admin.confirm_prompt') || "Are you sure?"}>
+                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm={t('home.confirm_prompt') || "Are you sure?"}>
                     <Trophy size={20} />
                     {t('admin.save_changes')}
                 </Button>
