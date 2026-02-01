@@ -109,6 +109,7 @@
     "suggestions_limit": "Max 10 Vorschläge",
     "get_in_touch": "Kontaktieren",
     "latest_activity": "Letzte Aktivität",
+    "unknown": "Unbekannt",
     "match_history": "Spielverlauf",
     "no_confirmed_matches": "Keine kürzlich bestätigten Spiele gefunden.",
     "match_label": "Spiel Id: {{id}}",

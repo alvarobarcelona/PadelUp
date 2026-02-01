@@ -122,6 +122,7 @@
     "suggestions": "Player Suggestions",
     "suggestions_limit": "Max 10 suggestions",
     "get_in_touch": "Get in\ntouch",
+    "unknown": "Unknown",
     "latest_activity": "Latest Activity",
     "match_history": "Match history",
     "no_confirmed_matches": "No recent confirmed matches found.",
