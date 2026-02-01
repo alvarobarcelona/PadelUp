@@ -10,6 +10,7 @@
     "notifications_disabled": "Desactivadas",
     "notifications_off": "Desactivado",
     "push_notifications": "Notificaciones Push",
+    "push_notifications_only_for_messages": "Solo para mensajes",
     "test": "Probar",
     "test_notification_msg": "¡Esta es una notificación de prueba!",
     "test_notification_sent": "Notificación de prueba enviada",
@@ -20,7 +21,7 @@
     "logout": "Cerrar Sesión",
     "danger_zone": "Zona de Peligro",
     "delete_account": "Eliminar Cuenta",
-    "delete_account_desc": "Esta acción es permanente. Todos tus datos, partidos e historial serán eliminados.",
+    "delete_account_desc": "Esta acción es permanente. Todos tus datos de tu perfil serán eliminados.",
     "update_password": "Actualizar Contraseña",
     "new_password": "Nueva Contraseña",
     "confirm_password": "Confirmar Contraseña",
@@ -84,6 +85,12 @@
       "resend_confirmation": "Reenviar email de confirmación"
     }
   },
+
+  "badges": {
+    "heavy_hitter": "Jugador muy activo",
+    "regular": "Regular",
+    "info": "Basado en partidos jugados en los últimos 30 días"
+  },
   "home": {
     "welcome_user": "Bienvenido, {{name}}",
     "welcome_guest": "Bienvenido Invitado",
@@ -137,6 +144,7 @@
     "last_20": "Últimos 20 Partidos",
     "year": "Año {{year}}",
     "achievements": "Logros",
+    "points_info": "Los puntos no afectan el nivel ni la clasificación.",
     "no_achievements": "No hay logros disponibles.",
     "my_clubs": "Mis Clubes",
     "club_matches": "{{count}} Partidos",
@@ -146,6 +154,7 @@
     "not_found": "Perfil no encontrado.",
     "upload_error": "Error subiendo avatar. Intenta de nuevo.",
     "joined": "Unido el {{date}}",
+    "main_club": "Club Principal",
     "head_to_head": "Cara a Cara",
     "record_against": "Tu récord contra {{name}}",
     "matches_total_wr_singular": "{{count}} partido en total ({{wr}}% Vic)",
@@ -158,6 +167,17 @@
     "streak_losses_plural": "{{count}} Derrotas",
     "streak_losses_desc": "¡Hora de la revancha!",
     "no_streak": "Sin racha activa",
+    "synergy": {
+      "title": "Química de Pareja",
+      "matches": "Partidos",
+      "win_rate": "% Victoria",
+      "perfect": "🔥 Pareja Perfecta",
+      "good": "✨ Dúo Dinámico",
+      "average": "⚖️ Equilibrado",
+      "bad": "🧊 Falta Química",
+      "unknown_desc": "Juega más partidos para establecer química"
+    },
+    "top_partners": "Mejores Parejas",
     "rivalry": {
       "unknown_title": "Rivales Desconocidos",
       "unknown_desc": "Juega más partidos para establecer rivalidad",
@@ -173,7 +193,7 @@
   "clubs": {
     "all_clubs": "Todos los clubs",
     "search_club": "Buscar Club",
-    "select_club": "Seleccionar Club",
+    "select_club": "Seleccionar Club donde jugaste el partido",
     "select_club_if_you_wish": "Seleccionar Club (Opcional)",
     "no_club": "Sin Club",
     "main_club": "Club Principal",
@@ -196,7 +216,7 @@
     "confirm_prompt": "¿Estás seguro de que deseas continuar?",
     "confirm": "Confirmar",
     "cancel": "Cancelar",
-    "beta_message": "Esta aplicación está en periodo de pruebas. Cualquier feedback será bien recibido.",
+    "beta_message": "Esta aplicación está en fase beta.",
     "validation_error": "Error de Validación",
     "invalid_score": "Puntuación Inválida",
     "draw": "Empate",
@@ -210,6 +230,7 @@
   "new_match": {
     "title": "Seleccionar Jugadores",
     "select_player": "Seleccionar Jugador",
+    "search_player": "Buscar jugador...",
     "team_1": "Equipo 1",
     "team_2": "Equipo 2",
     "player_1": "Jugador 1",
@@ -226,7 +247,8 @@
     "finish_match": "Finalizar Partido",
     "verification_note": "El partido será enviado a los oponentes para verificar el resultado. (Si se ignora, se aceptará automáticamente tras 24 horas).",
     "success_alert": "¡Partido enviado! Los oponentes tienen 24h para confirmar.",
-    "player_already_selected": "¡Jugador ya seleccionado!",
+    "player_already_selected_title": "Jugador ya seleccionado!",
+    "player_already_selected_desc": "Por favor selecciona otro jugador.",
     "enter_valid_result": "Por favor introduce un resultado válido (al menos dos sets jugados).",
     "cannot_be_draw": "El partido no puede terminar en empate.",
     "duplicate_match": "Parece que este partido ya ha sido registrado recientemente (hace 2 horas) por otro jugador. No hace falta duplicarlo. Por favor sé justo :)",
@@ -254,13 +276,17 @@
     "create_club": "Crear Club",
     "delete_club_confirm": "¿Estás seguro de querer borrar este club?",
     "no_clubs": "No hay clubs registrados.",
+    "banned": "Baneado",
+    "not_banned": "No baneado",
+    "subscribed_until": "Abonado hasta: {{date}}",
+    "not_subscribed": "No abonado",
     "approve": "Aprobar",
     "reject": "Rechazar",
     "edit_player": "Editar Jugador",
     "delete_match": "Eliminar Partido",
     "delete_match_title": "Eliminar Partido",
     "confirm_delete_match": "Esto ELIMINARÁ el partido y REVERTIRÁ los puntos ELO solo si el partido fue aceptado. ¿Estás seguro?",
-    "confirm_delete_player": "¿Estás seguro? ¡Esto podría romper partidos vinculados a este jugador!",
+    "confirm_delete_player": "¿Estás seguro? ¡Esto no se puede deshacer!",
     "search_placeholder": "Buscar usuario...",
     "search_match_placeholder": "Buscar partido (ID)...",
     "search_log_placeholder": "Buscar logs...",
@@ -279,7 +305,20 @@
     "direct_entry_warning": "ENTRADA DIRECTA: Este partido se confirmará INMEDIATAMENTE y se actualizarán los ELOs.",
     "match_created_success": "¡Partido creado y validado correctamente! ELO actualizado.",
     "instant_action_note": "Acción Inmediata - No requiere verificación.",
-    "record_match_title": "Registrar Partido (sin confirmación)"
+    "record_match_title": "Registrar Partido (sin confirmación)",
+    "delete_old_msgs_title": "Borrar Mensajes Antiguos",
+    "delete_old_msgs_confirm": "¿Seguro que quieres borrar mensajes de más de {{days}} días?",
+    "delete_old_msgs_confirm_count": "¿Estás seguro de querer borrar {{count}} mensajes de más de {{days}} días? Esta acción no se puede deshacer.",
+    "delete_btn": "Borrar",
+    "cleanup_success": "{{count}} mensajes eliminados.",
+    "maintenance_title": "Mantenimiento",
+    "maintenance_desc": "Borrar mensajes antiguos para liberar espacio en la base de datos. Esta acción es irreversible.",
+    "maintenance_btn": "Volver",
+    "tab_maintenance": "Mantenimiento",
+    "suspicious_activity": "Actividad sospechosa",
+    "suspicious_desc": "Actividad sospechosa detectada.",
+    "suspicious_activity_btn": "Volver",
+    "tab_suspicious_activity": "Actividad sospechosa"
   },
   "rankings": {
     "title": "Clasificación",
@@ -290,7 +329,8 @@
     "no_results": "No se encontraron jugadores.",
     "no_friends": "No tienes amigos aún. ¡Ve a 'Comunidad' para añadir algunos!",
     "no_players": "No se encontraron jugadores.",
-    "click_hint": "Haz clic en un jugador para ver estadísticas Cara a Cara"
+    "click_hint": "Haz clic en un jugador para ver estadísticas Cara a Cara",
+    "fire_motivation": "¡Gana 3 partidos seguidos para prender fuego a tu avatar! 🔥"
   },
   "community": {
     "title": "Comunidad",
@@ -328,11 +368,17 @@
     "rejection_reason": "MOTIVO DEL RECHAZO",
     "rejected_by": "Rechazado por:",
     "confirmed_by": "Aceptado por:",
-    "close": "Cerrar"
+    "auto_accepted": "Aceptado Automáticamente",
+    "close": "Cerrar",
+    "created_by_admin": "Gestionado por Admin",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "page_info": "Página {{current}} de {{total}}",
+    "filter_my_matches": "Mis Partidos"
   },
   "levels": {
     "title": "Niveles ELO",
-    "subtitle": "Entiende el sistema de clasificación",
+    "subtitle_2": "Si un usuario quiere ajustar su nivel por uno inferior, puede solicitarlo en el email de soporte. Siempre y cuando tenga sentido.\n\nPor ejemplo: al inicio del uso de la app no quiere empezar con 1150 de ELO (nivel 3).",
     "names": {
       "beginner": "Principiante",
       "basic": "Básico",
@@ -357,23 +403,24 @@
   "subscription": {
     "title": "Suscripción Caducada",
     "message": "Tu membresía ha caducado. Para continuar usando PadelUp, por favor renueva tu suscripción.",
-    "monthly_fee": "Cuota Mensual",
-    "payment_instructions": "Por favor envía el pago vía PayPal a:",
+    "monthly_fee": "Soporte Mensual",
+    "payment_instructions": "Por favor envía el soporte vía PayPal a:",
     "as_friend": "por favor, “como amigo”",
-    "contribution_note": "Esta pequeña contribución mantiene el sistema funcionando y mejorando. Muchas gracias.",
+    "contribution_note": "Esta pequeña contribución mantiene el sistema funcionando y mejorando la comunidad. Muchas gracias!!",
     "processing": "Procesando...",
-    "confirm_payment": "He realizado el pago",
-    "disclaimer": "Al confirmar, aceptas que has enviado el pago. Las confirmaciones falsas pueden llevar a la suspensión de la cuenta.",
+    "confirm_payment": "He realizado el soporte",
+    "disclaimer": "Al confirmar, aceptas que has enviado el soporte. Las confirmaciones falsas pueden llevar a la suspensión de la cuenta.",
     "success": "¡Suscripción renovada! Gracias.",
     "error": "Error actualizando la suscripción. Por favor inténtalo de nuevo."
   },
   "banned": {
     "title": "Cuenta temporalmente suspendida",
-    "message": "Tu cuenta ha sido bloqueada por varias razones posibles:",
-    "reason_1": "-Intento de engañar al sistema",
-    "reason_2": "-Impago simbólico para ayudar a la comunidad",
-    "reason_3": "-Mala gestión",
-    "contact_admin": "Por favor contacta a un administrador o envía tu caso a soporte en el área de ajustes.",
+    "message": "Tu cuenta ha sido bloqueada por varias posibles razones:",
+    "reason_1": "-Intento de engañar al sistema.",
+    "reason_2": "-Impago simbólico para ayudar a la comunidad.",
+    "reason_3": "-Mala gestión.",
+    "contact_admin": "Por favor contacta a un administrador o envía tu caso a soporte.",
+    "support_email": "Correo de Soporte",
     "sign_out": "Cerrar Sesión"
   },
   "chat": {
@@ -382,12 +429,21 @@
     "title": "Mensajes",
     "no_conversations": "No hay conversaciones.",
     "start_chatting_hint": "¡Encuentra un jugador en la Comunidad para empezar a chatear!",
-    "new_message": "nuevo mensaje",
+    "new_message": "Nuevo mensaje",
     "loading_chat": "Cargando chat...",
     "start_conversation": "¡Empieza una conversación con {{name}}!",
     "type_message": "Escribe un mensaje...",
     "delete_conversation": "Eliminar conversación",
-    "confirm_delete_conversation": "¿Estás seguro de querer eliminar esta conversación? Solo se eliminará para ti."
+    "select_user": "Selecciona un usuario",
+    "check_all_clubs": "Mensaje para todos los clubes",
+    "switch_search": "Cambiar búsqueda",
+    "broadcast_mode": "Modo de difusión",
+    "send_all": "Enviar a todos",
+    "broadcast_message": "Mensaje para todos",
+    "confirm_delete_conversation": "¿Estás seguro de querer eliminar esta conversación? Solo se eliminará para ti.",
+    "cleanup_disclaimer": "Mensajes antiguos a 90 dias podran ser eliminados por seguridad.\nLas conversacions estan encriptadas y son 100% privadas.",
+    "read": "Leído",
+    "sent": "Enviado"
   },
   "welcome_modal": {
     "title": "Bienvenido a PadelUp",
@@ -400,11 +456,18 @@
     "value_3_desc": "Tras el periodo de prueba, tu suscripción mensual mantiene PadelUp vivo y evolucionando. Apoya directamente nuevas funciones.",
     "button": "¡Estoy listo para disfrutar!"
   },
+  "push_prompt": {
+    "title": "Activar Notificaciones",
+    "description": "No te pierdas las novedades ni mensajes del chat de tu comunidad. ¡Activa las notificaciones push para estar al día!",
+    "enable_button": "Activar",
+    "not_now": "Quizás luego"
+  },
   "install_prompt": {
     "title": "Instalar App en tu pantalla",
-    "ios_instruction": "En Safari, toca el icono de los tres puntos y luego compartir, luego Añadir a Inicio",
+    "ios_instruction": "En Safari, toca el icono de los \"tres puntos\" y luego \"compartir\", seguidamente la opcion de \"mas\" y finalmente \"añadir a la pantalla de inicio\"",
     "android_instruction": "En Chrome, toca el icono de menú y luego Instalar App",
-    "dismiss": "Quizás más tarde"
+    "dismiss": "Quizás más tarde",
+    "ios_instruction_footer": "Accede a PadelUp con un solo toque"
   },
   "info_modal": {
     "title": "¿Cómo funciona PadelUp?",
@@ -414,5 +477,64 @@
     "step_2_desc": "<b>Importante:</b> Solo puedes seleccionar jugadores que ya estén registrados en la app. Invita a tus amigos a unirse para incluirlos en las estadísticas.",
     "step_3_title": "Validación",
     "step_3_desc": "Tu rival recibirá el partido en su pantalla para confirmar el resultado. ¡Sé honesto! Auto confirmacion tras 24h "
+  },
+  "legal": {
+    "privacy_policy": "Política de Privacidad",
+    "impressum": "Impressum (Aviso Legal)",
+    "terms": "Términos de Servicio",
+    "cookie_banner": {
+      "text": "Utilizamos cookies para mejorar su experiencia. Al continuar visitando este sitio, acepta nuestro uso de cookies.",
+      "accept": "Aceptar",
+      "decline": "Rechazar"
+    },
+    "consent_checkbox": "Acepto los {{terms}} y la {{privacy}}.",
+    "terms_update_modal": {
+      "title": "Actualización de Términos y Privacidad",
+      "message": "Hemos actualizado nuestros documentos legales para cumplir con el GDPR. Por favor revisa y acepta los nuevos Términos de Servicio y Política de Privacidad para continuar usando PadelUp.",
+      "accept_button": "Acepto"
+    },
+    "privacy_policy_content": {
+      "section1_title": "1. Protección de Datos de un vistazo",
+      "section1_subtitle": "Notas Generales",
+      "section1_text": "Las siguientes notas proporcionan una visión general simple de lo que sucede con sus datos personales cuando visita este sitio web. Los datos personales son todos los datos con los que se le puede identificar personalmente.",
+      "section2_title": "2. Alojamiento",
+      "section2_text": "Alojamos el contenido de nuestro sitio web con los siguientes proveedores:",
+      "section2_subtitle": "Supabase",
+      "section2_text_2": "El proveedor es Supabase, Inc. Usamos Supabase para la base de datos y la autenticación. Los datos se almacenan en servidores en la UE (AWS region eu-west-1, Irlanda).",
+      "section3_title": "3. Notas Generales e Información Obligatoria",
+      "section3_subtitle": "Protección de Datos",
+      "section3_text": "Los operadores de estas páginas toman muy en serio la protección de sus datos personales. Tratamos sus datos personales de forma confidencial y de acuerdo con las normas legales de protección de datos y esta política de privacidad.",
+      "section3_subtitle_2": "Nota sobre el Organismo Responsable",
+      "section3_text_2": "El organismo responsable del procesamiento de datos en este sitio web es:\n\nAlvaro Barcelona Peralta\nRatsbleiche 4\n38114, Brunswick, Germany\nEmail: padeluppadeleros@gmail.com",
+      "section4_title": "4. Recopilación de Datos en este Sitio Web",
+      "section4_subtitle": "Registro en este Sitio Web",
+      "section4_text": "Puede registrarse en este sitio web para utilizar funciones adicionales en el sitio. Solo utilizamos los datos introducidos para este fin con el propósito de utilizar la oferta o servicio respectivo para el que se ha registrado. La información obligatoria solicitada durante el registro debe proporcionarse en su totalidad. De lo contrario, rechazaremos el registro."
+    },
+    "impressum_content": {
+      "section1_title": "Información según § 5 TMG",
+      "section1_text": "PadelUp\n(Proyecto Privado / Servicio Comunitario)\n\nResponsable:\nAlvaro Barcelona Peralta\n Ratsbleiche 4\n 38114, Brunswick, Germany",
+      "section2_title": "Contacto",
+      "section2_text": "Email: padeluppadeleros@gmail.com",
+      "section3_title": "Responsabilidad por el Contenido",
+      "section3_text": "Como proveedor de servicios, somos responsables de nuestro propio contenido en estas páginas de acuerdo con las leyes generales según § 7 Párr.1 TMG. Sin embargo, según §§ 8 a 10 TMG, nosotros como proveedores de servicios no estamos obligados a monitorear la información de terceros transmitida o almacenada o a investigar circunstancias que indiquen una actividad ilegal.",
+      "section4_title": "Responsabilidad por los Enlaces",
+      "section4_text": "Nuestra oferta contiene enlaces a sitios web externos de terceros, sobre cuyos contenidos no tenemos influencia. Por lo tanto, no podemos asumir ninguna responsabilidad por estos contenidos externos. El respectivo proveedor u operador de las páginas es siempre responsable del contenido de las páginas enlazadas.",
+      "section5_title": "Derechos de Autor",
+      "section5_text": "El contenido y las obras en estas páginas creadas por los operadores del sitio están sujetos a la ley alemana de derechos de autor. La duplicación, el procesamiento, la distribución y cualquier tipo de explotación fuera de los límites de la ley de derechos de autor requieren el consentimiento por escrito del autor o creador respectivo."
+    },
+    "terms_content": {
+      "section1_title": "1. Alcance",
+      "section1_text": "Los siguientes Términos y Condiciones Generales se aplican al uso de esta aplicación.",
+      "section2_title": "2. Servicios",
+      "section2_text": "PadelUp proporciona una plataforma para registrar partidos de pádel y calcular clasificaciones basadas en un sistema ELO.",
+      "section3_title": "3. Registro",
+      "section3_text": "El uso de la aplicación requiere registro. El usuario está obligado a proporcionar información veraz.",
+      "section4_title": "4. Juego Limpio",
+      "section4_text": "Los usuarios se comprometen a un comportamiento justo. La manipulación de los resultados del juego conduce al bloqueo.",
+      "section5_title": "5. Duración y Terminación",
+      "section5_text": "El contrato se ejecuta por un período indefinido y puede ser terminado por el usuario en cualquier momento eliminando la cuenta.",
+      "section6_title": "6. Responsabilidad",
+      "section6_text": "No somos responsables de los daños resultantes del uso de la aplicación, a menos que haya dolo o negligencia grave."
+    }
   }
 }

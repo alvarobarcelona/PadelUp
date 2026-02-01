@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../components/ui/Button';
 
+
 interface MatchHistoryModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -13,6 +14,7 @@ interface MatchHistoryModalProps {
 interface MatchHistoryItem {
     id: number;
     created_at: string;
+    created_by?: string;
     status: 'confirmed' | 'rejected';
     winner_team: number;
     score: { t1: number; t2: number }[];
@@ -29,6 +31,7 @@ export const MatchHistoryModal = ({ isOpen, onClose, userId }: MatchHistoryModal
     const [matches, setMatches] = useState<MatchHistoryItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [playerNames, setPlayerNames] = useState<Record<string, string>>({});
+    const [userAdmins, setUserAdmins] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         if (isOpen && userId) {
@@ -55,7 +58,6 @@ export const MatchHistoryModal = ({ isOpen, onClose, userId }: MatchHistoryModal
             if (data) {
                 const matchesData = data as MatchHistoryItem[];
                 setMatches(matchesData);
-
                 // 2. Collect all unique player IDs
                 const allPlayerIds = new Set<string>();
                 matchesData.forEach(m => {
@@ -64,21 +66,25 @@ export const MatchHistoryModal = ({ isOpen, onClose, userId }: MatchHistoryModal
                     if (m.team2_p1) allPlayerIds.add(m.team2_p1);
                     if (m.team2_p2) allPlayerIds.add(m.team2_p2);
                     if (m.actor_id) allPlayerIds.add(m.actor_id);
+                    if (m.created_by) allPlayerIds.add(m.created_by);
                 });
 
                 // 3. Fetch Usernames
                 if (allPlayerIds.size > 0) {
                     const { data: profiles } = await supabase
                         .from('profiles')
-                        .select('id, username')
+                        .select('id, username, is_admin')
                         .in('id', Array.from(allPlayerIds));
 
                     if (profiles) {
                         const nameMap: Record<string, string> = {};
+                        const adminMap: Record<string, boolean> = {};
                         profiles.forEach(p => {
                             nameMap[p.id] = p.username;
+                            adminMap[p.id] = p.is_admin || false;
                         });
                         setPlayerNames(nameMap);
+                        setUserAdmins(adminMap);
                     }
                 }
             }
@@ -130,6 +136,9 @@ export const MatchHistoryModal = ({ isOpen, onClose, userId }: MatchHistoryModal
                     ) : (
                         matches.map((match) => {
                             const isRejected = match.status === 'rejected';
+                            //hack to display auto accepted matches
+                            const isAutoAccepted = match.status === 'confirmed' && !match.actor_id;
+                            const createdByAdmin = match.created_by && userAdmins[match.created_by];
                             const isWin = match.status === 'confirmed' && (
                                 (match.winner_team === 1 && (match.team1_p1 === userId || match.team1_p2 === userId)) ||
                                 (match.winner_team === 2 && (match.team2_p1 === userId || match.team2_p2 === userId))
@@ -191,6 +200,13 @@ export const MatchHistoryModal = ({ isOpen, onClose, userId }: MatchHistoryModal
                                             </span>
                                         </div>
                                     )}
+                                    {isAutoAccepted && !createdByAdmin && (
+                                        <span className=" flex justify-end gap-1 text-[10px] text-slate-500 italic">{t('history.auto_accepted')}</span>
+                                    )}
+
+                                    {createdByAdmin && (
+                                        <span className=" flex justify-end gap-1 text-[10px] text-slate-500 italic">{t('history.created_by_admin')}</span>
+                                    )}
 
                                     {/* Rejection Reason */}
                                     {isRejected && match.reason && (
@@ -202,6 +218,7 @@ export const MatchHistoryModal = ({ isOpen, onClose, userId }: MatchHistoryModal
                                             </div>
                                         </div>
                                     )}
+
                                 </div>
                             );
                         })

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
-import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck, Flame, Swords, X } from 'lucide-react';
+import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck, Flame, Swords, X, ShieldHalf, Moon, Bird, Pickaxe, Crown, Rocket, LandPlot, Castle, Crosshair, HandFist, Drum } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { checkAchievements } from '../lib/achievements';
@@ -10,19 +10,33 @@ import { AchievementModal } from '../components/Modals/AchievementModal';
 import { APP_FULL_VERSION } from '../lib/constants';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 const iconMap: Record<string, any> = {
     'Trophy': Trophy,
     'Medal': Medal,
     'Flame': Flame,
     'Camera': Camera,
-    'Sword': Swords
+    'Sword': Swords,
+    'ShieldHalf': ShieldHalf,
+    'Moon': Moon,
+    'Bird': Bird,
+    'Pickaxe': Pickaxe,
+    'Crown': Crown,
+    'Rocket': Rocket,
+    'LandPlot': LandPlot,
+    'Castle': Castle,
+    'Crosshair': Crosshair,
+    'HandFist': HandFist,
+    'ShieldCheck': ShieldCheck,
+    'Drum': Drum,
 };
 
 const Profile = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { alert } = useModal();
+    const queryClient = useQueryClient();
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [allAchievements, setAllAchievements] = useState<any[]>([]);
@@ -165,9 +179,15 @@ const Profile = () => {
                 else if (m.team2_p1 === profile.id) myKey = 't2p1';
                 else if (m.team2_p2 === profile.id) myKey = 't2p2';
 
-                if (myKey && m.elo_snapshot[myKey]) {
+                // CHECK FOR DIFFS (Preferred method for correct chronological graph)
+                if (myKey && m.elo_snapshot.diffs && m.elo_snapshot.diffs[myKey] !== undefined) {
+                    delta = m.elo_snapshot.diffs[myKey];
+                    newElo = simulatedElo + delta;
+                }
+                // Fallback to absolute value (Legacy) - ONLY if diffs not present
+                else if (myKey && m.elo_snapshot[myKey]) {
+                
                     newElo = m.elo_snapshot[myKey];
-                    // Re-align delta
                     delta = newElo - simulatedElo;
                 } else {
                     delta = won ? 16 : -16;
@@ -298,6 +318,8 @@ const Profile = () => {
     };
 
     const handleLogout = async () => {
+        // Clear all caches to prevent next user from seeing previous user's data
+        queryClient.removeQueries();
         await supabase.auth.signOut();
         navigate('/auth');
     };
@@ -562,7 +584,7 @@ const Profile = () => {
                         {stats.clubStats.map((club, i) => (
                             <div key={i} className="flex-shrink-0 auto-width bg-slate-700/50 rounded-lg p-3 flex flex-col items-center justify-center text-center border border-slate-700">
                                 <div className="p-3 rounded-full bg-slate-800 mb-3 shadow-sm">
-                                    <span className="text-2xl">🏟️</span>
+                                    <img src="padel-court.png" alt="" className="w-10 h-10 object-cover" />
                                 </div>
                                 <h4 className="font-bold text-white text-sm line-clamp-2 min-h-[2.5em] flex items-center justify-center">{club.name}</h4>
                                 <div className="mt-2 text-xs font-medium text-green-400 bg-green-900/20 px-2 py-1 rounded-full">
@@ -597,6 +619,7 @@ const Profile = () => {
                         {allAchievements.filter(a => userAchievementIds.has(a.id)).reduce((acc, curr) => acc + (curr.point_value || 0), 0)} pts / {allAchievements.reduce((acc, curr) => acc + (curr.point_value || 0), 0)} pts
                     </span>
                 </h3>
+                <h2 className="text-xs text-slate-500 mb-4">{t('profile.points_info')}</h2>
 
                 {allAchievements.length === 0 ? (
                     <div className="text-center py-6 text-slate-500 text-sm">

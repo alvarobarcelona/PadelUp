@@ -11,6 +11,7 @@
     "notifications_disabled": "Deaktiviert",
     "notifications_off": "Aus",
     "push_notifications": "Push-Benachrichtigungen",
+    "push_notifications_only_for_messages": "Nur für Nachrichten",
     "test": "Testen",
     "test_notification_msg": "Dies ist eine Testbenachrichtigung!",
     "test_notification_sent": "Testbenachrichtigung gesendet",
@@ -21,7 +22,7 @@
     "logout": "Abmelden",
     "danger_zone": "Gefahrenzone",
     "delete_account": "Konto löschen",
-    "delete_account_desc": "Diese Aktion ist dauerhaft. Alle Ihre Daten, Spiele und Verläufe werden gelöscht.",
+    "delete_account_desc": "Diese Aktion ist dauerhaft. Alle Ihre Daten von ihren Profile werden gelöscht.",
     "update_password": "Passwort aktualisieren",
     "new_password": "Neues Passwort",
     "confirm_password": "Passwort bestätigen",
@@ -81,6 +82,11 @@
       "resend_confirmation": "Bestätigungs-E-Mail erneut senden"
     }
   },
+  "badges": {
+    "heavy_hitter": "Sehr aktiver Spieler",
+    "regular": "Regelmäßig",
+    "info": "Basierend auf Spielen der letzten 30 Tage"
+  },
   "home": {
     "welcome_user": "Willkommen zurück, {{name}}",
     "welcome_guest": "Willkommen Gast",
@@ -136,6 +142,7 @@
     "last_20": "Letzte 20 Spiele",
     "year": "Jahr {{year}}",
     "achievements": "Erfolge",
+    "points_info": "Die Punkte beeinflussen nicht das Niveau oder die Rangliste.",
     "no_achievements": "Keine Erfolge verfügbar.",
     "sign_out": "Abmelden",
     "built_with": "Gebaut mit ❤️ für Padel-Liebhaber",
@@ -143,6 +150,7 @@
     "not_found": "Profil nicht gefunden.",
     "upload_error": "Fehler beim Hochladen des Avatars. Bitte versuchen Sie es erneut.",
     "joined": "Beigetreten am {{date}}",
+    "main_club": "HauptClub",
     "head_to_head": "Direkter Vergleich",
     "record_against": "Deine Bilanz gegen {{name}}",
     "matches_total_wr": "{{count}} Spiele insgesamt ({{wr}}% Siegquote)",
@@ -153,6 +161,17 @@
     "streak_losses_plural": "{{count}} Niederl",
     "streak_losses_desc": "Zeit für Revanche!",
     "no_streak": "Keine aktive Serie",
+    "synergy": {
+      "title": "Partner-Chemie",
+      "matches": "Spiele",
+      "win_rate": "Siege %",
+      "perfect": "🔥 Perfektes Match",
+      "good": "✨ Dynamisches Duo",
+      "average": "⚖️ Ausgeglichen",
+      "bad": "🧊 Ausbaufähig",
+      "unknown_desc": "Spiele mehr Matches, um eine Partnerchemie aufzubauen"
+    },
+    "top_partners": "Top Partner",
     "rivalry": {
       "unknown_title": "Unbekannte Rivalen",
       "unknown_desc": "Spiele mehr Matches, um eine Rivalität aufzubauen",
@@ -168,7 +187,7 @@
   "clubs": {
     "all_clubs": "Alle Clubs",
     "search_club": "Suche Club",
-    "select_club": "Wähle Club",
+    "select_club": "Wähle Club, wo du das Spiel gespielt hast",
     "no_club": "Kein Club",
     "main_club": "HauptClub",
     "select_club_if_you_wish": "Wähle Club (optional)",
@@ -193,7 +212,7 @@
     "confirm_prompt": "Sind Sie sicher, dass Sie fortfahren möchten?",
     "confirm": "Bestätigen",
     "cancel": "Abbrechen",
-    "beta_message": "Diese App befindet sich in der Betatestphase. Jedes Feedback ist willkommen!",
+    "beta_message": "Diese App befindet sich in der Betaphase.",
     "validation_error": "Validierungsfehler",
     "invalid_score": "Ungültiger Punktestand",
     "draw": "Unentschieden",
@@ -207,6 +226,7 @@
   "new_match": {
     "title": "Spieler auswählen",
     "select_player": "Spieler auswählen",
+    "search_player": "Spieler suchen...",
     "team_1": "Team 1",
     "team_2": "Team 2",
     "player_1": "Spieler 1",
@@ -223,7 +243,8 @@
     "finish_match": "Spiel beenden",
     "verification_note": "Das Spiel wird an die Gegner zur Überprüfung gesendet. (Bei Ignorieren wird es nach 24 Stunden automatisch akzeptiert.)",
     "success_alert": "Spiel eingereicht! Gegner haben 24h Zeit zur Bestätigung.",
-    "player_already_selected": "Spieler bereits ausgewählt!",
+    "player_already_selected_title": "Spieler bereits ausgewählt!",
+    "player_already_selected_desc": "wählen Sie bitte einen anderen Spieler aus.",
     "enter_valid_result": "Bitte geben Sie ein gültiges Ergebnis ein (mindestens zweis sets gespielt).",
     "cannot_be_draw": "Spiel kann nicht unentschieden enden.",
     "minimum_sets_required": "Ein Spiel muss mindestens zwei Sets umfassen.",
@@ -248,7 +269,7 @@
     "edit_player": "Spieler bearbeiten",
     "delete_match": "Spiel löschen",
     "confirm_delete_match": "Dadurch wird das Spiel gelöscht und die ELO-Punkte werden nur dann zurückgesetzt, wenn das Spiel angenommen wurde. Sind Sie sicher?",
-    "confirm_delete_player": "Sind Sie sicher? Dies könnte verknüpfte Spiele beschädigen!",
+    "confirm_delete_player": "Sind Sie sicher? Dies könnte nicht rückgängig gemacht werden!",
     "search_placeholder": "Suche nach Benutzer oder ID...",
     "search_match_placeholder": "Filtern nach Spiel-ID...",
     "search_log_placeholder": "Logs durchsuchen...",
@@ -269,6 +290,15 @@
     "match_created_success": "Spiel erfolgreich erstellt und validiert! ELO aktualisiert.",
     "instant_action_note": "Sofortige Aktion - Keine Überprüfung erforderlich.",
     "record_match_title": "Spiel erfassen (ohne Bestätigung)",
+    "delete_old_msgs_title": "Alte Nachrichten löschen",
+    "delete_old_msgs_confirm": "Nachrichten älter als {{days}} Tage löschen?",
+    "delete_btn": "Löschen",
+    "cleanup_success": "{{count}} Nachrichten erfolgreich gelöscht.",
+    "maintenance_title": "Wartung",
+    "maintenance_desc": "Alte Nachrichten löschen, um Speicherplatz in der Datenbank freizugeben. Diese Aktion ist irreversibel.",
+    "maintenance_btn": "Zurück",
+    "delete_old_msgs_confirm_count": "Möchten Sie wirklich {{count}} Nachrichten von mehr als {{days}} Tagen löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "tab_maintenance": "Wartung",
     "tab_clubs": "Clubs",
     "add_club": "Club hinzufügen",
     "club_name": "Clubname",
@@ -276,7 +306,15 @@
     "edit_club": "Club bearbeiten",
     "create_club": "Club erstellen",
     "delete_club_confirm": "Möchten Sie diesen Club wirklich löschen?",
-    "no_clubs": "Keine Clubs gefunden."
+    "no_clubs": "Keine Clubs gefunden.",
+    "banned": "Gesperrt",
+    "not_banned": "Nicht gesperrt",
+    "subscribed_until": "Abonniert bis: {{date}}",
+    "not_subscribed": "Nicht abonniert",
+    "suspicious_activity": "Sicherheitsverletzung",
+    "suspicious_desc": "Sicherheitsverletzung erkannt.",
+    "suspicious_activity_btn": "Zurück",
+    "tab_suspicious_activity": "Sicherheitsverletzung"
   },
   "rankings": {
     "title": "Rangliste",
@@ -287,7 +325,8 @@
     "no_results": "Keine Spieler gefunden.",
     "no_friends": "Keine Freunde gefunden. Gehen Sie zu 'Community', um welche hinzuzufügen!",
     "no_players": "Keine Spieler gefunden.",
-    "click_hint": "Klicken Sie auf einen Spieler, um den direkten Vergleich zu sehen"
+    "click_hint": "Klicken Sie auf einen Spieler, um den direkten Vergleich zu sehen",
+    "fire_motivation": "Gewinne 3 Spiele in Folge, um deinen Avatar in Brand zu setzen! 🔥"
   },
   "community": {
     "title": "Community",
@@ -334,11 +373,17 @@
     "rejection_reason": "GRUND FÜR ABLEHNUNG",
     "rejected_by": "Abgelehnt von:",
     "confirmed_by": "Bestätigt von:",
-    "close": "Schließen"
+    "auto_accepted": "Automatisch akzeptiert",
+    "created_by_admin": "Verwaltet von Admin",
+    "close": "Schließen",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "page_info": "Seite {{current}} von {{total}}",
+    "filter_my_matches": "Meine Spiele"
   },
   "levels": {
     "title": "ELO-Stufen",
-    "subtitle": "Verstehe das Ranglistensystem",
+    "subtitle_2": "Wenn ein Benutzer sein Level auf einen niedrigeren anpassen möchte, kann er dies per E-Mail an den Support anfragen. Dabei muss es Sinn haben.\n\n Beispiel: Wenn ein Benutzer mit der App anfängt, möchte er nicht mit 1150 ELO (Level 3) beginnen.",
     "names": {
       "beginner": "Anfänger",
       "basic": "Basis",
@@ -363,13 +408,13 @@
   "subscription": {
     "title": "Abonnement abgelaufen",
     "message": "Deine Mitgliedschaft ist abgelaufen. Um PadelUp weiterhin nutzen zu können, verlängere bitte dein Abonnement.",
-    "monthly_fee": "Monatliche Gebühr",
-    "payment_instructions": "Bitte sende die Zahlung per PayPal an:",
+    "monthly_fee": "Monatliche Stütze",
+    "payment_instructions": "Bitte sende die Unterstützung per PayPal an:",
     "as_friend": "bitte (als Freund)",
-    "contribution_note": "Dieser kleine Beitrag hält das System am Laufen und verbessert es.\n Vielen Dank und weiter kämpfen , um auf der Top Rank zu gelangen \n\n  ",
+    "contribution_note": "Dieser kleine Beitrag hält das System am Laufen und verbessert die Community.\n Vielen Dank und weiter kämpfen , um auf der Top Rank zu gelangen \n\n  ",
     "processing": "Wird bearbeitet...",
-    "confirm_payment": "Ich habe die Zahlung getätigt",
-    "disclaimer": "Mit der Bestätigung erklärst du dich damit einverstanden, dass du die Zahlung gesendet hast. Falsche Bestätigungen können zur Sperrung des Kontos führen.",
+    "confirm_payment": "Ich habe die Unterstützung getätigt",
+    "disclaimer": "Mit der Bestätigung erklärst du dich damit einverstanden, dass du die Unterstützung gesendet hast. Falsche Bestätigungen können zur Sperrung des Kontos führen.",
     "success": "Abonnement verlängert! Danke.",
     "error": "Fehler beim Aktualisieren des Abonnements. Bitte versuche es erneut."
   },
@@ -379,8 +424,9 @@
     "reason_1": "-Versuch, das System zu betrügen",
     "reason_2": "-Symbolische Nichtzahlung zur Unterstützung der Community",
     "reason_3": "-Missmanagement",
-    "contact_admin": "Bitte kontaktiere einen Administrator oder sende deinen Fall an den Support im Einstellungsbereich.",
-    "sign_out": "Abmelden"
+    "contact_admin": "Bitte kontaktiere einen Administrator oder sende deinen Fall an den Support",
+    "sign_out": "Abmelden",
+    "support_email": "Support E-Mail"
   },
   "chat": {
     "open_chat": "Chat öffnen",
@@ -388,12 +434,21 @@
     "title": "Nachrichten",
     "no_conversations": "Noch keine Unterhaltungen.",
     "start_chatting_hint": "Finde einen Spieler in der Community, um zu chatten!",
-    "new_message": "neue Nachricht",
+    "new_message": "Neue Nachricht",
     "loading_chat": "Lade Chat...",
     "start_conversation": "Starte eine Unterhaltung mit {{name}}!",
     "type_message": "Nachricht eingeben...",
     "delete_conversation": "Konversation löschen",
-    "confirm_delete_conversation": "Sind Sie sicher, dass Sie diese Konversation löschen möchten? Sie wird nur für Sie gelöscht."
+    "select_user": "Benutzer auswählen",
+    "check_all_clubs": "Nachricht für alle Clubs",
+    "switch_search": "Suche wechseln",
+    "broadcast_mode": "Broadcast-Modus",
+    "send_all": "An alle senden",
+    "broadcast_message": "Nachricht für alle",
+    "confirm_delete_conversation": "Sind Sie sicher, dass Sie diese Konversation löschen möchten? Sie wird nur für Sie gelöscht.",
+    "cleanup_disclaimer": "Nachrichten älter als 90 Tage können aus Sicherheitsgründen gelöscht werden. \nDie Konversationen sind verschlüsselt und 100% privat.",
+    "read": "Gelesen",
+    "sent": "Gesendet"
   },
   "welcome_modal": {
     "title": "Willkommen bei PadelUp",
@@ -406,11 +461,18 @@
     "value_3_desc": "Nach der Testphase hält dein monatliches Abonnement PadelUp am Leben und entwickelt es weiter. Es unterstützt direkt neue Funktionen.",
     "button": "Ich bin bereit zu genießen!"
   },
+  "push_prompt": {
+    "title": "Benachrichtigungen aktivieren",
+    "description": "Verpassen Sie keine Neuigkeiten oder Chat-Nachrichten aus Ihrer Community. Aktivieren Sie Push-Benachrichtigungen, um auf dem Laufenden zu bleiben!",
+    "enable_button": "Einschalten",
+    "not_now": "Vielleicht später"
+  },
   "install_prompt": {
     "title": "App installieren",
-    "ios_instruction": "Tippen Sie auf das Teilen-Symbol <share_icon/> und dann \"Zum Home-Bildschirm\" <plus_icon/>",
-    "android_instruction": "Tippen Sie auf das Menü-Symbol <menu_icon/> und dann \"App installieren\"",
-    "dismiss": "Vielleicht später"
+    "ios_instruction": "In Safari tippen Sie auf der \"3 Punkte\", dann auf das \"Teilen-Symbol\" und dann die Option \"Mehr\" anschliesend auf \"Zum Home-Bildschirm\" ",
+    "android_instruction": "Tippen Sie auf das Menü-Symbol und dann \"App installieren\"",
+    "dismiss": "Vielleicht später",
+    "ios_instruction_footer": "Loggen Sie sich mit einem Tip auf PadelUp"
   },
   "info_modal": {
     "title": "Wie PadelUp funktioniert",
@@ -420,5 +482,64 @@
     "step_2_desc": "<b>Wichtig:</b> Du kannst nur Spieler auswählen, die bereits in der App registriert sind. Lade Freunde ein, um gemeinsam Statistiken zu verfolgen.",
     "step_3_title": "Bestätigung",
     "step_3_desc": "Dein Gegner sieht das Spiel auf seinem Startbildschirm zur Bestätigung. Sei ehrlich! Automatische Bestätigung nach 24 Std."
+  },
+  "legal": {
+    "privacy_policy": "Datenschutzerklärung",
+    "impressum": "Impressum",
+    "terms": "AGB (Nutzungsbedingungen)",
+    "cookie_banner": {
+      "text": "Wir verwenden Cookies, um Ihr Erlebnis zu verbessern. Durch die weitere Nutzung dieser Seite stimmen Sie der Verwendung von Cookies zu.",
+      "accept": "Akzeptieren",
+      "decline": "Ablehnen"
+    },
+    "consent_checkbox": "Ich stimme den {{terms}} und der {{privacy}} zu.",
+    "terms_update_modal": {
+      "title": "AGB & Datenschutz Update",
+      "message": "Wir haben unsere rechtlichen Dokumente aktualisiert, um der DSGVO und lokalen Vorschriften zu entsprechen. Bitte überprüfen und akzeptieren Sie die neuen AGB und die Datenschutzerklärung, um PadelUp weiterhin nutzen zu können.",
+      "accept_button": "Ich akzeptiere"
+    },
+    "privacy_policy_content": {
+      "section1_title": "1. Datenschutz auf einen Blick",
+      "section1_subtitle": "Allgemeine Hinweise",
+      "section1_text": "Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.",
+      "section2_title": "2. Hosting",
+      "section2_text": "Wir hosten die Inhalte unserer Website bei folgenden Anbietern:",
+      "section2_subtitle": "Supabase",
+      "section2_text_2": "Anbieter ist die Supabase, Inc. Wir nutzen Supabase für Datenbank und Authentifizierung. Die Daten werden auf Servern in der EU (AWS Region eu-west-1, Irland) gespeichert.",
+      "section3_title": "3. Allgemeine Hinweise und Pflichtinformationen",
+      "section3_subtitle": "Datenschutz",
+      "section3_text": "Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend den gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung.",
+      "section3_subtitle_2": "Hinweis zur verantwortlichen Stelle",
+      "section3_text_2": "Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:\n\nAlvaro Barcelona Peralta\nRatsbleiche 4\n38114, Brunswick, Germany\nE-Mail: padeluppadeleros@gmail.com",
+      "section4_title": "4. Datenerfassung auf dieser Website",
+      "section4_subtitle": "Registrierung auf dieser Website",
+      "section4_text": "Sie können sich auf dieser Website registrieren, um zusätzliche Funktionen auf der Seite zu nutzen. Die dazu eingegebenen Daten verwenden wir nur zum Zwecke der Nutzung des jeweiligen Angebotes oder Dienstes, für den Sie sich registriert haben. Die bei der Registrierung abgefragten Pflichtangaben müssen vollständig angegeben werden. Anderenfalls werden wir die Registrierung ablehnen."
+    },
+    "impressum_content": {
+      "section1_title": "Angaben gemäß § 5 TMG",
+      "section1_text": "PadelUp\n(Privates Projekt / Community Service)\n\nVerantwortlich:\nAlvaro Barcelona Peralta\n Ratsbleiche 4\n 38114, Brunswick, Germany",
+      "section2_title": "Kontakt",
+      "section2_text": "E-Mail: padeluppadeleros@gmail.com",
+      "section3_title": "Haftung für Inhalte",
+      "section3_text": "Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.",
+      "section4_title": "Haftung für Links",
+      "section4_text": "Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich.",
+      "section5_title": "Urheberrecht",
+      "section5_text": "Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers."
+    },
+    "terms_content": {
+      "section1_title": "1. Geltungsbereich",
+      "section1_text": "Für die Nutzung dieser App gelten die folgenden Allgemeinen Geschäftsbedingungen (AGB).",
+      "section2_title": "2. Leistungen",
+      "section2_text": "PadelUp bietet eine Plattform zur Erfassung von Padel-Spielen und zur Berechnung von Ranglisten basierend auf einem ELO-System.",
+      "section3_title": "3. Registrierung",
+      "section3_text": "Die Nutzung der App erfordert eine Registrierung. Der Nutzer ist verpflichtet, wahrheitsgemäße Angaben zu machen.",
+      "section4_title": "4. Fair Play",
+      "section4_text": "Nutzer verpflichten sich zu fairem Verhalten. Manipulation von Spielergebnissen führt zu Sperrung.",
+      "section5_title": "5. Laufzeit und Kündigung",
+      "section5_text": "Der Vertrag läuft auf unbestimmte Zeit und kann jederzeit vom Nutzer durch Löschen des Kontos gekündigt werden.",
+      "section6_title": "6. Haftung",
+      "section6_text": "Wir haften nicht für Schäden, die aus der Nutzung der App entstehen, soweit nicht Vorsatz oder grobe Fahrlässigkeit vorliegt."
+    }
   }
 }

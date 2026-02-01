@@ -14,6 +14,8 @@ export const ACTIVITY_ACTIONS = [
   "ADMIN_EDIT_USER",
   "ADMIN_DELETE_USER",
   "ADMIN_MATCH_CREATE",
+  "ADMIN_EDIT_MATCH",
+  "ADMIN_CLEANUP_MESSAGES",
 ] as const;
 
 export type ActivityAction = (typeof ACTIVITY_ACTIONS)[number];
@@ -24,7 +26,7 @@ const LOGGING_ENABLED = true; // PAUSED
 export const logActivity = async (
   action: ActivityAction,
   targetId: string | null,
-  details: any = {}
+  details: any = {},
 ) => {
   if (!LOGGING_ENABLED) return;
 
@@ -39,7 +41,7 @@ export const logActivity = async (
       // For simplicity, we try to get user.
       console.warn(
         "Attempted to log activity without authenticated user context",
-        action
+        action,
       );
       return;
     }

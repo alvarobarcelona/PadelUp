@@ -84,6 +84,8 @@ self.addEventListener("push", function (event) {
 
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
+  const urlToOpen = event.notification.data;
+
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
@@ -93,11 +95,16 @@ self.addEventListener("notificationclick", function (event) {
           for (let i = 0; i < clientList.length; i++) {
             if (clientList[i].focused) {
               client = clientList[i];
+              break; // Ensure we stop at the focused client
             }
           }
-          return client.focus();
+          return client.focus().then((focusedClient) => {
+            // Fallback to original client if focus doesn't return (though it should)
+            const targetClient = focusedClient || client;
+            return targetClient.navigate(urlToOpen);
+          });
         }
-        return clients.openWindow(event.notification.data);
+        return clients.openWindow(urlToOpen);
       }),
   );
 });

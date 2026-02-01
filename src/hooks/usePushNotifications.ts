@@ -3,7 +3,8 @@ import { supabase } from "../lib/supabase";
 
 //Debe tener 87 caracteres
 // Clave pública VAPID (Debe tener 87 caracteres exactos)
-const VAPID_PUBLIC_KEY ="BNMLaWzK4NeOqM65aT3dcQQgpfZPRjooBmrImpAc9rDiJjMJs8SPj_S1gEbL7oJUzsDud0qfdKd3ijijw9gDzA4";
+const VAPID_PUBLIC_KEY =
+  "BNMLaWzK4NeOqM65aT3dcQQgpfZPRjooBmrImpAc9rDiJjMJs8SPj_S1gEbL7oJUzsDud0qfdKd3ijijw9gDzA4";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -80,18 +81,38 @@ export const usePushNotifications = () => {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("User not logged in");
 
-      const { error: dbError } = await supabase
+      // Deduplication: Check if this device (User Agent) already has a subscription
+      const { data: existingSub } = await supabase
         .from("push_subscriptions")
-        .upsert(
-          {
-            user_id: user.id,
-            subscription: subscription.toJSON(), // Important: toJSON()
-            user_agent: navigator.userAgent,
-          },
-          { onConflict: "user_id, subscription" },
-        );
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("user_agent", navigator.userAgent)
+        .maybeSingle();
 
-      if (dbError) throw dbError;
+      if (existingSub) {
+        // Update existing subscription for this device
+        const { error: updateError } = await supabase
+          .from("push_subscriptions")
+          .update({
+            subscription: subscription.toJSON(),
+            // Update created_at to keep it "fresh" if desired, or just leave it
+            // created_at: new Date().toISOString()
+          })
+          .eq("id", existingSub.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new subscription
+        const { error: insertError } = await supabase
+          .from("push_subscriptions")
+          .insert({
+            user_id: user.id,
+            subscription: subscription.toJSON(),
+            user_agent: navigator.userAgent,
+          });
+
+        if (insertError) throw insertError;
+      }
 
       console.log("Push notification subscribed successfully!");
     } catch (err: any) {

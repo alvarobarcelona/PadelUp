@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
@@ -20,29 +21,34 @@ interface Player {
 
 const Rankings = () => {
     const { t } = useTranslation();
-    const [players, setPlayers] = useState<Player[]>([]);
-    const [loading, setLoading] = useState(true);
     const [view, setView] = useState<'global' | 'friends'>('friends');
     const [searchQuery, setSearchQuery] = useState('');
-    const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>('all');
 
-    useEffect(() => {
-        const init = async () => {
-            await fetchRankings();
-            const { data: c } = await supabase.from('clubs').select('*').order('name');
-            if (c) setClubs(c);
-        };
-        init();
-    }, [view]);
-
-    const fetchRankings = async () => {
-        try {
-            setLoading(true);
-            setPlayers([]);
-
+    // Fetch User (needed for friends view logic)
+    const { data: user } = useQuery({
+        queryKey: ['user'],
+        queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser();
+            return user;
+        },
+        staleTime: Infinity
+    });
 
+    // Fetch Clubs
+    const { data: clubs = [] } = useQuery({
+        queryKey: ['clubs'],
+        queryFn: async () => {
+            const { data } = await supabase.from('clubs').select('*').order('name');
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 60 // 1 hour
+    });
+
+    // Fetch Rankings
+    const { data: players = [], isLoading: loading } = useQuery({
+        queryKey: ['rankings', view, user?.id],
+        queryFn: async () => {
             if (view === 'global') {
                 const { data, error } = await supabase
                     .from('profiles')
@@ -52,7 +58,7 @@ const Rankings = () => {
                     .order('elo', { ascending: false });
 
                 if (error) throw error;
-                setPlayers(data || []);
+                return data || [];
             } else if (view === 'friends' && user) {
                 // 1. Get Friends IDs
                 const { data: friendships, error: friendsError } = await supabase
@@ -64,8 +70,8 @@ const Rankings = () => {
                 if (friendsError) throw friendsError;
 
                 const friendIds = friendships
-                    .filter(f => f.status === 'accepted')
-                    .map(f => f.user_id_1 === user.id ? f.user_id_2 : f.user_id_1);
+                    .filter((f: any) => f.status === 'accepted')
+                    .map((f: any) => f.user_id_1 === user.id ? f.user_id_2 : f.user_id_1);
 
                 // Include self in friends ranking
                 friendIds.push(user.id);
@@ -78,18 +84,67 @@ const Rankings = () => {
                     .order('elo', { ascending: false });
 
                 if (error) throw error;
-                setPlayers(data || []);
+                return data || [];
+            }
+            return [];
+        },
+        enabled: view === 'global' || !!user // Only run if we have user for friends view
+    });
+
+
+    // Fetch Streaks (Optimized: Fetch last 500 matches and calc in memory)
+    const { data: streaks = {} } = useQuery({
+        queryKey: ['streaks'],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('matches')
+                .select('winner_team, team1_p1, team1_p2, team2_p1, team2_p2')
+                .eq('status', 'confirmed')
+                .order('created_at', { ascending: false })
+                .limit(200);
+
+            if (!data) return {};
+
+            const streakMap: Record<string, number> = {};
+
+
+            // We iterate from newest to oldest to find "current" streaks
+            // Actually, to count consecutive, we just need to see if they won the LAST N games.
+            // But complex interweaving of matches makes this tricky. 
+            // Simpler: Maintain a counter for everyone. If we see a loss, we stop counting for that person.
+            // Since we iterate newest -> oldest (descending):
+            // 1. If we see a WIN for player X, and we haven't seen a LOSS yet, increment streak.
+            // 2. If we see a LOSS for player X, mark as "streak broken" (or just stop incrementing).
+
+            // "broken" set to track who already lost a recent game
+            const brokenStreaks = new Set<string>();
+
+            for (const m of data) {
+                const t1 = [m.team1_p1, m.team1_p2].filter(Boolean);
+                const t2 = [m.team2_p1, m.team2_p2].filter(Boolean);
+
+                const winners = m.winner_team === 1 ? t1 : t2;
+                const losers = m.winner_team === 1 ? t2 : t1;
+
+                // Process Winners
+                for (const pid of winners) {
+                    if (!brokenStreaks.has(pid)) {
+                        streakMap[pid] = (streakMap[pid] || 0) + 1;
+                    }
+                }
+
+                // Process Losers
+                for (const pid of losers) {
+                    brokenStreaks.add(pid); // Their streak ends here (going backwards)
+                }
             }
 
-        } catch (error) {
-            console.error('Error fetching rankings:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+            return streakMap;
+        },
+        staleTime: 1000 * 60 * 5 // 5 minutes
+    });
 
-
-    const filteredPlayers = players.filter(player => {
+    const filteredPlayers = players.filter((player: Player) => {
         const matchesSearch = normalizeForSearch(player.username).includes(normalizeForSearch(searchQuery)) ||
             normalizeForSearch(`${player.first_name || ''} ${player.last_name || ''}`).includes(normalizeForSearch(searchQuery));
         const matchesClub = selectedClubId === 'all' || player.main_club_id === Number(selectedClubId);
@@ -142,13 +197,15 @@ const Rankings = () => {
                             className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
                         >
                             <option value="all">{t('clubs.all_clubs') || 'All Clubs'}</option>
-                            {clubs.map(c => (
+                            {clubs.map((c: any) => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                         </select>
                     )}
                 </div>
             </header>
+            
+            <div className='text-center text-slate-400'>{t('rankings.fire_motivation')}</div>
 
             <div className="space-y-3">
                 {loading ? (
@@ -162,12 +219,14 @@ const Rankings = () => {
                                 : t('rankings.no_players')}
                     </div>
                 ) : (
-                    filteredPlayers.map((player, index) => {
+                    filteredPlayers.map((player: Player, index: number) => {
                         const rank = index + 1;
                         const isTop = rank <= 3;
-
+                        const streak = streaks[player.id] || 0;
+                        const isOnFire = streak >= 3;
 
                         return (
+
                             <Link
                                 to={`/user/${player.id}`}
                                 key={player.id}
@@ -190,11 +249,12 @@ const Rankings = () => {
                                 </div>
 
                                 {/* Player Info  head to head*/}
-                                <Avatar src={player.avatar_url} fallback={player.username} />
+                                <Avatar src={player.avatar_url} fallback={player.username} isOnFire={isOnFire} />
 
                                 <div className="flex-1 min-w-0">
-                                    <h3 className={cn("truncate font-semibold", isTop ? "text-white" : "text-slate-300")}>
+                                    <h3 className={cn("truncate font-semibold flex items-center gap-2", isTop ? "text-white" : "text-slate-300")}>
                                         {player.username}
+                                        {isOnFire && <span className="text-xs animate-pulse">🔥</span>}
                                     </h3>
                                 </div>
 

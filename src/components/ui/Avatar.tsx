@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { cn } from './Button';
 
 interface AvatarProps {
@@ -5,26 +6,40 @@ interface AvatarProps {
     fallback: string;
     size?: 'sm' | 'md' | 'lg' | 'xl';
     className?: string;
+    isOnFire?: boolean;
 }
 
-export const Avatar = ({ src, fallback, size = 'md', className }: AvatarProps) => {
+export const Avatar = ({ src, fallback, size = 'md', className, isOnFire }: AvatarProps) => {
+    const [imageError, setImageError] = useState(false);
+
+    // Reset error state when src changes
+    useEffect(() => {
+        setImageError(false);
+    }, [src]);
+
     return (
         <div
             className={cn(
-                "relative flex shrink-0 overflow-hidden rounded-full bg-slate-800 border border-slate-700",
+                "relative flex shrink-0 overflow-hidden rounded-full bg-slate-800 border border-slate-700 transition-all duration-300",
                 {
                     'h-8 w-8 text-xs': size === 'sm',
                     'h-10 w-10 text-sm': size === 'md',
                     'h-14 w-14 text-base': size === 'lg',
                     'h-20 w-20 text-xl': size === 'xl',
+                    'fire-effect border-2': isOnFire,
                 },
                 className
             )}
         >
-            {src ? (
-                <img src={src} alt={fallback} className="h-full w-full object-cover" />
+            {src && !imageError ? (
+                <img
+                    src={src}
+                    alt={fallback}
+                    className="h-full w-full object-cover"
+                    onError={() => setImageError(true)}
+                />
             ) : (
-                <div className="flex h-full w-full items-center justify-center font-bold text-slate-400 uppercase">
+                <div className="flex h-full w-full items-center justify-center font-bold text-slate-400 uppercase select-none">
                     {fallback.slice(0, 2)}
                 </div>
             )}

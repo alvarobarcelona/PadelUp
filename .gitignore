@@ -28,3 +28,13 @@ dist-ssr
 .env
 .sql
 .env.local
+
+backups
+scripts
+docs
+
+# Supabase
+supabase/.temp
+supabase/.branches
+supabase/functions
+supabase/sql

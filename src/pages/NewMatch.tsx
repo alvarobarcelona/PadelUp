@@ -9,15 +9,19 @@ import { normalizeForSearch } from '../lib/utils';
 import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { t } from 'i18next';
 
 // Update Player interface
 interface Player {
     id: string;
-    username: string;
+    username: string | null;
+    first_name: string | null;
+    last_name: string | null;
     avatar_url: string | null;
     elo: number;
     subscription_end_date?: string | null;
     banned?: boolean | null;
+    main_club_id?: number | null;
 }
 //Este elo_snapshot se guarda en la tabla matches al crearlo, pero no afecta a los perfiles todavía.
 //Cuando se confirma el partido, la función confirm_match (en supabase/functions) vuelve a calcular todo desde cero.
@@ -47,6 +51,7 @@ const NewMatch = () => {
     // Club State
     const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>('');
+    const [filterClubId, setFilterClubId] = useState<number | string>('all');
 
     useEffect(() => {
         fetchPlayers();
@@ -64,8 +69,9 @@ const NewMatch = () => {
                 const { data: profile } = await supabase.from('profiles').select('main_club_id').eq('id', user.id).single();
                 if (profile?.main_club_id) {
                     setSelectedClubId(profile.main_club_id);
-                } else if (clubsData.length > 0) {
-                    setSelectedClubId(clubsData[0].id);
+                    setFilterClubId(profile.main_club_id);
+                } else {
+                    setSelectedClubId('');
                 }
             }
         }
@@ -76,7 +82,7 @@ const NewMatch = () => {
             const { data: { user } } = await supabase.auth.getUser();
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, username, avatar_url, elo, subscription_end_date, banned')
+                .select('id, username, first_name, last_name, avatar_url, elo, subscription_end_date, banned, main_club_id')
                 .eq('approved', true) // Only select approved players
                 .eq('is_admin', false)
                 .order('username');
@@ -97,7 +103,7 @@ const NewMatch = () => {
                 if (!currentUserPlayer) {
                     const { data: profile } = await supabase
                         .from('profiles')
-                        .select('id, username, avatar_url, elo, subscription_end_date, banned')
+                        .select('id, username, first_name, last_name, avatar_url, elo, subscription_end_date, banned, main_club_id')
                         .eq('id', user.id)
                         .single();
                     if (profile) {
@@ -128,8 +134,8 @@ const NewMatch = () => {
             const isAlreadySelected = Object.values(selectedPlayers).some(p => p?.id === player.id);
             if (isAlreadySelected) {
                 await alert({
-                    title: 'Already Selected',
-                    message: t('new_match.player_already_selected'),
+                    title: t('new_match.player_already_selected_title'),
+                    message: t('new_match.player_already_selected_desc'),
                     type: 'warning'
                 });
                 return;
@@ -426,9 +432,11 @@ const NewMatch = () => {
 
     // PLAYER SELECTION MODAL
     if (isSelectionModalOpen) {
-        const filteredPlayers = availablePlayers.filter(p =>
-            normalizeForSearch(p.username).includes(normalizeForSearch(searchQuery))
-        );
+        const filteredPlayers = availablePlayers.filter(p => {
+            const matchesSearch = normalizeForSearch(p.username ?? '').includes(normalizeForSearch(searchQuery)) || normalizeForSearch(p.first_name ?? '').includes(normalizeForSearch(searchQuery)) || normalizeForSearch(p.last_name ?? '').includes(normalizeForSearch(searchQuery));
+            const matchesClub = filterClubId === 'all' || p.main_club_id === Number(filterClubId);
+            return matchesSearch && matchesClub;
+        });
 
         return (
             <div className="space-y-6 animate-fade-in pb-20 relative">
@@ -438,16 +446,31 @@ const NewMatch = () => {
                         <Button variant="ghost" size="icon" onClick={() => setIsSelectionModalOpen(false)}><X /></Button>
                     </div>
                     {/* Search Input */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-3 text-slate-500" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search player..."
-                            className="w-full bg-slate-800 border-slate-700 rounded-lg pl-10 pr-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-slate-500"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-
-                        />
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-3 text-slate-500" size={18} />
+                            <input
+                                type="text"
+                                placeholder={t('new_match.search_player')}
+                                className="w-full bg-slate-800 border-slate-700 rounded-lg pl-10 pr-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder-slate-500"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        {clubs.length > 0 && (
+                            <select
+                                className="w-full bg-slate-800 border-slate-700 rounded-lg px-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all max-w-[150px]"
+                                value={filterClubId}
+                                onChange={(e) => setFilterClubId(e.target.value)}
+                            >
+                                <option value="all">{t('clubs.all_clubs') || 'All Clubs'}</option>
+                                {clubs.map(club => (
+                                    <option key={club.id} value={club.id}>
+                                        {club.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                 </header>
                 <div className="grid grid-cols-2 gap-4 overflow-y-auto pb-10">
@@ -457,10 +480,11 @@ const NewMatch = () => {
                             onClick={() => selectPlayer(player)}
                             className="flex flex-col items-center gap-2 rounded-xl bg-slate-800 p-4 active:bg-slate-700 active:scale-95 transition-all"
                         >
-                            <Avatar fallback={player.username} src={player.avatar_url} />
+                            <Avatar fallback={player.username ?? ''} src={player.avatar_url ?? ''} />
                             <span className="text-sm font-medium text-slate-200">{player.username}</span>
+                            <span className="text-[10px] text-slate-500">{player.first_name} {player.last_name}</span>
                             <span className="text-[10px] text-slate-500">ELO {player.elo}</span>
-                            <span className="text-[10px] text-slate-500">Level {getLevelFromElo(player.elo).level}</span>
+                            <span className="text-[10px] text-slate-500">{t('profile.level')} {getLevelFromElo(player.elo).level}</span>
                         </div>
                     ))}
                     {availablePlayers.length === 0 && (
@@ -491,7 +515,7 @@ const NewMatch = () => {
                                 value={selectedClubId}
                                 onChange={(e) => setSelectedClubId(e.target.value)}
                             >
-                                <option value="">{t('clubs.no_club') || 'No Club (Friendly Match)'}</option>
+                                <option value="">{t('clubs.no_club') || 'No Club'}</option>
                                 {clubs.map(club => (
                                     <option key={club.id} value={club.id}>
                                         {club.name} ({club.location})
@@ -675,10 +699,10 @@ const PlayerSelector = ({ label, player, onClick }: { label: string, player: Pla
         >
             {player ? (
                 <>
-                    <Avatar fallback={player.username} src={player.avatar_url} className="bg-green-500/20 text-green-400" />
+                    <Avatar fallback={player.username ?? ''} src={player.avatar_url ?? ''} className="bg-green-500/20 text-green-400" />
                     <p className="text-sm font-bold text-white truncate w-full text-center mt-1">{player.username}</p>
                     <span className="text-[10px] text-slate-400">ELO {player.elo}</span>
-                    <span className="text-[10px] text-slate-400">Level {getLevelFromElo(player.elo).level}</span>
+                    <span className="text-[10px] text-slate-400">{t('profile.level')} {getLevelFromElo(player.elo).level}</span>
                 </>
             ) : (
                 <>

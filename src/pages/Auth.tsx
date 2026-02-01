@@ -6,6 +6,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import { padelUpSupportMail } from '../lib/constants';
 
 const Auth = () => {
     const navigate = useNavigate();
@@ -24,6 +25,7 @@ const Auth = () => {
     const [clubs, setClubs] = useState<any[]>([]);
     const [selectedClubId, setSelectedClubId] = useState<number | string>(''); // Default empty or first club
     const [showResend, setShowResend] = useState(false);
+    const [consent, setConsent] = useState(false);
 
     const [isStandalone, setIsStandalone] = useState(false);
 
@@ -174,11 +176,23 @@ const Auth = () => {
                     }
                 }
 
+                if (!consent) {
+                    throw new Error('Please accept the Terms of Service and Privacy Policy.');
+                }
+
                 const { error, data } = await supabase.auth.signUp({
                     email,
                     password,
                     options: {
                         emailRedirectTo: window.location.origin,
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            username: username,
+                            club_id: isStandalone && clubs.length > 0 ? clubs[0].id : selectedClubId,
+                            terms_accepted: true,
+                            terms_accepted_at: new Date().toISOString()
+                        }
                     }
                 });
                 if (error) throw error;
@@ -192,7 +206,8 @@ const Auth = () => {
                         first_name: firstName,
                         last_name: lastName,
                         main_club_id: selectedClubId || null,
-                        elo: 1150
+                        elo: 1150,
+                        terms_accepted_at: new Date().toISOString()
                     });
 
                     if (profileError) {
@@ -351,6 +366,28 @@ const Auth = () => {
                         </div>
                     )}
 
+                    {/* Consent Checkbox */}
+                    {!isLogin && !isForgotPassword && (
+                        <div className="flex items-start gap-2 pt-2">
+                            <input
+                                type="checkbox"
+                                id="consent"
+                                required
+                                checked={consent}
+                                onChange={(e) => setConsent(e.target.checked)}
+                                className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-800 text-green-500 focus:ring-green-500"
+                            />
+                            <label htmlFor="consent" className="text-xs text-slate-400">
+                                <span dangerouslySetInnerHTML={{
+                                    __html: t('legal.consent_checkbox', {
+                                        terms: `<a href="/terms" class="text-green-400 hover:underline underline-offset-2">${t('legal.terms')}</a>`,
+                                        privacy: `<a href="/privacy-policy" class="text-green-400 hover:underline underline-offset-2">${t('legal.privacy_policy')}</a>`
+                                    })
+                                }} />
+                            </label>
+                        </div>
+                    )}
+
                     {error && (
                         <div className="p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">
                             {error}
@@ -392,7 +429,7 @@ const Auth = () => {
                         >
                             {isLogin ? t('auth.no_account') : t('auth.has_account')}
                         </button>
-                        <div className="text-xs text-slate-500">{t('auth.support_email')}: padeluppadeleros@gmail.com</div>
+                        <div className="text-xs text-slate-500">{t('auth.support_email')}: {padelUpSupportMail}</div>
                     </div>
 
                     {!isStandalone && (
