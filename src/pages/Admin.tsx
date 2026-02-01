@@ -145,7 +145,11 @@ const Admin = () => {
             // 1. Fetch match data with player IDs
             const { data: match, error: matchError } = await supabase
                 .from('matches')
-                .select('*')
+                .select(`*,
+                    p1:team1_p1(username),
+                    p2:team1_p2(username),
+                    p3:team2_p1(username),
+                    p4:team2_p2(username)`)
                 .eq('id', id)
                 .single();
 
