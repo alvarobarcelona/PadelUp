@@ -719,11 +719,11 @@ const Home = () => {
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
                                                 <span className={cn(match.winner_team === 1 ? "text-green-400" : "text-slate-400")}>
-                                                    {match.t1p1?.username} & {match.t1p2?.username}
+                                                    {match.t1p1?.username || t('home.unknown')} & {match.t1p2?.username || t('home.unknown')}
                                                 </span>
                                                 <span className="text-slate-600 text-[10px]">VS</span>
                                                 <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
-                                                    {match.t2p1?.username} & {match.t2p2?.username}
+                                                    {match.t2p1?.username || t('home.unknown')} & {match.t2p2?.username || t('home.unknown')}
                                                 </span>
 
                                             </div>

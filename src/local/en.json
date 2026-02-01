@@ -119,6 +119,7 @@
     "reject": "Reject",
     "waiting_opponent": "Waiting for opponent confirmation...",
     "record_match": "Record New Match",
+    "unknown": "Unknown",
     "suggestions": "Player Suggestions",
     "suggestions_limit": "Max 10 suggestions",
     "get_in_touch": "Get in\ntouch",

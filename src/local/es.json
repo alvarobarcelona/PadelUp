@@ -107,6 +107,7 @@
     "match_number": "Id del partido: {{id}}",
     "confirm": "Confirmar",
     "reject": "Rechazar",
+    "unknown": "Desconocido",
     "waiting_opponent": "Esperando confirmación del oponente...",
     "record_match": "Registrar Resultado",
     "suggestions": "Sugerencias Jugadores",

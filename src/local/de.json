@@ -103,6 +103,7 @@
     "match_number": "Spiel Id: {{id}}",
     "confirm": "Bestätigen",
     "reject": "Ablehnen",
+    "unknown": "Unbekannt",
     "waiting_opponent": "Warte auf Bestätigung des Gegners...",
     "record_match": "Neues Spiel erfassen",
     "suggestions": "Spielervorschläge",
