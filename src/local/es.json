@@ -456,6 +456,12 @@
     "value_3_desc": "Tras el periodo de prueba, tu suscripción mensual mantiene PadelUp vivo y evolucionando. Apoya directamente nuevas funciones.",
     "button": "¡Estoy listo para disfrutar!"
   },
+  "push_prompt": {
+    "title": "Activar Notificaciones",
+    "description": "No te pierdas invitaciones a partidos ni mensajes de chat. ¡Activa las notificaciones push para estar al día!",
+    "enable_button": "Activar Notificaciones",
+    "not_now": "Quizás luego"
+  },
   "install_prompt": {
     "title": "Instalar App en tu pantalla",
     "ios_instruction": "En Safari, toca el icono de los \"tres puntos\" y luego \"compartir\", seguidamente la opcion de \"mas\" y finalmente \"añadir a la pantalla de inicio\"",

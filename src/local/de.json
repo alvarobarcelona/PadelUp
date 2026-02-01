@@ -461,6 +461,12 @@
     "value_3_desc": "Nach der Testphase hält dein monatliches Abonnement PadelUp am Leben und entwickelt es weiter. Es unterstützt direkt neue Funktionen.",
     "button": "Ich bin bereit zu genießen!"
   },
+  "push_prompt": {
+    "title": "Benachrichtigungen aktivieren",
+    "description": "Verpassen Sie keine Spieleinladungen oder Chat-Nachrichten. Aktivieren Sie Push-Benachrichtigungen, um auf dem Laufenden zu bleiben!",
+    "enable_button": "Benachrichtigungen einschalten",
+    "not_now": "Vielleicht später"
+  },
   "install_prompt": {
     "title": "App installieren",
     "ios_instruction": "In Safari tippen Sie auf der \"3 Punkte\", dann auf das \"Teilen-Symbol\" und dann die Option \"Mehr\" anschliesend auf \"Zum Home-Bildschirm\" ",

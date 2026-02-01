@@ -456,6 +456,12 @@
     "value_3_desc": "After the test period, your monthly subscription keeps PadelUp alive and evolving. It directly supports new features and new functions.",
     "button": "I'm Ready to enjoy!"
   },
+  "push_prompt": {
+    "title": "Enable Notifications",
+    "description": "Don't miss match invitations or chat messages. Enable push notifications to stay updated!",
+    "enable_button": "Enable Notifications",
+    "not_now": "Maybe later"
+  },
   "install_prompt": {
     "title": "Install App on Screen",
     "ios_instruction": "In Safari, tap the three dots icon, then the option more, then tap Add to Home Screen.",

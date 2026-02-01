@@ -1,5 +1,8 @@
 # PadelUp - Social Padel Tracker
 
+## Important for recruiters:
+I am fully aware of the workflow involved in working with versions and branches, and I understand that working on the master branch is NOT the correct or logical approach in real projects. However, this is a private project, and if it were to grow, I would work with branches and push requests to the master branch as usual.
+
 **PadelUp** is a modern, mobile-first web application designed for amateur padel groups to track matches, maintain competitive ELO rankings, and foster community through social features and gamification.
 
 ## 📸 Screenshots
