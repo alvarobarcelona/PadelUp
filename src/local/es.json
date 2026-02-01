@@ -458,8 +458,8 @@
   },
   "push_prompt": {
     "title": "Activar Notificaciones",
-    "description": "No te pierdas invitaciones a partidos ni mensajes de chat. ¡Activa las notificaciones push para estar al día!",
-    "enable_button": "Activar Notificaciones",
+    "description": "No te pierdas las novedades ni mensajes del chat de tu comunidad. ¡Activa las notificaciones push para estar al día!",
+    "enable_button": "Activar",
     "not_now": "Quizás luego"
   },
   "install_prompt": {

@@ -463,8 +463,8 @@
   },
   "push_prompt": {
     "title": "Benachrichtigungen aktivieren",
-    "description": "Verpassen Sie keine Spieleinladungen oder Chat-Nachrichten. Aktivieren Sie Push-Benachrichtigungen, um auf dem Laufenden zu bleiben!",
-    "enable_button": "Benachrichtigungen einschalten",
+    "description": "Verpassen Sie keine Neuigkeiten oder Chat-Nachrichten aus Ihrer Community. Aktivieren Sie Push-Benachrichtigungen, um auf dem Laufenden zu bleiben!",
+    "enable_button": "Einschalten",
     "not_now": "Vielleicht später"
   },
   "install_prompt": {

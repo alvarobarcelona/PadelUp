@@ -458,8 +458,8 @@
   },
   "push_prompt": {
     "title": "Enable Notifications",
-    "description": "Don't miss match invitations or chat messages. Enable push notifications to stay updated!",
-    "enable_button": "Enable Notifications",
+    "description": "Don't miss news or chat messages from your community. Enable push notifications to stay updated!",
+    "enable_button": "Enable",
     "not_now": "Maybe later"
   },
   "install_prompt": {
