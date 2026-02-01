@@ -33,10 +33,10 @@ interface MatchPreview {
     creator?: { username: string } | null;
     score?: any[];
     // We only need basic info for the feed
-    t1p1: { username: string };
-    t1p2: { username: string };
-    t2p1: { username: string };
-    t2p2: { username: string };
+    t1p1: { username: string, elo?: number };
+    t1p2: { username: string, elo?: number };
+    t2p1: { username: string, elo?: number };
+    t2p2: { username: string, elo?: number };
     team1_p1: string;
     team1_p2: string;
     team2_p1: string;
@@ -130,10 +130,28 @@ const Home = () => {
                         prevElo = 1150;
                     }
 
-                    if (currentElo !== undefined && prevElo !== undefined) {
-                        points = currentElo - prevElo;
-                        if (won && points < 0) points = 0;
-                        if (!won && points > 0) points = 0;
+                    if (currentElo !== undefined) {
+                        // Priority 1: Use stored Diff from snapshot (New System)
+                        const diffs = (m.elo_snapshot as any).diffs;
+                        if (diffs && diffs[posKey] !== undefined) {
+                            points = diffs[posKey];
+                        }
+                        // Priority 2: Calculate from previous match (Legacy System)
+                        // Only fallback if diffs not present
+                        else if (prevElo !== undefined) {
+                            points = currentElo - prevElo;
+                            // Sanity check for Legacy Race Conditions (Match 33 fix)
+                            // If we WON but points < 0, it means we compared against a FUTURE/HIGHER elo from an unseen match
+                            // We can't know the real points, but we know it shouldn't be negative.
+                            // We can estimate based on result? Or just clamp to 0. 
+                            if (won && points < 0) {
+                                // Attempt to estimate standard points (e.g., +15) or just show +?
+                                // Let's just clamp to 0 for now as 'Unknown Positive' to avoid confusion.
+                                // Or better: If it's a win, and we have negative points, it's definitely an error.
+                                points = 0;
+                            }
+                            if (!won && points > 0) points = 0;
+                        }
                     }
                 }
                 form.push({ id: m.id, won, points });
@@ -179,10 +197,10 @@ const Home = () => {
                 .select(`
                     id, created_at, winner_team, commentary, status, score, created_by,
                     team1_p1, team1_p2, team2_p1, team2_p2,
-                    t1p1:team1_p1(username),
-                    t1p2:team1_p2(username),
-                    t2p1:team2_p1(username),
-                    t2p2:team2_p2(username)
+                    t1p1:team1_p1(username, elo),
+                    t1p2:team1_p2(username, elo),
+                    t2p1:team2_p1(username, elo),
+                    t2p2:team2_p2(username, elo)
                 `)
                 .eq('status', 'pending')
                 .or(`team1_p1.eq.${profile.id},team1_p2.eq.${profile.id},team2_p1.eq.${profile.id},team2_p2.eq.${profile.id}`)
@@ -213,10 +231,10 @@ const Home = () => {
                 .from('matches')
                 .select(`
                     id, created_at, winner_team, commentary, status, score,
-                    t1p1:team1_p1(username),
-                    t1p2:team1_p2(username),
-                    t2p1:team2_p1(username),
-                    t2p2:team2_p2(username)
+                    t1p1:team1_p1(username, elo),
+                    t1p2:team1_p2(username, elo),
+                    t2p1:team2_p1(username, elo),
+                    t2p2:team2_p2(username, elo)
                 `)
                 .eq('status', 'confirmed')
                 .order('created_at', { ascending: false })
@@ -589,7 +607,9 @@ const Home = () => {
                 {/* Main Action - Floating/Prominent */}
                 <Link
                     to="/new-match"
-                    className="group relative flex items-center justify-center gap-3 rounded-2xl bg-green-500 py-5 font-bold text-slate-900 shadow-xl shadow-green-500/20 active:scale-95 transition-all hover:bg-green-400 overflow-hidden"
+                    className="group relative flex items-center justify-center gap-3 rounded-2xl bg-green-500 py-5 font-bold text-slate-900 shadow-xl shadow-green-500/20 active:scale-95 transition-all hover:bg-green-400 overflow-hidden touch-none select-none"
+                    style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                     <Plus size={28} strokeWidth={3} />

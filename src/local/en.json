@@ -21,7 +21,7 @@
     "logout": "Log Out",
     "danger_zone": "Danger Zone",
     "delete_account": "Delete Account",
-    "delete_account_desc": "This action is permanent. All your data, matches, and history will be deleted.",
+    "delete_account_desc": "This action is permanent. All your data from your profile will be deleted.",
     "update_password": "Update Password",
     "new_password": "New Password",
     "confirm_password": "Confirm Password",
@@ -94,6 +94,13 @@
     "main_club": "Main Club",
     "no_club_selected": "No club "
   },
+
+  "badges": {
+    "heavy_hitter": "Highly active player",
+    "regular": "Regular",
+    "info": "Based on matches played in the last 30 days"
+  },
+
   "home": {
     "welcome_user": "Welcome back, {{name}}",
     "welcome_guest": "Welcome Guest",
@@ -209,7 +216,7 @@
     "confirm_prompt": "Are you sure you want to proceed?",
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "beta_message": "This app is in beta testing period. Any feedback is welcome!",
+    "beta_message": "This app is in beta period.",
     "validation_error": "Validation Error",
     "invalid_score": "Invalid Score",
     "draw": "Draw",
@@ -268,7 +275,7 @@
     "delete_player_title": "Delete Player",
     "delete_match_title": "Delete Match",
     "confirm_delete_match": "This will DELETE the match and REVERT ELO points for all players. Are you sure?",
-    "confirm_delete_player": "Are you sure? This might break matches linked to this player!",
+    "confirm_delete_player": "Are you sure? This might not be undone!",
     "search_placeholder": "Search user...",
     "search_match_placeholder": "Search match (ID)...",
     "search_log_placeholder": "Search logs...",
@@ -276,6 +283,10 @@
     "no_members": "No members found.",
     "no_matches": "No matches found.",
     "no_activity": "No activity recorded yet.",
+    "banned": "Banned",
+    "not_banned": "Not banned",
+    "subscribed_until": "Subscribed until: {{date}}",
+    "not_subscribed": "Not subscribed",
     "filters": "Filters",
     "select_all": "Select All",
     "clear_all": "Clear All",
@@ -319,7 +330,8 @@
     "no_results": "No players found matching your search.",
     "no_friends": "No friends found. Go to 'Community' to add some!",
     "no_players": "No players found.",
-    "click_hint": "Click on a player to see Head-to-Head stats"
+    "click_hint": "Click on a player to see Head-to-Head stats",
+    "fire_motivation": "Win 3 matches in a row to set your avatar on fire! 🔥"
   },
   "community": {
     "title": "Community",
@@ -355,12 +367,14 @@
     "rejected": "REJECTED",
     "victory": "VICTORY",
     "defeat": "DEFEAT",
+    "created_by_admin": "Managed by Admin",
     "rejection_reason": "REJECTION REASON",
     "rejected_by": "Rejected by:",
     "confirmed_by": "Confirmed by:",
     "previous": "Previous",
     "next": "Next",
-    "page_info": "Page {{current}} of {{total}}"
+    "page_info": "Page {{current}} of {{total}}",
+    "filter_my_matches": "My Matches"
   },
   "levels": {
     "title": "ELO Levels",
@@ -427,7 +441,9 @@
     "broadcast_mode": "Broadcast mode",
     "send_all": "Send to all",
     "broadcast_message": "Broadcast message",
-    "cleanup_disclaimer": "Messages older than 90 days can be deleted for security.\nConversations are encrypted and 100% private."
+    "cleanup_disclaimer": "Messages older than 90 days can be deleted for security.\nConversations are encrypted and 100% private.",
+    "read": "Read",
+    "sent": "Sent"
   },
   "welcome_modal": {
     "title": "Welcome to PadelUp",
@@ -439,6 +455,12 @@
     "value_3_title": "Support the Community",
     "value_3_desc": "After the test period, your monthly subscription keeps PadelUp alive and evolving. It directly supports new features and new functions.",
     "button": "I'm Ready to enjoy!"
+  },
+  "push_prompt": {
+    "title": "Enable Notifications",
+    "description": "Don't miss news or chat messages from your community. Enable push notifications to stay updated!",
+    "enable_button": "Enable",
+    "not_now": "Maybe later"
   },
   "install_prompt": {
     "title": "Install App on Screen",

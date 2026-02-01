@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, Send, Loader2, ArrowLeft, MessageSquarePlus, Trash2, ShieldCheck, MailPlus, Megaphone } from 'lucide-react';
+import { X, Send, Loader2, ArrowLeft, MessageSquarePlus, Trash2, ShieldCheck, MailPlus, Megaphone, Check, CheckCheck } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '../ui/Button';
 import { useChat } from '../../context/ChatContext';
@@ -17,6 +17,7 @@ interface Message {
         username: string;
         avatar_url: string | null;
     };
+    is_read?: boolean;
     deleted_by_sender?: boolean;
     deleted_by_receiver?: boolean;
 }
@@ -265,6 +266,21 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                             scrollToBottom();
                         }
                     }
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'messages',
+                },
+                (payload) => {
+                    const updatedMsg = payload.new as any;
+                    // Update the message in the state if it exists
+                    setMessages((prev) => prev.map(msg =>
+                        msg.id === updatedMsg.id ? { ...msg, is_read: updatedMsg.is_read } : msg
+                    ));
                 }
             )
             .subscribe();
@@ -661,9 +677,20 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                                 )}>
                                                     {msg.content}
                                                 </div>
-                                                <span className="text-[10px] text-slate-600 mt-1 px-1">
-                                                    {new Date(msg.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                                </span>
+                                                <div className="flex items-center gap-1 justify-end mt-1 px-1">
+                                                    <span className="text-[10px] text-slate-600">
+                                                        {new Date(msg.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                    {isMe && (
+                                                        <span title={msg.is_read ? t('chat.read') : t('chat.sent')}>
+                                                            {msg.is_read ? (
+                                                                <CheckCheck size={14} className="text-green-500" />
+                                                            ) : (
+                                                                <Check size={14} className="text-slate-500" />
+                                                            )}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     );

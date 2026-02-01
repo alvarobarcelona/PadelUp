@@ -21,7 +21,7 @@
     "logout": "Cerrar Sesión",
     "danger_zone": "Zona de Peligro",
     "delete_account": "Eliminar Cuenta",
-    "delete_account_desc": "Esta acción es permanente. Todos tus datos, partidos e historial serán eliminados.",
+    "delete_account_desc": "Esta acción es permanente. Todos tus datos de tu perfil serán eliminados.",
     "update_password": "Actualizar Contraseña",
     "new_password": "Nueva Contraseña",
     "confirm_password": "Confirmar Contraseña",
@@ -84,6 +84,12 @@
       "signup_confirm": "¡Éxito! Revisa tu correo para el enlace de confirmación. A veces puede tardar unos minutos.",
       "resend_confirmation": "Reenviar email de confirmación"
     }
+  },
+
+  "badges": {
+    "heavy_hitter": "Jugador muy activo",
+    "regular": "Regular",
+    "info": "Basado en partidos jugados en los últimos 30 días"
   },
   "home": {
     "welcome_user": "Bienvenido, {{name}}",
@@ -210,7 +216,7 @@
     "confirm_prompt": "¿Estás seguro de que deseas continuar?",
     "confirm": "Confirmar",
     "cancel": "Cancelar",
-    "beta_message": "Esta aplicación está en periodo de pruebas. Cualquier feedback será bien recibido.",
+    "beta_message": "Esta aplicación está en fase beta.",
     "validation_error": "Error de Validación",
     "invalid_score": "Puntuación Inválida",
     "draw": "Empate",
@@ -270,13 +276,17 @@
     "create_club": "Crear Club",
     "delete_club_confirm": "¿Estás seguro de querer borrar este club?",
     "no_clubs": "No hay clubs registrados.",
+    "banned": "Baneado",
+    "not_banned": "No baneado",
+    "subscribed_until": "Abonado hasta: {{date}}",
+    "not_subscribed": "No abonado",
     "approve": "Aprobar",
     "reject": "Rechazar",
     "edit_player": "Editar Jugador",
     "delete_match": "Eliminar Partido",
     "delete_match_title": "Eliminar Partido",
     "confirm_delete_match": "Esto ELIMINARÁ el partido y REVERTIRÁ los puntos ELO solo si el partido fue aceptado. ¿Estás seguro?",
-    "confirm_delete_player": "¿Estás seguro? ¡Esto podría romper partidos vinculados a este jugador!",
+    "confirm_delete_player": "¿Estás seguro? ¡Esto no se puede deshacer!",
     "search_placeholder": "Buscar usuario...",
     "search_match_placeholder": "Buscar partido (ID)...",
     "search_log_placeholder": "Buscar logs...",
@@ -319,7 +329,8 @@
     "no_results": "No se encontraron jugadores.",
     "no_friends": "No tienes amigos aún. ¡Ve a 'Comunidad' para añadir algunos!",
     "no_players": "No se encontraron jugadores.",
-    "click_hint": "Haz clic en un jugador para ver estadísticas Cara a Cara"
+    "click_hint": "Haz clic en un jugador para ver estadísticas Cara a Cara",
+    "fire_motivation": "¡Gana 3 partidos seguidos para prender fuego a tu avatar! 🔥"
   },
   "community": {
     "title": "Comunidad",
@@ -359,9 +370,11 @@
     "confirmed_by": "Aceptado por:",
     "auto_accepted": "Aceptado Automáticamente",
     "close": "Cerrar",
+    "created_by_admin": "Gestionado por Admin",
     "previous": "Anterior",
     "next": "Siguiente",
-    "page_info": "Página {{current}} de {{total}}"
+    "page_info": "Página {{current}} de {{total}}",
+    "filter_my_matches": "Mis Partidos"
   },
   "levels": {
     "title": "Niveles ELO",
@@ -428,7 +441,9 @@
     "send_all": "Enviar a todos",
     "broadcast_message": "Mensaje para todos",
     "confirm_delete_conversation": "¿Estás seguro de querer eliminar esta conversación? Solo se eliminará para ti.",
-    "cleanup_disclaimer": "Mensajes antiguos a 90 dias podran ser eliminados por seguridad.\nLas conversacions estan encriptadas y son 100% privadas."
+    "cleanup_disclaimer": "Mensajes antiguos a 90 dias podran ser eliminados por seguridad.\nLas conversacions estan encriptadas y son 100% privadas.",
+    "read": "Leído",
+    "sent": "Enviado"
   },
   "welcome_modal": {
     "title": "Bienvenido a PadelUp",
@@ -440,6 +455,12 @@
     "value_3_title": "Apoya a la Comunidad",
     "value_3_desc": "Tras el periodo de prueba, tu suscripción mensual mantiene PadelUp vivo y evolucionando. Apoya directamente nuevas funciones.",
     "button": "¡Estoy listo para disfrutar!"
+  },
+  "push_prompt": {
+    "title": "Activar Notificaciones",
+    "description": "No te pierdas las novedades ni mensajes del chat de tu comunidad. ¡Activa las notificaciones push para estar al día!",
+    "enable_button": "Activar",
+    "not_now": "Quizás luego"
   },
   "install_prompt": {
     "title": "Instalar App en tu pantalla",

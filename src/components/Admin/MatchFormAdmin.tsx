@@ -3,7 +3,7 @@ import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
 import { Users, X, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { calculateTeamAverage, calculateExpectedScore, calculateNewRating, getKFactor, getLevelFromElo } from '../../lib/elo';
+import { getLevelFromElo } from '../../lib/elo';
 import { normalizeForSearch } from '../../lib/utils';
 import { logActivity } from '../../lib/logger';
 import { useTranslation } from 'react-i18next';
@@ -40,13 +40,33 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
     const [sets, setSets] = useState([{ t1: 0, t2: 0 }, { t1: 0, t2: 0 }, { t1: 0, t2: 0 }]);
     const [commentary, setCommentary] = useState('');
 
+    // Club State
+    const [clubs, setClubs] = useState<any[]>([]);
+    const [selectedClubId, setSelectedClubId] = useState<number | string>('');
+
     // Selection Modal State
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [activePosition, setActivePosition] = useState<keyof typeof selectedPlayers | null>(null);
 
     useEffect(() => {
         fetchPlayers();
+        fetchClubs();
     }, []);
+
+    const fetchClubs = async () => {
+        const { data: clubsData } = await supabase.from('clubs').select('*').order('id');
+        if (clubsData) {
+            setClubs(clubsData);
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('main_club_id').eq('id', user.id).single();
+                if (profile?.main_club_id) {
+                    setSelectedClubId(profile.main_club_id);
+                }
+            }
+        }
+    };
 
     const fetchPlayers = async () => {
         try {
@@ -158,53 +178,11 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
 
             const winnerTeam = t1Sets > t2Sets ? 1 : 2;
 
-            // --- ELO CALCULATION START ---
-            const fetchMatchCount = async (pid: string) => {
-                const { count } = await supabase
-                    .from('matches')
-                    .select('id', { count: 'exact', head: true })
-                    .or(`team1_p1.eq.${pid},team1_p2.eq.${pid},team2_p1.eq.${pid},team2_p2.eq.${pid}`);
-                return count || 0;
-            };
-
-            const [count1, count2, count3, count4] = await Promise.all([
-                fetchMatchCount(selectedPlayers.t1p1.id),
-                fetchMatchCount(selectedPlayers.t1p2.id),
-                fetchMatchCount(selectedPlayers.t2p1.id),
-                fetchMatchCount(selectedPlayers.t2p2.id)
-            ]);
-
-            const k1 = getKFactor(count1);
-            const k2 = getKFactor(count2);
-            const k3 = getKFactor(count3);
-            const k4 = getKFactor(count4);
-
-            const t1Avg = calculateTeamAverage(selectedPlayers.t1p1.elo, selectedPlayers.t1p2.elo);
-            const t2Avg = calculateTeamAverage(selectedPlayers.t2p1.elo, selectedPlayers.t2p2.elo);
-
-            const t1Score = winnerTeam === 1 ? 1 : 0;
-            const t2Score = winnerTeam === 2 ? 1 : 0;
-
-            const t1Expected = calculateExpectedScore(t1Avg, t2Avg);
-            const t2Expected = calculateExpectedScore(t2Avg, t1Avg);
-
-            const newRatings = {
-                t1p1: calculateNewRating(selectedPlayers.t1p1.elo, t1Score, t1Expected, k1),
-                t1p2: calculateNewRating(selectedPlayers.t1p2.elo, t1Score, t1Expected, k2),
-                t2p1: calculateNewRating(selectedPlayers.t2p1.elo, t2Score, t2Expected, k3),
-                t2p2: calculateNewRating(selectedPlayers.t2p2.elo, t2Score, t2Expected, k4),
-            };
-            // --- ELO CALCULATION END ---
-
-            // 1. Prepare Match Data
+            // 1. Prepare Match Data (PENDING)
             const { data: { user } } = await supabase.auth.getUser();
-            const eloSnapshot = {
-                t1p1: newRatings.t1p1,
-                t1p2: newRatings.t1p2,
-                t2p1: newRatings.t2p1,
-                t2p2: newRatings.t2p2
-            };
 
+            // Insert match as PENDING. 
+            // We do NOT calculate ELO here. We let the DB do it safely.
             const { data: newMatch, error: matchError } = await supabase.from('matches').insert({
                 team1_p1: selectedPlayers.t1p1.id,
                 team1_p2: selectedPlayers.t1p2.id,
@@ -213,24 +191,29 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 score: sets,
                 winner_team: winnerTeam,
                 commentary: commentary.trim() || null,
-                status: 'confirmed', // DIRECT MATCH
-                elo_snapshot: eloSnapshot,
-                created_by: user?.id
+                status: 'pending', // IMPORTANT: Start as pending
+                elo_snapshot: {}, // Will be populated by confirm_match
+                created_by: user?.id,
+                club_id: selectedClubId ? Number(selectedClubId) : null
             }).select().single();
 
             if (matchError) throw matchError;
 
-            // UPDATE PROFILES IMMEDIATELY
-            await Promise.all([
-                supabase.from('profiles').update({ elo: newRatings.t1p1 }).eq('id', selectedPlayers.t1p1.id),
-                supabase.from('profiles').update({ elo: newRatings.t1p2 }).eq('id', selectedPlayers.t1p2.id),
-                supabase.from('profiles').update({ elo: newRatings.t2p1 }).eq('id', selectedPlayers.t2p1.id),
-                supabase.from('profiles').update({ elo: newRatings.t2p2 }).eq('id', selectedPlayers.t2p2.id),
-            ]);
+            // 2. Execute SAFE Confirmation via RPC
+            // This ensures we use the Race-Condition-Proof logic we built.
+            const { error: confirmError } = await supabase.rpc('confirm_match', { match_id: newMatch.id });
+
+            if (confirmError) {
+                // If confirmation fails, we might want to delete the pending match or alert admin
+                // For now, let's throw and show the error.
+                throw confirmError;
+            }
 
             // LOG ADMIN MATCH CREATE
             if (newMatch) {
                 logActivity('ADMIN_MATCH_CREATE', newMatch.id.toString(), {
+                    elo_snapshot: newMatch.elo_snapshot,
+                    score: sets,
                     winner: winnerTeam,
                     t1: [selectedPlayers.t1p1.username, selectedPlayers.t1p2.username],
                     t2: [selectedPlayers.t2p1.username, selectedPlayers.t2p2.username]
@@ -288,7 +271,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                             <span className="text-sm font-medium text-slate-200">{player.username}</span>
                             <span className="text-[10px] text-slate-500">ELO {player.elo}</span>
                             <span className="text-[10px] text-slate-500">Level {getLevelFromElo(player.elo).level}</span>
-                            <span className="text-[10px] text-slate-500">{player.subscription_end_date ? t('admin.subscribed_until', { date: player.subscription_end_date }) : t('admin.not_subscribed')}</span>
+                            <span className="text-[10px] text-slate-500">{player.subscription_end_date ? t('admin.subscribed_until', { date: new Date(player.subscription_end_date).toLocaleDateString() }) : t('admin.not_subscribed')}</span>
                             <span className="text-[10px] text-slate-500"><span className="text-red-500">{player.banned ? t('admin.banned') : <span className="text-green-500">{t('admin.not_banned')}</span>}</span></span>
                         </div>
                     ))}
@@ -312,6 +295,24 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
                 </header>
 
                 <section className="space-y-3">
+                    {clubs.length > 0 && (
+                        <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <label className="block text-sm font-medium text-slate-400 mb-2">{t('clubs.select_club') || 'Select Club'}</label>
+                            <select
+                                className="block w-full rounded-lg bg-slate-900 border-transparent focus:border-green-500 focus:bg-slate-900 focus:ring-0 text-white p-3 transition-colors"
+                                value={selectedClubId}
+                                onChange={(e) => setSelectedClubId(e.target.value)}
+                            >
+                                <option value="">{t('clubs.no_club') || 'No Club'}</option>
+                                {clubs.map(club => (
+                                    <option key={club.id} value={club.id}>
+                                        {club.name} ({club.location})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <h2 className="text-sm font-semibold uppercase text-green-400 tracking-wider">{t('new_match.team_1')}</h2>
                     <div className="grid grid-cols-2 gap-4">
                         <PlayerSelector label={t('new_match.player_1')} player={selectedPlayers.t1p1} onClick={() => openSelection('t1p1')} />
@@ -418,7 +419,7 @@ export const MatchFormAdmin = ({ onSuccess, onCancel }: MatchFormAdminProps) => 
             </div>
 
             <div className="pt-8 space-y-3">
-                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm={t('admin.confirm_prompt') || "Are you sure?"}>
+                <Button className="w-full gap-2" size="lg" onClick={handleSave} isLoading={loading} confirm={t('home.confirm_prompt') || "Are you sure?"}>
                     <Trophy size={20} />
                     {t('admin.save_changes')}
                 </Button>

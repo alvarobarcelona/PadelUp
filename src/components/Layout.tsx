@@ -13,6 +13,7 @@ import { InstallPrompt } from './InstallPrompt';
 import BetaBanner from './BetaBanner';
 // import CookieBanner from './CookieBanner';
 import TermsAcceptanceModal from './TermsAcceptanceModal';
+import { PushNotificationPrompt } from './Modals/PushNotificationPrompt';
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -149,6 +150,7 @@ const Layout = () => {
             </nav>
 
             <InstallPrompt />
+            <PushNotificationPrompt />
             {/* <CookieBanner /> */}
 
             {showTermsModal && (

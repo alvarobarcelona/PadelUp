@@ -347,12 +347,13 @@ const Settings = () => {
                 return;
             }
 
-            // 1. Delete Profile (Matches should cascade or be handled by DB policies if set, otherwise this might fail if foreign keys exist without cascade. Assuming standard setup or manual cleanup not needed for this simple request yet)
-            // Note: If explicit FK constraints prevent deletion, we'd need to delete matches first.
-            // For now, let's try deleting the profile.
-            const { error } = await supabase.from('profiles').delete().eq('id', user.id);
+            // 1. Delete Account via Edge Function
+            // This ensures Auth User + Profile are deleted, while keeping Matches (via Ghost Player migration)
+            const { error } = await supabase.functions.invoke('delete-user', {
+                body: { user_id: user.id }
+            });
 
-            if (error) throw error;
+            if (error) throw new Error(error.message || 'Failed to delete account');
 
             // 2. Sign Out
             await supabase.auth.signOut();

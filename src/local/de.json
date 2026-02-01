@@ -22,7 +22,7 @@
     "logout": "Abmelden",
     "danger_zone": "Gefahrenzone",
     "delete_account": "Konto löschen",
-    "delete_account_desc": "Diese Aktion ist dauerhaft. Alle Ihre Daten, Spiele und Verläufe werden gelöscht.",
+    "delete_account_desc": "Diese Aktion ist dauerhaft. Alle Ihre Daten von ihren Profile werden gelöscht.",
     "update_password": "Passwort aktualisieren",
     "new_password": "Neues Passwort",
     "confirm_password": "Passwort bestätigen",
@@ -81,6 +81,11 @@
       "signup_confirm": "Erfolg! Überprüfen Sie Ihre E-Mail auf den Bestätigungslink.",
       "resend_confirmation": "Bestätigungs-E-Mail erneut senden"
     }
+  },
+  "badges": {
+    "heavy_hitter": "Sehr aktiver Spieler",
+    "regular": "Regelmäßig",
+    "info": "Basierend auf Spielen der letzten 30 Tage"
   },
   "home": {
     "welcome_user": "Willkommen zurück, {{name}}",
@@ -207,7 +212,7 @@
     "confirm_prompt": "Sind Sie sicher, dass Sie fortfahren möchten?",
     "confirm": "Bestätigen",
     "cancel": "Abbrechen",
-    "beta_message": "Diese App befindet sich in der Betatestphase. Jedes Feedback ist willkommen!",
+    "beta_message": "Diese App befindet sich in der Betaphase.",
     "validation_error": "Validierungsfehler",
     "invalid_score": "Ungültiger Punktestand",
     "draw": "Unentschieden",
@@ -264,7 +269,7 @@
     "edit_player": "Spieler bearbeiten",
     "delete_match": "Spiel löschen",
     "confirm_delete_match": "Dadurch wird das Spiel gelöscht und die ELO-Punkte werden nur dann zurückgesetzt, wenn das Spiel angenommen wurde. Sind Sie sicher?",
-    "confirm_delete_player": "Sind Sie sicher? Dies könnte verknüpfte Spiele beschädigen!",
+    "confirm_delete_player": "Sind Sie sicher? Dies könnte nicht rückgängig gemacht werden!",
     "search_placeholder": "Suche nach Benutzer oder ID...",
     "search_match_placeholder": "Filtern nach Spiel-ID...",
     "search_log_placeholder": "Logs durchsuchen...",
@@ -304,7 +309,7 @@
     "no_clubs": "Keine Clubs gefunden.",
     "banned": "Gesperrt",
     "not_banned": "Nicht gesperrt",
-    "subscribed_until": "Abonniert bis: ",
+    "subscribed_until": "Abonniert bis: {{date}}",
     "not_subscribed": "Nicht abonniert",
     "suspicious_activity": "Sicherheitsverletzung",
     "suspicious_desc": "Sicherheitsverletzung erkannt.",
@@ -320,7 +325,8 @@
     "no_results": "Keine Spieler gefunden.",
     "no_friends": "Keine Freunde gefunden. Gehen Sie zu 'Community', um welche hinzuzufügen!",
     "no_players": "Keine Spieler gefunden.",
-    "click_hint": "Klicken Sie auf einen Spieler, um den direkten Vergleich zu sehen"
+    "click_hint": "Klicken Sie auf einen Spieler, um den direkten Vergleich zu sehen",
+    "fire_motivation": "Gewinne 3 Spiele in Folge, um deinen Avatar in Brand zu setzen! 🔥"
   },
   "community": {
     "title": "Community",
@@ -368,10 +374,12 @@
     "rejected_by": "Abgelehnt von:",
     "confirmed_by": "Bestätigt von:",
     "auto_accepted": "Automatisch akzeptiert",
+    "created_by_admin": "Verwaltet von Admin",
     "close": "Schließen",
     "previous": "Zurück",
     "next": "Weiter",
-    "page_info": "Seite {{current}} von {{total}}"
+    "page_info": "Seite {{current}} von {{total}}",
+    "filter_my_matches": "Meine Spiele"
   },
   "levels": {
     "title": "ELO-Stufen",
@@ -438,7 +446,9 @@
     "send_all": "An alle senden",
     "broadcast_message": "Nachricht für alle",
     "confirm_delete_conversation": "Sind Sie sicher, dass Sie diese Konversation löschen möchten? Sie wird nur für Sie gelöscht.",
-    "cleanup_disclaimer": "Nachrichten älter als 90 Tage können aus Sicherheitsgründen gelöscht werden. \nDie Konversationen sind verschlüsselt und 100% privat."
+    "cleanup_disclaimer": "Nachrichten älter als 90 Tage können aus Sicherheitsgründen gelöscht werden. \nDie Konversationen sind verschlüsselt und 100% privat.",
+    "read": "Gelesen",
+    "sent": "Gesendet"
   },
   "welcome_modal": {
     "title": "Willkommen bei PadelUp",
@@ -450,6 +460,12 @@
     "value_3_title": "Unterstütze die Community",
     "value_3_desc": "Nach der Testphase hält dein monatliches Abonnement PadelUp am Leben und entwickelt es weiter. Es unterstützt direkt neue Funktionen.",
     "button": "Ich bin bereit zu genießen!"
+  },
+  "push_prompt": {
+    "title": "Benachrichtigungen aktivieren",
+    "description": "Verpassen Sie keine Neuigkeiten oder Chat-Nachrichten aus Ihrer Community. Aktivieren Sie Push-Benachrichtigungen, um auf dem Laufenden zu bleiben!",
+    "enable_button": "Einschalten",
+    "not_now": "Vielleicht später"
   },
   "install_prompt": {
     "title": "App installieren",

@@ -1,8 +1,19 @@
 # PadelUp - Social Padel Tracker
 
+## Important for recruiters:
+I am fully aware of the workflow involved in working with versions and branches, and I understand that working on the master branch is NOT the correct or logical approach in real projects. However, this is a private project, and if it were to grow, I would work with branches and push requests to the master branch as usual.
+
 **PadelUp** is a modern, mobile-first web application designed for amateur padel groups to track matches, maintain competitive ELO rankings, and foster community through social features and gamification.
 
+## 📸 Screenshots
 
+|                     Login                     |                    Sign Up                     |                     Home                     |                     Ranks                     |
+| :-------------------------------------------: | :--------------------------------------------: | :------------------------------------------: | :-------------------------------------------: |
+| <img src="screenshots/Login.JPG" width="200"> | <img src="screenshots/SignUp.JPG" width="200"> | <img src="screenshots/Home.JPG" width="200"> | <img src="screenshots/Ranks.JPG" width="200"> |
+
+|                     Community                     |                      Profile                      |                     Settings                     |     |
+| :-----------------------------------------------: | :-----------------------------------------------: | :----------------------------------------------: | :-: |
+| <img src="screenshots/Community.JPG" width="200"> | <img src="screenshots/MyProfile.JPG" width="200"> | <img src="screenshots/Settings.JPG" width="200"> |     |
 
 ## 🚀 Features
 
@@ -60,38 +71,3 @@ The application runs on a robust PostgreSQL schema featuring Row Level Security 
 - `process_expired_matches()`: Auto-confirms pending matches after 24h.
 
 ---
-
-## 🔄 Infrastructure & DevOps
-
-### Automated Backups
-
-Data integrity is secured via **GitHub Actions**.
-
-- **Workflow**: `.github/workflows/backup.yml`
-- **Schedule**: Runs daily at **03:00 AM Local Time** (02:00 UTC).
-- **Strategy**: Uses `pg_dump` to generate two SQL files:
-  1. `backup_YYYY-MM-DD.sql`: **Optimized public schema dump** (Structure + Data). -> _Primary Backup_
-  2. _Legacy_: Previously supported full server dumps (deprecated for efficiency).
-- **CI Safety**: Commits include `[skip ci]` to prevent Vercel build loops.
-
----
-
-## 📦 Local Development
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/your-username/padel-up.git
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   cd padel-up
-   npm install
-   ```
-
-3. **Start the development server**
-   ```bash
-   npm run dev
-   ```
