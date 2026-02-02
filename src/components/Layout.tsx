@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Home, Trophy, Users, Loader2 } from 'lucide-react';
+import { Home, Trophy, Users, Loader2, Award } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
 import ChatButton from './Chat/ChatButton';
@@ -144,6 +144,12 @@ const Layout = () => {
                         <NavLink to="/rankings" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
                             <Trophy size={22} />
                             <span className="text-[10px] font-medium">{t('nav.rank')}</span>
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink to="/tournament-rankings" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
+                            <Award size={22} />
+                            <span className="text-[10px] font-medium">{t('nav.tournament_rank') || 'T-Rank'}</span>
                         </NavLink>
                     </li>
                 </ul>

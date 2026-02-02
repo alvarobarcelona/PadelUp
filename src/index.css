@@ -64,3 +64,18 @@ body {
 .fire-effect {
   animation: fire-glow 1.5s ease-in-out infinite;
 }
+
+/* Trophy 3D Rotation Animation */
+@keyframes trophy-rotate {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+.animate-trophy-rotate {
+  animation: trophy-rotate 3s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
