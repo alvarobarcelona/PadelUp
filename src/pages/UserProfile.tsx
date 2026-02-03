@@ -270,9 +270,12 @@ export default function UserProfile() {
     return (
         <div className="max-w-4xl mx-auto pb-20">
             {/* Header Profile */}
-            <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white">
-                <ArrowLeft className="w-6 h-6" />
-            </button>
+            <div className="flex items-center gap-4 mb-4">
+                <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white">
+                    <ArrowLeft className="w-6 h-6" />
+                </button>
+                <span className="text-white font-bold text-xl flex justify-center w-full"> {t('profile.user_profile')}</span>
+            </div>
             <div className="bg-slate-800/50 backdrop-blur-md p-8 rounded-2xl border border-slate-700/50 flex flex-col items-center shadow-xl">
                 <div className="relative">
 

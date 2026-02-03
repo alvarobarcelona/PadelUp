@@ -299,8 +299,8 @@ export default function Tournaments() {
                                             {t(`tournaments.status.${tournament.status}`, { defaultValue: tournament.status })}
                                         </span>
 
-                                        {/* Delete Button (Admin Only or Creator) */}
-                                        {(isAdmin || tournament.created_by === userId) && (
+                                        {/* Delete Button (Admin Only) */}
+                                        {(isAdmin) && (
                                             <button
                                                 onClick={(e) => handleDelete(e, tournament.id)}
                                                 className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors z-10"

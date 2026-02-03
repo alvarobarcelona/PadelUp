@@ -126,6 +126,7 @@
   "profile": {
     "title": "Mein Profil",
     "admin_console": "Admin-Konsole",
+    "user_profile": "Benutzerprofil",
     "level": "Niveau",
     "full_stats": "Vollständige Statistiken",
     "win_rate": "Siegquote",

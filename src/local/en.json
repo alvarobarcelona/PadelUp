@@ -139,6 +139,7 @@
   },
   "profile": {
     "title": "My Profile",
+    "user_profile": "User Profile",
     "admin_console": "Admin Console",
     "level": "Level",
     "full_stats": "Full statistics",
