@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy, Info, MessageCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
@@ -46,6 +46,7 @@ interface MatchPreview {
 const Home = () => {
     const { alert, confirm } = useModal();
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
 
     // UI State
@@ -616,13 +617,12 @@ const Home = () => {
                     <span className="text-lg tracking-tight">{t('home.record_match')}</span>
                 </Link>
 
-                {/* Tournaments Link */}
                 <button
                     onClick={() => {
                         const isAdmin = profile?.is_admin;
 
                         if (isAdmin) {
-                            window.open("https://padel-tournaments-sepia.vercel.app", "_blank", "noopener,noreferrer");
+                            navigate('/tournaments');
                             return;
                         }
 
@@ -637,7 +637,7 @@ const Home = () => {
                             return;
                         }
 
-                        window.open("https://padel-tournaments-sepia.vercel.app", "_blank", "noopener,noreferrer");
+                        navigate('/tournaments');
                     }}
                     className="w-full group relative flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 py-4 font-bold text-white shadow-xl shadow-orange-500/20 active:scale-95 transition-all hover:from-amber-400 hover:to-orange-500 overflow-hidden"
                 >

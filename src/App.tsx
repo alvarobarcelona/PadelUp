@@ -1,9 +1,10 @@
-
-
+import Tournaments from './pages/Tournaments';
+import TournamentManager from './components/Tournaments/TournamentManager';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Rankings from './pages/Rankings';
+import TournamentRankings from './pages/TournamentRankings';
 import NewMatch from './pages/NewMatch';
 import History from './pages/History';
 import Profile from './pages/Profile';
@@ -66,6 +67,7 @@ function AppRoutes() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="rankings" element={<Rankings />} />
+          <Route path="tournament-rankings" element={<TournamentRankings />} />
           <Route path="new-match" element={<NewMatch />} />
           <Route path="history" element={<History />} />
           <Route path="players" element={<Players />} />
@@ -75,6 +77,8 @@ function AppRoutes() {
           <Route path="admin/suspicious" element={<SuspiciousUsers />} />
           <Route path="settings" element={<Settings />} />
           <Route path="levels" element={<Levels />} />
+          <Route path="tournaments" element={<Tournaments />} />
+          <Route path="tournaments/:id" element={<TournamentManager />} />
         </Route>
       </Routes>
       {/* <CookieBanner /> */}

@@ -1,8 +1,7 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
-import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save, Filter } from 'lucide-react';
+import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save, Filter, Trophy, ClipboardEdit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getMatchPointsFromHistory } from '../lib/elo';
 import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
@@ -16,7 +15,7 @@ import { useModal } from '../context/ModalContext';
 // const K_FACTOR = 32;
 
 const Admin = () => {
-    const { alert, confirm } = useModal();
+    const { alert, confirm, prompt } = useModal();
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState(false);
@@ -25,18 +24,21 @@ const Admin = () => {
     const [matches, setMatches] = useState<any[]>([]);
     const [clubs, setClubs] = useState<any[]>([]);
     const [logs, setLogs] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity' | 'maintenance'>('pending');
+    const [tournaments, setTournaments] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity' | 'maintenance' | 'tournaments'>('pending');
 
     // Pagination State
     const [playersPage, setPlayersPage] = useState(1);
     const [matchesPage, setMatchesPage] = useState(1);
     const [logsPage, setLogsPage] = useState(1);
+    const [tournamentsPage, setTournamentsPage] = useState(1);
     const [itemsPerPage] = useState(15);
 
     // Search State
     const [memberSearch, setMemberSearch] = useState('');
     const [matchSearch, setMatchSearch] = useState('');
     const [logSearch, setLogSearch] = useState('');
+    const [tournamentSearch, setTournamentSearch] = useState('');
 
     // Edit State
     const [editingPlayer, setEditingPlayer] = useState<any | null>(null);
@@ -47,6 +49,10 @@ const Admin = () => {
     const [newClubLocation, setNewClubLocation] = useState('');
     const [editingClub, setEditingClub] = useState<any | null>(null);
     const [editingMatch, setEditingMatch] = useState<any | null>(null);
+    const [editingTournamentResults, setEditingTournamentResults] = useState<any | null>(null);
+    const [tournamentMatches, setTournamentMatches] = useState<any[]>([]);
+    const [loadingMatches, setLoadingMatches] = useState(false);
+    const [editingTournament, setEditingTournament] = useState<any | null>(null);
 
     // Activity Filter State
     const [selectedActions, setSelectedActions] = useState<ActivityAction[]>([...ACTIVITY_ACTIONS]);
@@ -78,6 +84,32 @@ const Admin = () => {
         const { data: m } = await supabase.from('matches').select('*').order('created_at', { ascending: false });
         const { data: c } = await supabase.from('clubs').select('*').order('id', { ascending: true });
 
+        // Fetch Tournaments (simplified - we'll get creator info from profiles)
+        const { data: t, error: tournamentsError } = await supabase
+            .from('tournaments')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (tournamentsError) {
+            console.error('Error fetching tournaments:', tournamentsError);
+        }
+
+        // Enrich tournaments with creator info and participant counts
+        if (t && p) {
+            for (const tournament of t) {
+                // Find creator from profiles
+                const creator = p.find(profile => profile.id === tournament.created_by);
+                tournament.creator = creator ? { username: creator.username, avatar_url: creator.avatar_url } : null;
+
+                // Get participant count
+                const { count } = await supabase
+                    .from('tournament_participants')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('tournament_id', tournament.id);
+                tournament.participant_count = count || 0;
+            }
+        }
+
         // Fetch Logs (last 500)
         const { data: l } = await supabase
             .from('activity_logs')
@@ -96,6 +128,7 @@ const Admin = () => {
         if (p) setPlayers(p);
         if (m) setMatches(m);
         if (c) setClubs(c);
+        if (t) setTournaments(t);
         if (l) setLogs(l);
         setLoading(false);
     };
@@ -269,6 +302,198 @@ const Admin = () => {
         }
     };
 
+    const handleDeleteTournament = async (id: number) => {
+        const confirmed = await confirm({
+            title: t('admin.delete_tournament_title') || 'Delete Tournament',
+            message: t('admin.confirm_delete_tournament') || 'This will delete the tournament and all its data permanently. Are you sure?',
+            type: 'danger',
+            confirmText: 'Delete'
+        });
+        if (!confirmed) return;
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.from('tournaments').delete().eq('id', id);
+            if (error) throw error;
+
+            // LOG ADMIN DELETE TOURNAMENT
+            await logActivity('ADMIN_DELETE_TOURNAMENT', id.toString(), { tournament_id: id });
+
+            await alert({ title: 'Success', message: 'Tournament deleted', type: 'success' });
+            fetchData();
+        } catch (error: any) {
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateTournament = async () => {
+        if (!editingTournament || !editingTournament.name.trim()) return;
+        setLoading(true);
+        try {
+            const { error } = await supabase
+                .from('tournaments')
+                .update({
+                    name: editingTournament.name,
+                    mode: editingTournament.mode,
+                    status: editingTournament.status,
+                    visibility: editingTournament.visibility
+                })
+                .eq('id', editingTournament.id);
+
+            if (error) throw error;
+
+            // LOG ADMIN EDIT TOURNAMENT
+            await logActivity('ADMIN_EDIT_TOURNAMENT', editingTournament.id.toString(), {
+                changes: {
+                    name: editingTournament.name,
+                    mode: editingTournament.mode,
+                    status: editingTournament.status,
+                    visibility: editingTournament.visibility
+                }
+            });
+
+            await alert({ title: 'Success', message: t('admin.tournament_updated') || 'Tournament updated successfully!', type: 'success' });
+            setEditingTournament(null);
+            fetchData();
+        } catch (error: any) {
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchTournamentMatches = async (tournamentId: number) => {
+        setLoadingMatches(true);
+        try {
+            const { data, error } = await supabase
+                .from('tournament_matches')
+                .select('*')
+                .eq('tournament_id', tournamentId)
+                .order('round_number', { ascending: true })
+                .order('court_number', { ascending: true });
+
+            if (error) throw error;
+            setTournamentMatches(data || []);
+        } catch (error: any) {
+            console.error('Error fetching tournament matches:', error);
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoadingMatches(false);
+        }
+    };
+
+    const handleUpdateMatchResult = async (matchId: number, scoreTeam1: number, scoreTeam2: number, completed: boolean) => {
+        setLoading(true);
+        try {
+            // Update match scores
+            const { error: matchError } = await supabase
+                .from('tournament_matches')
+                .update({
+                    score_team1: scoreTeam1,
+                    score_team2: scoreTeam2,
+                    completed: completed
+                })
+                .eq('id', matchId);
+
+            if (matchError) throw matchError;
+
+            // Recalculate participant scores
+            if (editingTournamentResults) {
+                await recalculateTournamentScores(editingTournamentResults.id);
+            }
+
+            // Log admin action
+            await logActivity('ADMIN_EDIT_TOURNAMENT', editingTournamentResults?.id.toString(), {
+                action: 'edit_match_result',
+                match_id: matchId,
+                new_scores: { team1: scoreTeam1, team2: scoreTeam2, completed }
+            });
+
+            await alert({ title: 'Success', message: t('admin.match_updated') || 'Match result updated successfully!', type: 'success' });
+
+            // Refresh matches
+            await fetchTournamentMatches(editingTournamentResults.id);
+            await fetchData();
+        } catch (error: any) {
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const recalculateTournamentScores = async (tournamentId: number) => {
+        try {
+            // Fetch all matches for this tournament
+            const { data: matches } = await supabase
+                .from('tournament_matches')
+                .select('*')
+                .eq('tournament_id', tournamentId);
+
+            // Fetch all participants
+            const { data: participants } = await supabase
+                .from('tournament_participants')
+                .select('*')
+                .eq('tournament_id', tournamentId);
+
+            if (!matches || !participants) return;
+
+            // Reset all scores
+            const scoreMap = new Map<number, { score: number, matchesPlayed: number }>();
+            participants.forEach(p => {
+                scoreMap.set(p.id, { score: 0, matchesPlayed: 0 });
+            });
+
+            // Calculate scores from all completed matches
+            matches.forEach(match => {
+                if (!match.completed) return;
+
+                // Find participants in this match
+                const team1Players = participants.filter(p =>
+                    p.player_id === match.team1_p1_id || p.player_id === match.team1_p2_id
+                );
+                const team2Players = participants.filter(p =>
+                    p.player_id === match.team2_p1_id || p.player_id === match.team2_p2_id
+                );
+
+                // Add scores (both Americano and Mexicano use same scoring: points = score achieved)
+                team1Players.forEach(p => {
+                    const current = scoreMap.get(p.id);
+                    if (current) {
+                        scoreMap.set(p.id, {
+                            score: current.score + match.score_team1,
+                            matchesPlayed: current.matchesPlayed + 1
+                        });
+                    }
+                });
+
+                team2Players.forEach(p => {
+                    const current = scoreMap.get(p.id);
+                    if (current) {
+                        scoreMap.set(p.id, {
+                            score: current.score + match.score_team2,
+                            matchesPlayed: current.matchesPlayed + 1
+                        });
+                    }
+                });
+            });
+
+            // Update all participants
+            for (const [participantId, stats] of scoreMap.entries()) {
+                await supabase
+                    .from('tournament_participants')
+                    .update({
+                        score: stats.score,
+                        matches_played: stats.matchesPlayed
+                    })
+                    .eq('id', participantId);
+            }
+        } catch (error) {
+            console.error('Error recalculating scores:', error);
+        }
+    };
+
     const revertEloForMatch = async (match: any) => {
         // Use History Replay to find exact points exchanged
         const replayData = getMatchPointsFromHistory(matches, match.id);
@@ -347,6 +572,13 @@ const Admin = () => {
     const filteredMatches = matches.filter(m => {
         if (!matchSearch) return true;
         return m.id.toString().includes(matchSearch);
+    });
+
+    // Filter Tournaments
+    const filteredTournaments = tournaments.filter(t => {
+        if (!tournamentSearch) return true;
+        const search = normalizeForSearch(tournamentSearch);
+        return normalizeForSearch(t.name).includes(search) || t.id.toString().includes(search);
     });
 
 
@@ -572,6 +804,12 @@ const Admin = () => {
                         className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'matches' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                     >
                         {t('admin.tab_matches')} ({filteredMatches.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('tournaments')}
+                        className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'tournaments' ? 'text-white border-b-2 border-purple-500' : 'text-slate-500'}`}
+                    >
+                        {t('admin.tab_tournaments')} ({filteredTournaments.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('direct_match')}
@@ -1047,6 +1285,105 @@ const Admin = () => {
                     )
                 }
 
+                {/* TOURNAMENTS TAB */}
+                {activeTab === 'tournaments' && (
+                    <div className="space-y-4">
+                        {/* Search Bar */}
+                        <div className="relative">
+                            <Search className="absolute left-3 top-3 text-slate-500" size={18} />
+                            <input
+                                type="text"
+                                placeholder={t('admin.search_tournament_placeholder') || 'Search tournament by name or ID...'}
+                                className="w-full bg-slate-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-purple-500 border border-slate-700"
+                                value={tournamentSearch}
+                                onChange={(e) => setTournamentSearch(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            {paginate(
+                                tournaments.filter(t => {
+                                    if (!tournamentSearch) return true;
+                                    const search = tournamentSearch.toLowerCase();
+                                    return t.name.toLowerCase().includes(search) || t.id.toString().includes(search);
+                                }),
+                                tournamentsPage
+                            ).map(tournament => {
+                                const creatorName = tournament.creator?.username || t('common.deleted_user');
+                                const participantCount = tournament.participant_count || 0;
+
+                                return (
+                                    <div key={tournament.id} className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="font-bold text-white text-lg">{tournament.name}</p>
+                                                    <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">ID: {tournament.id}</span>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                                                    <span className="flex items-center gap-1">
+                                                        <Trophy size={14} />
+                                                        <span className="capitalize">{tournament.mode}</span>
+                                                    </span>
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${tournament.status === 'completed' ? 'bg-slate-700 text-slate-400' :
+                                                        tournament.status === 'playing' ? 'bg-green-500/20 text-green-400' :
+                                                            'bg-yellow-500/20 text-yellow-500'
+                                                        }`}>
+                                                        {tournament.status}
+                                                    </span>
+                                                    <span className="px-2 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-400">
+                                                        {tournament.visibility || 'public'}
+                                                    </span>
+                                                    <span>👥 {participantCount} players</span>
+                                                    <span>📍 Round {tournament.current_round_number}</span>
+                                                </div>
+                                                <div className="mt-2 text-xs text-slate-500">
+                                                    <p>Created by: <span className="text-slate-400">{creatorName}</span></p>
+                                                    <p>Date: {new Date(tournament.created_at).toLocaleString()}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10" onClick={() => setEditingTournament(tournament)}>
+                                                    <Pencil size={16} />
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="text-purple-400 hover:bg-purple-500/10"
+                                                    onClick={() => {
+                                                        setEditingTournamentResults(tournament);
+                                                        fetchTournamentMatches(tournament.id);
+                                                    }}
+                                                >
+                                                    <ClipboardEdit size={16} />
+                                                </Button>
+                                                <Button size="sm" variant="danger" onClick={() => handleDeleteTournament(tournament.id)}>
+                                                    <Trash2 size={16} />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {tournaments.filter(t => {
+                                if (!tournamentSearch) return true;
+                                const search = tournamentSearch.toLowerCase();
+                                return t.name.toLowerCase().includes(search) || t.id.toString().includes(search);
+                            }).length === 0 && <p className="text-center text-slate-500 py-4">{t('admin.no_tournaments') || 'No tournaments found.'}</p>}
+
+                            <PaginationControls
+                                currentPage={tournamentsPage}
+                                totalItems={tournaments.filter(t => {
+                                    if (!tournamentSearch) return true;
+                                    const search = tournamentSearch.toLowerCase();
+                                    return t.name.toLowerCase().includes(search) || t.id.toString().includes(search);
+                                }).length}
+                                onPageChange={setTournamentsPage}
+                            />
+                        </div>
+                    </div>
+                )}
+
 
             </div>
 
@@ -1266,6 +1603,185 @@ const Admin = () => {
                                     Save Changes
                                 </Button>
                             </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* EDIT TOURNAMENT MODAL */}
+            {
+                editingTournament && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                        <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative">
+                            <button onClick={() => setEditingTournament(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
+                                <X size={24} />
+                            </button>
+                            <h2 className="text-xl font-bold text-white mb-6">{t('admin.edit_tournament') || 'Edit Tournament'}</h2>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1">{t('admin.tournament_name') || 'Tournament Name'}</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                        value={editingTournament.name}
+                                        onChange={(e) => setEditingTournament({ ...editingTournament, name: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1">{t('admin.tournament_status') || 'Status'}</label>
+                                    <select
+                                        className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                        value={editingTournament.status}
+                                        onChange={(e) => setEditingTournament({ ...editingTournament, status: e.target.value })}
+                                    >
+                                        <option value="setup">Setup</option>
+                                        <option value="playing">Playing</option>
+                                        <option value="completed">Completed</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1">{t('admin.tournament_visibility') || 'Visibility'}</label>
+                                    <select
+                                        className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                        value={editingTournament.visibility || 'public'}
+                                        onChange={(e) => setEditingTournament({ ...editingTournament, visibility: e.target.value })}
+                                    >
+                                        <option value="public">Public</option>
+                                        <option value="friends">Friends</option>
+                                        <option value="private">Private</option>
+                                    </select>
+                                </div>
+                                <Button onClick={handleUpdateTournament} className="w-full mt-4 flex items-center justify-center gap-2">
+                                    <Save size={18} />
+                                    {t('admin.save_changes')}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* EDIT TOURNAMENT RESULTS MODAL */}
+            {
+                editingTournamentResults && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto scroll-hide">
+                        <div className="w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative my-8 scroll-hide">
+                            <button onClick={() => {
+                                setEditingTournamentResults(null);
+                                setTournamentMatches([]);
+                            }} className="absolute top-4 right-4 text-slate-500 hover:text-white z-10">
+                                <X size={24} />
+                            </button>
+
+                            <h2 className="text-xl font-bold text-white mb-2">
+                                {t('admin.edit_tournament_results') || 'Edit Tournament Results'}
+                            </h2>
+                            <p className="text-sm text-slate-400 mb-6">
+                                {editingTournamentResults.name} • <span className="capitalize">{editingTournamentResults.mode}</span>
+                            </p>
+
+                            {loadingMatches ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="animate-spin text-purple-500" size={32} />
+                                    <span className="ml-3 text-slate-400">{t('admin.loading_matches') || 'Loading matches...'}</span>
+                                </div>
+                            ) : tournamentMatches.length === 0 ? (
+                                <p className="text-center text-slate-500 py-12">{t('admin.no_matches_tournament') || 'No matches found for this tournament.'}</p>
+                            ) : (
+                                <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                                    {/* Group matches by round */}
+                                    {Array.from(new Set(tournamentMatches.map(m => m.round_number))).sort((a, b) => a - b).map(roundNum => {
+                                        const roundMatches = tournamentMatches.filter(m => m.round_number === roundNum);
+
+                                        return (
+                                            <div key={roundNum} className="space-y-3">
+                                                <h3 className="text-lg font-bold text-purple-400 sticky top-0 bg-slate-900 py-2 z-10">
+                                                    Round {roundNum}
+                                                </h3>
+
+                                                {roundMatches.map(match => (
+                                                    <div
+                                                        key={match.id}
+                                                        className={`bg-slate-800 p-4 rounded-lg border-2 ${match.completed ? 'border-green-500/30' : 'border-yellow-500/30'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">
+                                                                Court {match.court_number}
+                                                            </span>
+                                                            <span className={`text-xs px-2 py-1 rounded ${match.completed ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                                                                }`}>
+                                                                {match.completed ? '✓ Completed' : 'Incomplete'}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                            {/* Team 1 */}
+                                                            <div className="space-y-2">
+                                                                <p className="text-xs text-slate-500 font-bold">Team 1</p>
+                                                                <p className="text-sm text-white">
+                                                                    {match.team1_p1_text} & {match.team1_p2_text}
+                                                                </p>
+                                                                <div className="text-center text-2xl font-bold text-white bg-slate-700 rounded p-3">
+                                                                    {match.score_team1}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Team 2 */}
+                                                            <div className="space-y-2">
+                                                                <p className="text-xs text-slate-500 font-bold">Team 2</p>
+                                                                <p className="text-sm text-white">
+                                                                    {match.team2_p1_text} & {match.team2_p2_text}
+                                                                </p>
+                                                                <div className="text-center text-2xl font-bold text-white bg-slate-700 rounded p-3">
+                                                                    {match.score_team2}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <Button
+                                                            onClick={async () => {
+                                                                const newScore1 = await prompt({
+                                                                    title: t('admin.team_1_score_title'),
+                                                                    message: t('admin.enter_score_team_1', { players: `${match.team1_p1_text} & ${match.team1_p2_text}` }),
+                                                                    defaultValue: match.score_team1.toString(),
+                                                                    confirmText: t('admin.next'),
+                                                                    cancelText: t('common.cancel')
+                                                                });
+                                                                if (newScore1 === null) return;
+
+                                                                const newScore2 = await prompt({
+                                                                    title: t('admin.team_2_score_title'),
+                                                                    message: t('admin.enter_score_team_2', { players: `${match.team2_p1_text} & ${match.team2_p2_text}` }),
+                                                                    defaultValue: match.score_team2.toString(),
+                                                                    confirmText: t('admin.next'),
+                                                                    cancelText: t('common.cancel')
+                                                                });
+                                                                if (newScore2 === null) return;
+
+                                                                const completed = await confirm({
+                                                                    title: t('admin.mark_completed_title'),
+                                                                    message: t('admin.mark_completed_message'),
+                                                                    confirmText: t('admin.yes_complete'),
+                                                                    cancelText: t('admin.no')
+                                                                });
+
+                                                                await handleUpdateMatchResult(match.id, parseInt(newScore1) || 0, parseInt(newScore2) || 0, completed);
+                                                            }}
+                                                            className="w-full flex items-center justify-center gap-2"
+                                                            size="sm"
+                                                            variant="ghost"
+                                                        >
+                                                            <Pencil size={16} />
+                                                            Edit Scores
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )

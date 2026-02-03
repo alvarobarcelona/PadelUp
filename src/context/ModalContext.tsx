@@ -4,14 +4,17 @@ import { Modal } from '../components/ui/Modal';
 interface ModalOptions {
     title: string;
     message?: ReactNode;
-    type?: 'info' | 'success' | 'warning' | 'danger' | 'confirm';
+    type?: 'info' | 'success' | 'warning' | 'danger' | 'confirm' | 'prompt';
     confirmText?: string;
     cancelText?: string;
+    defaultValue?: string;
+    placeholder?: string;
 }
 
 interface ModalContextType {
     alert: (options: ModalOptions) => Promise<void>;
     confirm: (options: ModalOptions) => Promise<boolean>;
+    prompt: (options: ModalOptions) => Promise<string | null>;
 }
 
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
@@ -28,11 +31,12 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
     const [modalState, setModalState] = useState<{
         isOpen: boolean;
         options: ModalOptions;
-        resolve?: (value: boolean | void | PromiseLike<boolean | void>) => void;
+        resolve?: (value: boolean | void | string | null | PromiseLike<boolean | void | string | null>) => void;
     }>({
         isOpen: false,
         options: { title: '' },
     });
+    const [inputValue, setInputValue] = useState('');
 
     const close = useCallback(() => {
         setModalState(prev => ({ ...prev, isOpen: false }));
@@ -64,24 +68,46 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
         });
     }, [close]);
 
+    const prompt = useCallback((options: ModalOptions) => {
+        return new Promise<string | null>((resolve) => {
+            setInputValue(options.defaultValue || '');
+            setModalState({
+                isOpen: true,
+                options: { ...options, type: 'prompt' },
+                resolve: (value) => {
+                    close();
+                    resolve(value as string | null);
+                }
+            });
+        });
+    }, [close]);
+
     const handleConfirm = () => {
         if (modalState.resolve) {
-            modalState.resolve(true);
+            if (modalState.options.type === 'prompt') {
+                modalState.resolve(inputValue);
+            } else {
+                modalState.resolve(true);
+            }
         }
     };
 
     const handleCancel = () => {
         if (modalState.resolve) {
             // If it's an alert, we just resolve. If it's a confirm, we resolve false.
-            // But for simplicity in the resolve signature we made it generic.
-            modalState.resolve(false);
+            // If it's a prompt, we resolve null.
+            if (modalState.options.type === 'prompt') {
+                modalState.resolve(null);
+            } else {
+                modalState.resolve(false);
+            }
         } else {
             close();
         }
     };
 
     return (
-        <ModalContext.Provider value={{ alert, confirm }}>
+        <ModalContext.Provider value={{ alert, confirm, prompt }}>
             {children}
             <Modal
                 isOpen={modalState.isOpen}
@@ -92,7 +118,11 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
                 type={modalState.options.type}
                 confirmText={modalState.options.confirmText}
                 cancelText={modalState.options.cancelText}
+                inputValue={modalState.options.type === 'prompt' ? inputValue : undefined}
+                onInputChange={modalState.options.type === 'prompt' ? setInputValue : undefined}
+                placeholder={modalState.options.placeholder}
             />
         </ModalContext.Provider>
     );
 };
+

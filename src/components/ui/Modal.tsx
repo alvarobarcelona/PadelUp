@@ -9,11 +9,14 @@ interface ModalProps {
     title: string;
     description?: React.ReactNode;
     children?: React.ReactNode;
-    type?: 'info' | 'success' | 'warning' | 'danger' | 'confirm';
+    type?: 'info' | 'success' | 'warning' | 'danger' | 'confirm' | 'prompt';
     confirmText?: string;
     cancelText?: string;
     onConfirm?: () => void;
     isLoading?: boolean;
+    inputValue?: string;
+    onInputChange?: (value: string) => void;
+    placeholder?: string;
 }
 
 export const Modal = ({
@@ -26,7 +29,10 @@ export const Modal = ({
     confirmText = 'OK',
     cancelText = 'Cancel',
     onConfirm,
-    isLoading
+    isLoading,
+    inputValue,
+    onInputChange,
+    placeholder
 }: ModalProps) => {
     const [isVisible, setIsVisible] = useState(false);
 
@@ -104,6 +110,26 @@ export const Modal = ({
                     </div>
 
                     {children && <div className="mt-4">{children}</div>}
+
+                    {/* Input field for prompt type */}
+                    {type === 'prompt' && (
+                        <div className="mt-4">
+                            <input
+                                type="text"
+                                value={inputValue || ''}
+                                onChange={(e) => onInputChange?.(e.target.value)}
+                                placeholder={placeholder}
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        onConfirm?.();
+                                        if (!isLoading) onClose();
+                                    }
+                                }}
+                            />
+                        </div>
+                    )}
 
                     <div className="mt-8 flex justify-end gap-3">
                         {(onConfirm || type === 'confirm') && (
