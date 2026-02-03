@@ -44,6 +44,15 @@ body {
   scrollbar-width: none;
 }
 
+/* Hide scrollbar - alias for no-scrollbar */
+.scroll-hide::-webkit-scrollbar {
+  display: none;
+}
+.scroll-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Fire Effect for Winning Streak */
 @keyframes fire-glow {
   0%,
