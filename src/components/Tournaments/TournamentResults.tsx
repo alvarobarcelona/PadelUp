@@ -18,7 +18,9 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                 .from('tournament_participants')
                 .select('*')
                 .eq('tournament_id', tournament.id)
-                .order('score', { ascending: false }); // Highest score first
+                .order('score', { ascending: false }) // Highest score first
+                .order('matches_played', { ascending: true }) // Fewer matches = better efficiency
+                .order('display_name', { ascending: true }); // Alphabetical for consistency
             return data || [];
         }
     });
