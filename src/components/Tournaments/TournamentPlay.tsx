@@ -45,7 +45,10 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
             const { data: participantsData, error: partError } = await supabase
                 .from('tournament_participants')
                 .select('*')
-                .eq('tournament_id', tournament.id);
+                .eq('tournament_id', tournament.id)
+                .order('score', { ascending: false }) // Highest score first
+                .order('matches_played', { ascending: true }) // Fewer matches = better efficiency
+                .order('display_name', { ascending: true }); // Alphabetical for consistency
 
             if (partError) throw partError;
             if (!participantsData) return [];
@@ -306,6 +309,7 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
             queryClient.invalidateQueries({ queryKey: ['matches'] });
             queryClient.invalidateQueries({ queryKey: ['participants'] });
             queryClient.invalidateQueries({ queryKey: ['tournament'] });
+            queryClient.invalidateQueries({ queryKey: ['tournament-rankings'] });
         },
         onError: (err) => {
             alert({ title: t('error', { defaultValue: 'Error' }), message: err.message, type: 'danger' });
@@ -320,6 +324,9 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tournament'] });
+            queryClient.invalidateQueries({ queryKey: ['participants'] });
+            queryClient.invalidateQueries({ queryKey: ['matches'] });
+            queryClient.invalidateQueries({ queryKey: ['tournament-rankings'] });
         }
     });
 

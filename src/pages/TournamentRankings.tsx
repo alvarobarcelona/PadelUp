@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/ui/Avatar';
 import { cn } from '../components/ui/Button';
@@ -8,6 +8,7 @@ import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { PullToRefresh } from '../components/ui/PullToRefresh';
 
 interface TournamentPlayerStats {
     player_id: string;
@@ -26,6 +27,7 @@ const TournamentRankings = () => {
     const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     // Fetch Tournament Rankings
     const { data: rankings = [], isLoading: loading } = useQuery({
@@ -158,115 +160,121 @@ const TournamentRankings = () => {
         return matchesSearch;
     });
 
+    const handleRefresh = async () => {
+        await queryClient.refetchQueries({ queryKey: ['tournament-rankings'] });
+    };
+
     return (
-        <div className="space-y-6 animate-fade-in">
-            <header className="flex flex-col gap-4">
-                <div className="flex flex-col items-center">
-                    <h1 className="text-3xl font-bold text-white">{t('tournament_rankings.title') || 'Tournament Rankings'}</h1>
-                    <p className="text-slate-400">{t('tournament_rankings.subtitle') || 'Top players from only public tournaments'} </p>
-                    <button onClick={() => navigate('/tournaments')} className="text-white mt-2 flex justify-center gap-2 bg-orange-500 rounded-2xl px-4 py-2">{t('tournament_rankings.create_tournament') || 'Create Tournament'}<Plus size={24} /></button>
-                </div>
-
-                {/* Search Bar */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder={t('rankings.search_placeholder') || 'Search players...'}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
-                    />
-                </div>
-                <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1"><Crown size={12} className="text-yellow-500" />{t('tournament_rankings.wins') || 'Wins'}</span>
-                    <span>🏆{t('tournament_rankings.podiums') || 'Podiums'}</span>
-                    <span>🎯{t('tournament_rankings.tournaments_played') || 'Tournaments'}</span>
-                </div>
-            </header>
-
-            <div className="space-y-3">
-                {loading ? (
-                    <div className="text-center py-10 text-slate-500">
-                        <Loader2 className="animate-spin inline mr-2" /> {t('common.loading') || 'Loading...'}
+        <PullToRefresh onRefresh={handleRefresh}>
+            <div className="space-y-6 animate-fade-in">
+                <header className="flex flex-col gap-4">
+                    <div className="flex flex-col items-center">
+                        <h1 className="text-3xl font-bold text-white">{t('tournament_rankings.title') || 'Tournament Rankings'}</h1>
+                        <p className="text-slate-400">{t('tournament_rankings.subtitle') || 'Top players from only public tournaments'} </p>
+                        <button onClick={() => navigate('/tournaments')} className="text-white mt-2 flex justify-center gap-2 bg-orange-500 rounded-2xl px-4 py-2">{t('tournament_rankings.create_tournament') || 'Create Tournament'}<Plus size={24} /></button>
                     </div>
-                ) : filteredRankings.length === 0 ? (
-                    <div className="text-center py-10 text-slate-500">
-                        {searchQuery
-                            ? t('rankings.no_results') || 'No players found'
-                            : t('tournament_rankings.no_data') || 'No public tournament data yet'}
+
+                    {/* Search Bar */}
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder={t('rankings.search_placeholder') || 'Search players...'}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                        />
                     </div>
-                ) : (
-                    filteredRankings.map((player: TournamentPlayerStats, index: number) => {
-                        const rank = index + 1;
-                        const isTop = rank <= 3;
+                    <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-1"><Crown size={12} className="text-yellow-500" />{t('tournament_rankings.wins') || 'Wins'}</span>
+                        <span>🏆{t('tournament_rankings.podiums') || 'Podiums'}</span>
+                        <span>🎯{t('tournament_rankings.tournaments_played') || 'Tournaments'}</span>
+                    </div>
+                </header>
 
-                        return (
+                <div className="space-y-3">
+                    {loading ? (
+                        <div className="text-center py-10 text-slate-500">
+                            <Loader2 className="animate-spin inline mr-2" /> {t('common.loading') || 'Loading...'}
+                        </div>
+                    ) : filteredRankings.length === 0 ? (
+                        <div className="text-center py-10 text-slate-500">
+                            {searchQuery
+                                ? t('rankings.no_results') || 'No players found'
+                                : t('tournament_rankings.no_data') || 'No public tournament data yet'}
+                        </div>
+                    ) : (
+                        filteredRankings.map((player: TournamentPlayerStats, index: number) => {
+                            const rank = index + 1;
+                            const isTop = rank <= 3;
 
-                            
-                            <Link
-                            
-                                to={`/user/${player.player_id}`}
-                                key={player.player_id}
-                                className={cn(
-                                    "group relative flex items-center gap-4 rounded-xl border p-4 transition-all hover:scale-[1.02]",
-                                    isTop
-                                        ? "border-slate-700 bg-slate-800/80 shadow-lg"
-                                        : "border-transparent bg-slate-900/50 hover:bg-slate-800"
-                                )}
-                            >
-                                
-                            
-                                {/* Rank Badge or Medal */}
-                                <div className={cn(
-                                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-bold",
-                                    rank === 1 ? "bg-yellow-500/20 text-yellow-400" :
-                                        rank === 2 ? "bg-slate-400/20 text-slate-300" :
-                                            rank === 3 ? "bg-amber-700/20 text-amber-600" :
-                                                "bg-slate-800 text-slate-500"
-                                )}>
-                                    {isTop ? <Medal size={20} /> : rank}
-                                </div>
+                            return (
 
-                                {/* Player Info */}
-                                <Avatar src={player.avatar_url} fallback={player.username} />
 
-                                <div className="flex-1 min-w-0">
-                                    <h3 className={cn("truncate font-semibold", isTop ? "text-white" : "text-slate-300")}>
-                                        {player.username}
-                                    </h3>
-                                    <div className="flex gap-3 text-xs text-slate-500 mt-1">
-                                        <span className="flex items-center gap-1">
-                                            <Crown size={12} className="text-yellow-500" />
-                                            {player.total_wins} {t('tournament_rankings.win') || 'W'}
-                                        </span>
-                                        <span>🏆 {player.podium_finishes} {t('tournament_rankings.podium') || 'P'}</span>
-                                        <span>🎯 {player.tournaments_played} {t('tournament_rankings.tournament') || 'T'}</span>
+                                <Link
+
+                                    to={`/user/${player.player_id}`}
+                                    key={player.player_id}
+                                    className={cn(
+                                        "group relative flex items-center gap-4 rounded-xl border p-4 transition-all hover:scale-[1.02]",
+                                        isTop
+                                            ? "border-slate-700 bg-slate-800/80 shadow-lg"
+                                            : "border-transparent bg-slate-900/50 hover:bg-slate-800"
+                                    )}
+                                >
+
+
+                                    {/* Rank Badge or Medal */}
+                                    <div className={cn(
+                                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-bold",
+                                        rank === 1 ? "bg-yellow-500/20 text-yellow-400" :
+                                            rank === 2 ? "bg-slate-400/20 text-slate-300" :
+                                                rank === 3 ? "bg-amber-700/20 text-amber-600" :
+                                                    "bg-slate-800 text-slate-500"
+                                    )}>
+                                        {isTop ? <Medal size={20} /> : rank}
                                     </div>
-                                </div>
 
-                                {/* Total Points */}
-                                <div className="text-right">
-                                    <div className={cn("text-lg font-bold", isTop ? "text-green-400" : "text-white")}>
-                                        {player.total_points}
-                                    </div>
-                                    <div className="text-xs text-slate-500 font-medium">
-                                        {t('tournament_rankings.total_points') || 'points'}
-                                    </div>
-                                </div>
+                                    {/* Player Info */}
+                                    <Avatar src={player.avatar_url} fallback={player.username} />
 
-                                {/* Crown for #1 */}
-                                {rank === 1 && (
-                                    <div className="absolute -top-2 -right-2 rotate-12 text-yellow-400">
-                                        <Trophy size={24} fill="currentColor" />
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className={cn("truncate font-semibold", isTop ? "text-white" : "text-slate-300")}>
+                                            {player.username}
+                                        </h3>
+                                        <div className="flex gap-3 text-xs text-slate-500 mt-1">
+                                            <span className="flex items-center gap-1">
+                                                <Crown size={12} className="text-yellow-500" />
+                                                {player.total_wins} {t('tournament_rankings.win') || 'W'}
+                                            </span>
+                                            <span>🏆 {player.podium_finishes} {t('tournament_rankings.podium') || 'P'}</span>
+                                            <span>🎯 {player.tournaments_played} {t('tournament_rankings.tournament') || 'T'}</span>
+                                        </div>
                                     </div>
-                                )}
-                            </Link>
-                        );
-                    })
-                )}
+
+                                    {/* Total Points */}
+                                    <div className="text-right">
+                                        <div className={cn("text-lg font-bold", isTop ? "text-green-400" : "text-white")}>
+                                            {player.total_points}
+                                        </div>
+                                        <div className="text-xs text-slate-500 font-medium">
+                                            {t('tournament_rankings.total_points') || 'points'}
+                                        </div>
+                                    </div>
+
+                                    {/* Crown for #1 */}
+                                    {rank === 1 && (
+                                        <div className="absolute -top-2 -right-2 rotate-12 text-yellow-400">
+                                            <Trophy size={24} fill="currentColor" />
+                                        </div>
+                                    )}
+                                </Link>
+                            );
+                        })
+                    )}
+                </div>
             </div>
-        </div>
+        </PullToRefresh>
     );
 };
 
