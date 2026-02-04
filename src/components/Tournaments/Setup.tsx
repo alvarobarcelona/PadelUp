@@ -212,12 +212,13 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                             {friends.length > 0 ? (
                                 friends.map((f: any) => {
                                     const isAdded = participants.some((p: any) => p.player_id === f.id);
+                                    const isDisabled = isAdded || addParticipantMutation.isPending;
                                     return (
                                         <button
                                             key={f.id}
-                                            disabled={isAdded}
-                                            onClick={() => !isAdded && addParticipantMutation.mutate({ firstName: f.first_name, lastName: f.last_name, id: f.id })}
-                                            className={`w-full text-left px-4 py-2 flex items-center gap-2 ${isAdded ? 'opacity-50 cursor-not-allowed bg-slate-900' : 'hover:bg-slate-700'}`}
+                                            disabled={isDisabled}
+                                            onClick={() => !isDisabled && addParticipantMutation.mutate({ firstName: f.first_name, lastName: f.last_name, id: f.id })}
+                                            className={`w-full text-left px-4 py-2 flex items-center gap-2 ${isDisabled ? 'opacity-50 cursor-not-allowed bg-slate-900' : 'hover:bg-slate-700'}`}
                                         >
                                             <div className="w-6 h-6 rounded-full bg-slate-600 overflow-hidden">
                                                 {f.avatar_url && <img src={f.avatar_url} className="w-full h-full object-cover" />}
@@ -225,6 +226,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                                             <div className="flex flex-col">
                                                 <span className="text-sm text-slate-200">{f.first_name + ' ' + f.last_name}</span>
                                                 {isAdded && <span className="text-[10px] text-green-500">{t('tournaments.setup.already_added', { defaultValue: 'Already added' })}</span>}
+                                                {addParticipantMutation.isPending && !isAdded && <span className="text-[10px] text-yellow-500">{t('tournaments.setup.adding', { defaultValue: 'Adding...' })}</span>}
                                             </div>
                                         </button>
                                     );
@@ -249,14 +251,15 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                                 className="flex-1 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
                                 value={guestName}
                                 onChange={(e) => setGuestName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && guestName.trim() && addParticipantMutation.mutate({ firstName: guestName })}
+                                onKeyDown={(e) => e.key === 'Enter' && guestName.trim() && !addParticipantMutation.isPending && addParticipantMutation.mutate({ firstName: guestName })}
+                                disabled={addParticipantMutation.isPending}
                             />
                             <button
-                                disabled={!guestName.trim()}
+                                disabled={!guestName.trim() || addParticipantMutation.isPending}
                                 onClick={() => addParticipantMutation.mutate({ firstName: guestName })}
                                 className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-colors"
                             >
-                                {t('add', { defaultValue: 'Add' })}
+                                {addParticipantMutation.isPending ? t('tournaments.setup.adding', { defaultValue: 'Adding...' }) : t('add', { defaultValue: 'Add' })}
                             </button>
                         </div>
                     </div>
@@ -330,9 +333,11 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                         <button
                             onClick={() => setVisibility('friends')}
                             className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${visibility === 'friends' ? 'bg-purple-500/20 border-purple-500 text-purple-400' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}
+
                         >
                             <Users size={20} className="mb-1" />
                             <span className="text-xs font-bold">{t('tournaments.visibility.friends', { defaultValue: 'Friends' })}</span>
+                            <span className="text-xs text-slate-400">{t('tournaments.visibility.friends_desc', { defaultValue: 'Only friends can see it' })}</span>
                         </button>
                         <button
                             onClick={() => setVisibility('private')}
@@ -352,20 +357,22 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                         <label className="text-sm font-medium text-slate-300">{t('tournaments.setup.points_per_match', { defaultValue: 'Points per Match' })}</label>
                         <span className="text-sm font-bold text-green-400 bg-slate-900 border border-slate-700 px-2 py-0.5 rounded-lg">{pointsPerMatch} pts</span>
                     </div>
-                    <input
-                        type="range"
-                        min="16"
-                        max="48"
-                        step="4"
-                        value={pointsPerMatch}
-                        onChange={(e) => setPointsPerMatch(Number(e.target.value))}
-                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500"
-                    />
-                    <div className="flex justify-between text-[10px] text-slate-500 font-mono font-medium">
-                        <span>16</span>
-                        <span>24 ({t('tournaments.setup.standard', { defaultValue: 'Standard' })})</span>
-                        <span className='mr-28'>32 ({t('tournaments.setup.long', { defaultValue: 'Long' })})</span>
-                        <span>48</span>
+                    <div className="relative">
+                        <input
+                            type="range"
+                            min="16"
+                            max="48"
+                            step="4"
+                            value={pointsPerMatch}
+                            onChange={(e) => setPointsPerMatch(Number(e.target.value))}
+                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500"
+                        />
+                        <div className="relative text-[10px] text-slate-500 font-mono font-medium mt-2 h-6">
+                            <span className="absolute left-0">16</span>
+                            <span className="absolute left-[25%] -translate-x-1/2 text-center">24<br />({t('tournaments.setup.standard', { defaultValue: 'Standard' })})</span>
+                            <span className="absolute left-[50%] -translate-x-1/2 text-center">32<br />({t('tournaments.setup.long', { defaultValue: 'Long' })})</span>
+                            <span className="absolute right-0">48</span>
+                        </div>
                     </div>
                 </div>
 

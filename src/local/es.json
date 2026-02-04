@@ -424,7 +424,8 @@
       "private": "Privado",
       "private_desc": "Solo tú puedes verlo",
       "public_desc": "Cuenta para el ranking",
-      "public_note": "IMPORTANTE: Solo los torneos públicos contarán para el ranking. Al finalizar quedaran pendientes de confirmación por parte de un administrador."
+      "public_note": "IMPORTANTE: Solo los torneos públicos contarán para el ranking. Al finalizar quedaran pendientes de confirmación por parte de un administrador.",
+      "friends_desc": "Solo amigos pueden verlo"
     },
     "modes": {
       "americano": "Americano",
@@ -441,6 +442,7 @@
       "search_users": "Buscar usuarios de PadelUp...",
       "no_users": "No se encontraron usuarios",
       "already_added": "Ya agregado",
+      "adding": "Agregando...",
       "add_players": "Agrega jugadores para comenzar",
       "settings": "Configuración",
       "tournament_mode": "Modo de Torneo",

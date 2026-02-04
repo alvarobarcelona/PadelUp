@@ -413,7 +413,8 @@
       "private": "Private",
       "private_desc": "Only you can see it",
       "public_desc": "Counts for ranking",
-      "public_note": "IMPORTANT: Only public tournaments will count towards the ranking. At the end, they will remain pending confirmation by an administrator."
+      "public_note": "IMPORTANT: Only public tournaments will count towards the ranking. At the end, they will remain pending confirmation by an administrator.",
+      "friends_desc": "Only friends can see it"
     },
     "modes": {
       "americano": "Americano",
@@ -430,6 +431,7 @@
       "search_users": "Search PadelUp users...",
       "no_users": "No users found",
       "already_added": "Already added",
+      "adding": "Adding...",
       "add_players": "Add players to start",
       "settings": "Settings",
       "tournament_mode": "Tournament Mode",

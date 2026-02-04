@@ -483,7 +483,7 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
 
                                             {/* Padel Ball Indicator */}
                                             <div
-                                                className="absolute top-1/2 -translate-y-1/2 transition-all duration-300 pointer-events-none z-20 text-2xl drop-shadow-lg"
+                                                className="absolute top-1/2 -translate-y-1/2 transition-all duration-300 pointer-events-none z-10 text-2xl drop-shadow-lg"
                                                 style={{ left: `calc(${ballPosition}% - 12px)` }}
                                             >
                                                 <PiTennisBallFill className='text-yellow-500' size={28} />

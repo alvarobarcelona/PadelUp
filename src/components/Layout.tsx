@@ -127,7 +127,10 @@ const Layout = () => {
             <ChatButton onClick={() => setIsChatOpen(true)} unreadCount={unreadCount} />
             <ChatDrawer
                 isOpen={isChatOpen}
-                onClose={() => setIsChatOpen(false)}
+                onClose={() => {
+                    setIsChatOpen(false);
+                    setInitialChatMessage(undefined);
+                }}
                 activeUserId={chatActiveUser}
                 onActiveUserChange={setChatActiveUser}
                 initialMessage={initialChatMessage}

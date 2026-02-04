@@ -170,7 +170,7 @@ export default function TournamentManager() {
 
     return (
         <div className="pb-20 animate-fade-in relative min-h-screen">
-            <header className="mb-6 sticky top-0 bg-slate-900/90 backdrop-blur-md z-10 py-4 -mx-4 px-4 border-b border-slate-800/50">
+            <header className="mb-6 sticky top-0 bg-slate-900/90 backdrop-blur-md z-20 py-4 -mx-4 px-4 border-b border-slate-800/50">
                 <div className="flex items-center gap-3">
 
                     <div><button onClick={() => navigate(-1)}><ChevronLeft size={20} className="text-white" /></button></div>
@@ -183,7 +183,7 @@ export default function TournamentManager() {
                             {displayMode} {tournament.status === 'setup' && `• ${modeDescription}`} {tournament.status !== 'setup' && `• ${t(`tournaments.status.${tournament.status}`, { defaultValue: tournament.status })}`}
                         </p>
                     </div>
-                    {tournament.status === 'playing' && <span className="ml-auto text-xs text-slate-400">{t('tournaments.created_by')}: {tournament.creator_username}</span>}
+                    {tournament.status === 'playing' && <span className="ml-auto text-xs text-slate-400">{t('tournaments.created_by')} {tournament.creator_username}</span>}
                 </div>
             </header>
 

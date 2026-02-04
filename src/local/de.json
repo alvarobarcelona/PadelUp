@@ -407,7 +407,8 @@
       "private": "Privat",
       "private_desc": "Nur du kannst es sehen",
       "public_desc": "Zählt für Rangliste",
-      "public_note": "WICHTIG: Nur öffentliche Turniere zählen für die Rangliste. Am Ende bleiben sie zur Bestätigung durch einen Administrator ausstehend."
+      "public_note": "WICHTIG: Nur öffentliche Turniere zählen für die Rangliste. Am Ende bleiben sie zur Bestätigung durch einen Administrator ausstehend.",
+      "friends_desc": "Nur Freunde können es sehen"
     },
     "results_validation": {
       "winner": "Turniersieger",
@@ -433,6 +434,7 @@
       "search_users": "PadelUp Benutzer suchen...",
       "no_users": "Keine Benutzer gefunden",
       "already_added": "Bereits hinzugefügt",
+      "adding": "Wird hinzugefügt...",
       "add_players": "Füge Spieler hinzu, um zu starten",
       "settings": "Einstellungen",
       "tournament_mode": "Turniermodus",
