@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Check, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, RefreshCw, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useModal } from '../../context/ModalContext';
 import { generateAmericanoRound, generateMexicanoRound, type TournamentParticipant } from '../../lib/tournament-logic';
 import { PiTennisBallFill } from "react-icons/pi";
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 type TournamentPlayProps = {
     tournament: any;
@@ -13,10 +14,23 @@ type TournamentPlayProps = {
 
 export default function TournamentPlay({ tournament }: TournamentPlayProps) {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { alert, confirm } = useModal();
     const [viewRound, setViewRound] = useState(tournament.current_round_number);
     const [scores, setScores] = useState<Record<number, { s1: number, s2: number }>>({});
+    const [isCreator, setIsCreator] = useState(false);
+
+    // Check if current user is the creator
+    useEffect(() => {
+        const checkCreator = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && tournament.created_by === user.id) {
+                setIsCreator(true);
+            }
+        };
+        checkCreator();
+    }, [tournament.created_by]);
 
     // Update viewRound if tournament updates (e.g. next round generated)
     useEffect(() => {
@@ -319,6 +333,46 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
         },
     });
 
+    // Delete tournament mutation (for creator to cancel friends tournaments)
+    const deleteTournamentMutation = useMutation({
+        mutationFn: async () => {
+            const { error } = await supabase
+                .from('tournaments')
+                .delete()
+                .eq('id', tournament.id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+            alert({
+                title: t('tournaments.play.tournament_deleted_title', { defaultValue: 'Tournament Deleted' }),
+                message: t('tournaments.play.tournament_deleted_message', { defaultValue: 'The tournament has been cancelled and deleted.' }),
+                type: 'success'
+            });
+            navigate('/tournaments');
+        },
+        onError: (err: any) => {
+            alert({
+                title: t('error', { defaultValue: 'Error' }),
+                message: err.message,
+                type: 'danger'
+            });
+        }
+    });
+
+    const handleDeleteTournament = async () => {
+        const confirmed = await confirm({
+            title: t('tournaments.play.delete_confirm_title', { defaultValue: 'Cancel Tournament?' }),
+            message: t('tournaments.play.delete_confirm_message', { defaultValue: 'Are you sure you want to cancel and delete this tournament? This action cannot be undone.' }),
+            confirmText: t('tournaments.play.delete_yes', { defaultValue: 'Yes, Delete' }),
+            cancelText: t('cancel', { defaultValue: 'Cancel' })
+        });
+
+        if (confirmed) {
+            deleteTournamentMutation.mutate();
+        }
+    };
+
     if (matchesLoading) return <div>{t('tournaments.play.loading_matches', { defaultValue: 'Loading matches...' })}</div>;
 
     // Determine if we can proceed
@@ -526,6 +580,21 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
                             {t('tournaments.play.finish_tournament', { defaultValue: 'Finish Tournament' })}
                         </button>
                     </>
+                )}
+
+                {/* Delete Tournament - Only for creator in friends tournaments */}
+                {isCreator && tournament.visibility === 'friends' && tournament.status === 'playing' && (
+                    <button
+                        onClick={handleDeleteTournament}
+                        disabled={deleteTournamentMutation.isPending}
+                        className="w-full py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 font-bold rounded-xl transition-colors border border-red-600/30 flex items-center justify-center gap-2"
+                    >
+                        <Trash2 size={18} />
+                        {deleteTournamentMutation.isPending
+                            ? t('tournaments.play.deleting', { defaultValue: 'Deleting...' })
+                            : t('tournaments.play.cancel_tournament', { defaultValue: 'Cancel Tournament' })
+                        }
+                    </button>
                 )}
             </div>
         </div >

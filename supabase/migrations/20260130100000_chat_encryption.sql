@@ -12,16 +12,25 @@ ALTER TABLE messages ALTER COLUMN content DROP NOT NULL;
 -- NOTE: In a production enterprise env, this should be a secret or fetched from Vault.
 -- We wrap this in a function so we can change the method later if needed.
 CREATE OR REPLACE FUNCTION get_chat_encryption_key() 
-RETURNS text AS $$
+RETURNS text 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
     -- Esta es tu Master Key generada. GUÁRDALA EN UN LUGAR SEGURO si alguna vez necesitas recuperarla.
     RETURN 'x8zP!k9L#m2N$v4Q@j5R&t7W*y1B^c3D'; 
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$;
 
 -- Helper: Safe Decrypt (Returns fallback text if key is wrong/data corrupt)
 -- UPDATED: Uses Base64 decoding for robustness
 CREATE OR REPLACE FUNCTION safe_decrypt(encrypted_data_base64 text, key text) 
-RETURNS text AS $$
+RETURNS text 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     IF encrypted_data_base64 IS NULL THEN
         RETURN NULL;
@@ -31,7 +40,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN '[Mensaje encriptado/Error clave]'; -- Fallback text
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$;
 
 
 -- 3. Migration (Optional/Dev): Encrypt existing messages
@@ -47,6 +56,7 @@ CREATE OR REPLACE FUNCTION send_chat_message(
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     current_user_id uuid;
@@ -69,7 +79,7 @@ BEGIN
         'chat' -- Default type
     );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$;
 
 
 -- 5. RPC to Fetch Messages (Decrypted Select)
@@ -90,6 +100,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     current_user_id uuid;
@@ -122,7 +133,7 @@ BEGIN
     ORDER BY m.created_at ASC;
 
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$;
 
 -- 6. RPC to Fetch Single Message (For Realtime updates)
 -- UPDATED: Returns 'type' column
@@ -140,6 +151,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     current_user_id uuid;
@@ -161,7 +173,7 @@ BEGIN
     WHERE m.id = message_id
     AND (m.sender_id = current_user_id OR m.receiver_id = current_user_id); -- Security check
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$;
 
 -- 7. RPC to Fetch Conversations (Decrypted Last Message + Profile)
 CREATE OR REPLACE FUNCTION get_my_conversations()
