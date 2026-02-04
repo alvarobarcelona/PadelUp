@@ -18,7 +18,7 @@ const ResultsSnapshot = ({ tournament, winner, participants, rounds }: any) => {
     return (
         <div
             id="results-snapshot"
-            className="absolute top-0 left-0 w-[600px] h-auto min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 pointer-events-none opacity-0 -z-50"
+            className="absolute top-0 left-0 w-[600px] h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 pointer-events-none opacity-0 -z-50"
             style={{ fontFamily: 'Inter, sans-serif' }}
         >
             {/* Header */}
@@ -424,7 +424,6 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                                             el.style.top = '0';
                                             el.style.left = '0';
                                             el.style.height = 'auto'; // Force auto height to fit content
-                                            el.style.minHeight = '100vh';
                                         }
                                     }
                                 }).then(canvas => {
