@@ -173,7 +173,7 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                 <div className="flex justify-between items-start mb-4">
                     <div>
                         <h2 className="text-2xl font-bold text-white mb-1">{tournament.name}</h2>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${tournament.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
                                 tournament.status === 'pending_verification' ? 'bg-yellow-500/20 text-yellow-400' :
                                     tournament.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
@@ -183,6 +183,13 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                             </span>
                             <span className="text-xs text-slate-500">•</span>
                             <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">{tournament.mode}</span>
+                            <span className="text-xs text-slate-500">•</span>
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${tournament.visibility === 'public' ? 'bg-indigo-500/20 text-indigo-400' :
+                                    tournament.visibility === 'friends' ? 'bg-purple-500/20 text-purple-400' :
+                                        'bg-slate-500/20 text-slate-400'
+                                }`}>
+                                {t(`tournaments.visibility.${tournament.visibility}`, { defaultValue: tournament.visibility })}
+                            </span>
                         </div>
                     </div>
 

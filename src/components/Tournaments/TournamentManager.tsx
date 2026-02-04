@@ -20,13 +20,22 @@ export default function TournamentManager() {
     const { data: tournament, isLoading } = useQuery({
         queryKey: ['tournament', id],
         queryFn: async () => {
-            const { data, error } = await supabase
+            const { data: tournamentData, error } = await supabase
                 .from('tournaments')
                 .select('*')
                 .eq('id', id)
                 .single();
             if (error) throw error;
-            return data;
+            // Fetch creator profile
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('username')
+                .eq('id', tournamentData.created_by)
+                .single();
+            return {
+                ...tournamentData,
+                creator_username: profile?.username
+            };
         },
         enabled: !!id
     });
@@ -59,7 +68,7 @@ export default function TournamentManager() {
                             {displayMode} {tournament.status === 'setup' && `• ${modeDescription}`} {tournament.status !== 'setup' && `• ${t(`tournaments.status.${tournament.status}`, { defaultValue: tournament.status })}`}
                         </p>
                     </div>
-
+                    <span className="ml-auto text-xs text-slate-400">{t('tournaments.created_by')}: {tournament.creator_username}</span>
                 </div>
             </header>
 

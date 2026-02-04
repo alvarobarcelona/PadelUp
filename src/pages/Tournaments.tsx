@@ -40,32 +40,49 @@ export default function Tournaments() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return [];
 
+            // Check if user is admin
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('is_admin')
+                .eq('id', user.id)
+                .single();
+
+            const userIsAdmin = profile?.is_admin || false;
+
             let query = supabase
                 .from('tournaments')
                 .select('*, tournament_participants(player_id)')
                 .neq('status', 'rejected');
 
-            // Filter by Tab
+            // Filter by Tab (admins see everything, regular users see filtered)
             if (activeTab === 'public') {
                 query = query.eq('visibility', 'public');
             }
             else if (activeTab === 'friends') {
-                // Fetch friends list first
-                const { data: friendsData } = await getFriends(user.id);
-                // Create a mutable copy or a new array. getFriends returns data or null.
-                // We want to include ourselves so we see our own "Friends Only" tournaments.
-                const friendIds = friendsData ? [...friendsData] : [];
-                friendIds.push(user.id);
+                if (!userIsAdmin) {
+                    // Regular users: only friends' tournaments
+                    const { data: friendsData } = await getFriends(user.id);
+                    const friendIds = friendsData ? [...friendsData] : [];
+                    friendIds.push(user.id);
 
-                query = query
-                    .eq('visibility', 'friends')
-                    .in('created_by', friendIds);
+                    query = query
+                        .eq('visibility', 'friends')
+                        .in('created_by', friendIds);
+                } else {
+                    // Admins: all friends tournaments
+                    query = query.eq('visibility', 'friends');
+                }
             }
             else if (activeTab === 'private') {
-                // Private: Only show my own
-                query = query
-                    .eq('visibility', 'private')
-                    .eq('created_by', user.id);
+                if (!userIsAdmin) {
+                    // Regular users: only their own private tournaments
+                    query = query
+                        .eq('visibility', 'private')
+                        .eq('created_by', user.id);
+                } else {
+                    // Admins: all private tournaments
+                    query = query.eq('visibility', 'private');
+                }
             }
 
             const { data } = await query.order('created_at', { ascending: false });
