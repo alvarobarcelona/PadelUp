@@ -18,7 +18,7 @@ const ResultsSnapshot = ({ tournament, winner, participants, rounds }: any) => {
     return (
         <div
             id="results-snapshot"
-            className="absolute top-0 left-0 w-[600px] h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 pointer-events-none opacity-0 -z-50"
+            className="absolute top-0 left-0 w-[1080px] h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 pointer-events-none opacity-0 -z-50"
             style={{ fontFamily: 'Inter, sans-serif' }}
         >
             {/* Header */}
@@ -47,64 +47,67 @@ const ResultsSnapshot = ({ tournament, winner, participants, rounds }: any) => {
                 </div>
             )}
 
-            {/* Rankings */}
-            <div className="mb-8">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Final Leaderboard</h3>
-                <div className="space-y-2">
-                    {participants.slice(0, 8).map((p: any, i: number) => (
-                        <div key={i} className={`flex items-center justify-between p-3 rounded-lg ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' :
-                            i === 1 ? 'bg-slate-700/50' :
-                                i === 2 ? 'bg-slate-800/50' : 'bg-transparent border-b border-slate-800'
-                            }`}>
-                            <div className="flex items-center gap-3 ">
-                                <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm pb-3 ${i === 0 ? 'bg-yellow-500 text-black' :
-                                    i === 1 ? 'bg-slate-700 text-black' :
-                                        i === 2 ? 'bg-slate-800 text-white' : 'bg-slate-800 text-slate-400'
-                                    }`}>
-                                    {i === 0 ? '🥇 ' :
-                                        i === 1 ? '🥈' :
-                                            i === 2 ? '🥉' :
-                                                (i + 1)}
+            <div className="grid grid-cols-2 gap-8 items-start">
+                {/* Rankings */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Final Leaderboard</h3>
+                    <div className="space-y-2">
+                        {participants.slice(0, 8).map((p: any, i: number) => (
+                            <div key={i} className={`flex items-center justify-between p-3 rounded-lg ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' :
+                                i === 1 ? 'bg-slate-700/50' :
+                                    i === 2 ? 'bg-slate-800/50' : 'bg-transparent border-b border-slate-800'
+                                }`}>
+                                <div className="flex items-center gap-3 ">
+                                    <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm pb-3 ${i === 0 ? 'bg-yellow-500 text-black' :
+                                        i === 1 ? 'bg-slate-700 text-black' :
+                                            i === 2 ? 'bg-slate-800 text-white' : 'bg-slate-800 text-slate-400'
+                                        }`}>
+                                        {i === 0 ? '🥇 ' :
+                                            i === 1 ? '🥈' :
+                                                i === 2 ? '🥉' :
+                                                    (i + 1)}
+                                    </div>
+                                    <span className={`font-medium ${i === 0 ? 'text-yellow-100' : 'text-slate-200'}`}>
+                                        {p.display_name}
+                                    </span>
                                 </div>
-                                <span className={`font-medium ${i === 0 ? 'text-yellow-100' : 'text-slate-200'}`}>
-                                    {p.display_name}
-                                </span>
-                            </div>
-                            <span className="font-mono font-bold text-slate-400">{p.score} pts</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            {/* Match History */}
-            {rounds && Object.keys(rounds).length > 0 && (
-                <div className="mb-8">
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Match History</h3>
-                    <div className="space-y-6">
-                        {Object.entries(rounds).map(([roundNum, roundMatches]: [string, any]) => (
-                            <div key={roundNum}>
-                                <div className="inline-block px-3 py-1 bg-slate-800 rounded mb-2">
-                                    <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">Round {roundNum}</span>
-                                </div>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {roundMatches.map((m: any, idx: number) => (
-                                        <div key={idx} className="bg-slate-800/40 p-3 rounded flex justify-between items-center text-sm border border-slate-700/50">
-                                            <div className={`flex-1 text-right ${Number(m.score_team1) > Number(m.score_team2) ? 'text-green-400 font-bold' : 'text-slate-300'}`}>
-                                                {m.team1_p1_text} & {m.team1_p2_text}
-                                            </div>
-                                            <div className="px-3 font-mono font-bold text-white whitespace-nowrap">
-                                                {m.score_team1} - {m.score_team2}
-                                            </div>
-                                            <div className={`flex-1 text-left ${Number(m.score_team2) > Number(m.score_team1) ? 'text-green-400 font-bold' : 'text-slate-300'}`}>
-                                                {m.team2_p1_text} & {m.team2_p2_text}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                <span className="font-mono font-bold text-slate-400">{p.score} pts</span>
                             </div>
                         ))}
                     </div>
                 </div>
-            )}
+
+                {/* Match History */}
+                {rounds && Object.keys(rounds).length > 0 && (
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Match History</h3>
+                        <div className="space-y-6">
+                            {Object.entries(rounds).map(([roundNum, roundMatches]: [string, any]) => (
+                                <div key={roundNum}>
+                                    <div className="inline-block px-3 py-1 bg-slate-800 rounded mb-2">
+                                        <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">Round {roundNum}</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {roundMatches.map((m: any, idx: number) => (
+                                            <div key={idx} className="bg-slate-800/40 p-3 rounded flex justify-between items-center text-sm border border-slate-700/50">
+                                                <div className={`flex-1 text-right ${Number(m.score_team1) > Number(m.score_team2) ? 'text-green-400 font-bold' : 'text-slate-300'}`}>
+                                                    {m.team1_p1_text} & {m.team1_p2_text}
+                                                </div>
+                                                <div className="px-3 font-mono font-bold text-white whitespace-nowrap">
+                                                    {m.score_team1} - {m.score_team2}
+                                                </div>
+                                                <div className={`flex-1 text-left ${Number(m.score_team2) > Number(m.score_team1) ? 'text-green-400 font-bold' : 'text-slate-300'}`}>
+                                                    {m.team2_p1_text} & {m.team2_p2_text}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Footer */}
             <div className="mt-8 pt-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-500">
