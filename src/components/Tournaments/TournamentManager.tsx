@@ -47,13 +47,35 @@ export default function TournamentManager() {
         const checkAccess = async () => {
             const { data: { user } } = await supabase.auth.getUser();
 
-            // 1. Not logged in
+            // 1. Check if tournament is in setup status - only creator and admin can access
+            if (tournament.status === 'setup') {
+                if (!user) {
+                    setHasAccess(false);
+                    return;
+                }
+
+                // Check if user is admin
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('is_admin')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile?.is_admin || tournament.created_by === user.id) {
+                    setHasAccess(true);
+                } else {
+                    setHasAccess(false);
+                }
+                return;
+            }
+
+            // 2. Not logged in
             if (!user) {
                 setHasAccess(tournament.visibility === 'public');
                 return;
             }
 
-            // 2. Admin (Global access)
+            // 3. Admin (Global access)
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('is_admin')
@@ -65,13 +87,13 @@ export default function TournamentManager() {
                 return;
             }
 
-            // 3. Creator (Owner access)
+            // 4. Creator (Owner access)
             if (tournament.created_by === user.id) {
                 setHasAccess(true);
                 return;
             }
 
-            // 4. Visibility Rules
+            // 5. Visibility Rules
             if (tournament.visibility === 'public') {
                 setHasAccess(true);
             } else if (tournament.visibility === 'friends') {
