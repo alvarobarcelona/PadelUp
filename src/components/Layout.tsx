@@ -23,11 +23,18 @@ const Layout = () => {
     const [verifying, setVerifying] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
+    const [initialChatMessage, setInitialChatMessage] = useState<string | undefined>(undefined);
     const [showTermsModal, setShowTermsModal] = useState(false);
 
     useEffect(() => {
-        const handleOpenChat = (e: CustomEvent<string>) => {
-            setChatActiveUser(e.detail);
+        const handleOpenChat = (e: CustomEvent<string | { userId: string, initialMessage?: string }>) => {
+            if (typeof e.detail === 'string') {
+                setChatActiveUser(e.detail);
+                setInitialChatMessage(undefined);
+            } else {
+                setChatActiveUser(e.detail.userId);
+                setInitialChatMessage(e.detail.initialMessage);
+            }
             setIsChatOpen(true);
         };
 
@@ -123,6 +130,7 @@ const Layout = () => {
                 onClose={() => setIsChatOpen(false)}
                 activeUserId={chatActiveUser}
                 onActiveUserChange={setChatActiveUser}
+                initialMessage={initialChatMessage}
             />
 
             {/* Bottom Navigation */}

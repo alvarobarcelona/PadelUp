@@ -19,34 +19,27 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Helper: Safe Decrypt (Returns fallback text if key is wrong/data corrupt)
-CREATE OR REPLACE FUNCTION safe_decrypt(encrypted_data bytea, key text) 
+-- UPDATED: Uses Base64 decoding for robustness
+CREATE OR REPLACE FUNCTION safe_decrypt(encrypted_data_base64 text, key text) 
 RETURNS text AS $$
 BEGIN
-    RETURN extensions.pgp_sym_decrypt(encrypted_data, key)::text;
+    IF encrypted_data_base64 IS NULL THEN
+        RETURN NULL;
+    END IF;
+    -- Decode Base64 -> Bytea, then Decrypt
+    RETURN extensions.pgp_sym_decrypt(decode(encrypted_data_base64, 'base64'), key)::text;
 EXCEPTION WHEN OTHERS THEN
     RETURN '[Mensaje encriptado/Error clave]'; -- Fallback text
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 
--- 3. Migration Function: Encrypt existing messages
-DO $$
-DECLARE
-    r RECORD;
-    key text;
-BEGIN
-    key := get_chat_encryption_key(); 
-    
-    -- Only update rows where content is present and content_encrypted is null
-    FOR r IN SELECT id, content FROM messages WHERE content IS NOT NULL AND content_encrypted IS NULL LOOP
-        UPDATE messages 
-        SET content_encrypted = extensions.pgp_sym_encrypt(r.content, key, 'compress-algo=1, cipher-algo=aes256')
-        WHERE id = r.id;
-    END LOOP;
-END $$;
+-- 3. Migration (Optional/Dev): Encrypt existing messages
+-- (Skipped for fresh installs or handled by manual scripts if needed, avoiding complex migration logic here)
 
 
 -- 4. RPC to Send Message (Encrypted Insert)
+-- UPDATED: Uses Base64 encoding + Explicit columns
 CREATE OR REPLACE FUNCTION send_chat_message(
     receiver_id uuid,
     content text
@@ -66,18 +59,21 @@ BEGIN
         RAISE EXCEPTION 'Not authenticated';
     END IF;
 
-    INSERT INTO messages (sender_id, receiver_id, content_encrypted, content)
+    -- EXPLICITLY insert into content_encrypted with Base64 and set content to NULL
+    INSERT INTO messages (sender_id, receiver_id, content, content_encrypted, type)
     VALUES (
         current_user_id, 
         receiver_id, 
-        extensions.pgp_sym_encrypt(content, encryption_key, 'compress-algo=1, cipher-algo=aes256'),
-        NULL -- We insert NULL into the plain text column mostly, or we could leave it out if allowed
+        NULL, -- content is NULL
+        encode(extensions.pgp_sym_encrypt(content, encryption_key, 'compress-algo=1, cipher-algo=aes256'), 'base64'),
+        'chat' -- Default type
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 
 -- 5. RPC to Fetch Messages (Decrypted Select)
+-- UPDATED: Returns 'type' column
 CREATE OR REPLACE FUNCTION get_chat_messages(
     other_user_id uuid
 )
@@ -89,7 +85,8 @@ RETURNS TABLE (
     content text,
     is_read boolean,
     deleted_by_sender boolean,
-    deleted_by_receiver boolean
+    deleted_by_receiver boolean,
+    type text
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -112,21 +109,23 @@ BEGIN
         m.sender_id,
         m.receiver_id,
         -- Try to decrypt. If decrypt fails (bad key?), return error text or raw
-        safe_decrypt(m.content_encrypted::bytea, encryption_key) as content,
+        safe_decrypt(m.content_encrypted, encryption_key) as content,
         m.is_read,
         m.deleted_by_sender,
-        m.deleted_by_receiver
+        m.deleted_by_receiver,
+        m.type
     FROM messages m
     WHERE 
         (m.sender_id = current_user_id AND m.receiver_id = other_user_id)
         OR 
         (m.sender_id = other_user_id AND m.receiver_id = current_user_id)
-    ORDER BY m.created_at ASC
+    ORDER BY m.created_at ASC;
 
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 6. RPC to Fetch Single Message (For Realtime updates)
+-- UPDATED: Returns 'type' column
 CREATE OR REPLACE FUNCTION get_message_by_id(
     message_id uuid
 )
@@ -136,7 +135,8 @@ RETURNS TABLE (
     sender_id uuid,
     receiver_id uuid,
     content text,
-    is_read boolean
+    is_read boolean,
+    type text
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -154,8 +154,9 @@ BEGIN
         m.created_at,
         m.sender_id,
         m.receiver_id,
-        safe_decrypt(m.content_encrypted::bytea, encryption_key) as content,
-        m.is_read
+        safe_decrypt(m.content_encrypted, encryption_key) as content,
+        m.is_read,
+        m.type
     FROM messages m
     WHERE m.id = message_id
     AND (m.sender_id = current_user_id OR m.receiver_id = current_user_id); -- Security check
@@ -212,7 +213,7 @@ BEGIN
         p.id as user_id,
         p.username,
         p.avatar_url,
-        safe_decrypt(rm.content_encrypted::bytea, encryption_key) as last_message,
+        safe_decrypt(rm.content_encrypted, encryption_key) as last_message,
         rm.created_at as last_message_time,
         EXISTS (
             SELECT 1 FROM messages m2 

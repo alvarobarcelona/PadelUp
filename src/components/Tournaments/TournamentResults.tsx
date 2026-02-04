@@ -2,8 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Trophy, Medal } from 'lucide-react';
+import { Trophy, Medal, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useState, useEffect } from 'react';
+import { useModal } from '../../context/ModalContext';
 
 type ResultsProps = {
     tournament: any;
@@ -11,6 +13,15 @@ type ResultsProps = {
 
 export default function TournamentResults({ tournament }: ResultsProps) {
     const { t } = useTranslation();
+    const { alert } = useModal();
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) setCurrentUserId(user.id);
+        });
+    }, []);
+
     const { data: participants = [] } = useQuery({
         queryKey: ['participants', tournament.id],
         queryFn: async () => {
@@ -24,6 +35,8 @@ export default function TournamentResults({ tournament }: ResultsProps) {
             return data || [];
         }
     });
+
+    const isParticipant = currentUserId ? participants.some((p: any) => p.player_id === currentUserId) : false;
 
     const { data: matches = [] } = useQuery({
         queryKey: ['matches', tournament.id],
@@ -46,23 +59,28 @@ export default function TournamentResults({ tournament }: ResultsProps) {
     }, {});
 
     // Calculate Stats
+    // Fix: Use display_name (text) as key because Guest players (for private tournaments only) have null player_id
     const playerStats = matches.reduce((acc: any, m: any) => {
         if (!m.completed) return acc;
 
-        const processPlayer = (playerId: string, result: 'w' | 'l' | 'd') => {
-            if (!playerId) return;
-            if (!acc[playerId]) acc[playerId] = { mp: 0, w: 0, d: 0, l: 0 };
-            acc[playerId].mp++;
-            acc[playerId][result]++;
+        const processPlayer = (playerName: string, result: 'w' | 'l' | 'd') => {
+            if (!playerName) return;
+            if (!acc[playerName]) acc[playerName] = { mp: 0, w: 0, d: 0, l: 0 };
+            acc[playerName].mp++;
+            acc[playerName][result]++;
         };
 
-        const result1 = m.score_team1 > m.score_team2 ? 'w' : m.score_team1 < m.score_team2 ? 'l' : 'd';
+        const s1 = Number(m.score_team1);
+        const s2 = Number(m.score_team2);
+
+        const result1 = s1 > s2 ? 'w' : s1 < s2 ? 'l' : 'd';
         const result2 = result1 === 'w' ? 'l' : result1 === 'l' ? 'w' : 'd';
 
-        processPlayer(m.team1_p1_id, result1);
-        processPlayer(m.team1_p2_id, result1);
-        processPlayer(m.team2_p1_id, result2);
-        processPlayer(m.team2_p2_id, result2);
+        // Use _text fields (Names) instead of IDs
+        processPlayer(m.team1_p1_text, result1);
+        processPlayer(m.team1_p2_text, result1);
+        processPlayer(m.team2_p1_text, result2);
+        processPlayer(m.team2_p2_text, result2);
 
         return acc;
     }, {});
@@ -92,23 +110,92 @@ export default function TournamentResults({ tournament }: ResultsProps) {
         minute: 'numeric'
     });
 
+    // Fetch an Admin to chat with
+    const { data: adminUser } = useQuery({
+        queryKey: ['adminUser'],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('is_admin', true)
+                .limit(1)
+                .single();
+            return data;
+        }
+    });
+
+    const handleReportIssue = async () => {
+        if (!adminUser) {
+            alert({ title: t('error', { defaultValue: 'Error' }), message: t('tournaments.results.no_admin', { defaultValue: 'No administrator available to contact.' }), type: 'danger' });
+            return;
+        }
+
+        const message = `${t('tournaments.results.dispute_prefix', { defaultValue: 'Dispute for Tournament' })}: ${tournament.name}\n${t('tournaments.results.reason', { defaultValue: 'Reason' })}: `;
+
+        const event = new CustomEvent('openChat', {
+            detail: {
+                userId: adminUser.id,
+                initialMessage: message
+            }
+        });
+        window.dispatchEvent(event);
+    };
+
     return (
         <div className="space-y-6 pb-20 animate-fade-in">
+            {/* Status tournament Banner */}
+            {tournament.status === 'pending_verification' && (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-start gap-3">
+                    <AlertTriangle className="text-yellow-500 shrink-0 mt-0.5" size={20} />
+                    <div>
+                        <h3 className="font-bold text-yellow-400 text-sm">{t('tournaments.verification_pending_title') || 'Verification Pending'}</h3>
+                        <p className="text-xs text-yellow-500/80 mt-1">
+                            {t('tournaments.verification_pending_desc') || 'This tournament is currently under review by administrators. Points will be awarded once verified.'}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {tournament.status === 'rejected' && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+                    <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={20} />
+                    <div>
+                        <h3 className="font-bold text-red-400 text-sm">{t('tournaments.verification_rejected_title') || 'Tournament Rejected'}</h3>
+                        <p className="text-xs text-red-500/80 mt-1">
+                            {t('tournaments.verification_rejected_desc') || 'This tournament was rejected by administrators. No points will be awarded.'}
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
                 <div className="flex justify-between items-start mb-4">
                     <div>
                         <h2 className="text-2xl font-bold text-white mb-1">{tournament.name}</h2>
                         <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${tournament.status === 'completed' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
-                                {tournament.status}
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${tournament.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
+                                tournament.status === 'pending_verification' ? 'bg-yellow-500/20 text-yellow-400' :
+                                    tournament.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                                        'bg-green-500/20 text-green-400'
+                                }`}>
+                                {t(`tournaments.status.${tournament.status}`, { defaultValue: tournament.status })}
                             </span>
                             <span className="text-xs text-slate-500">•</span>
                             <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">{tournament.mode}</span>
                         </div>
                     </div>
 
-
+                    {/* Report Issue Button (only for participants) */}
+                    {isParticipant && (tournament.status === 'completed' && tournament.visibility === 'public') && (
+                        <button
+                            onClick={handleReportIssue}
+                            className="flex items-center gap-1 px-2 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 rounded-lg transition-colors border border-yellow-500/30"
+                        >
+                            <AlertTriangle size={16} />
+                            <span className="text-sm font-medium">{t('tournaments.results.report_issue', { defaultValue: 'Report Issue' })}</span>
+                        </button>
+                    )}
                 </div>
                 <div className="flex justify-start gap-3 items-center mb-2">
                     <div className="text-xs text-slate-500 font-medium">{t('tournaments.created_by', { defaultValue: 'Created by:' })}</div>
@@ -146,7 +233,7 @@ export default function TournamentResults({ tournament }: ResultsProps) {
 
                 <div className="w-full max-w-md space-y-3 mt-8">
                     {participants.map((p: any, i: number) => {
-                        const stats = playerStats[p.player_id] || { mp: 0, w: 0, d: 0, l: 0 };
+                        const stats = playerStats[p.display_name] || { mp: 0, w: 0, d: 0, l: 0 };
 
                         // Medal colors for top 3
                         const getMedalColor = (position: number) => {
@@ -212,11 +299,11 @@ export default function TournamentResults({ tournament }: ResultsProps) {
 
                                         <div className="flex items-center justify-between mt-3">
                                             {/* Team 1 */}
-                                            <div className={`flex flex-col w-[40%] text-center ${m.score_team1 > m.score_team2 ? 'opacity-100' : 'opacity-60'}`}>
+                                            <div className={`flex flex-col w-[40%] text-center ${Number(m.score_team1) > Number(m.score_team2) ? 'opacity-100' : 'opacity-60'}`}>
                                                 <span className="text-sm font-bold text-slate-200 truncate">{m.team1_p1_text}</span>
                                                 <span>&</span>
                                                 <span className="text-sm font-bold text-slate-200 truncate">{m.team1_p2_text}</span>
-                                                <span className={`text-2xl font-black mt-1 ${m.score_team1 > m.score_team2 ? 'text-green-500' : 'text-slate-600'}`}>
+                                                <span className={`text-2xl font-black mt-1 ${Number(m.score_team1) > Number(m.score_team2) ? 'text-green-500' : 'text-slate-600'}`}>
                                                     {m.score_team1}
                                                 </span>
                                             </div>
@@ -227,11 +314,11 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                                             </div>
 
                                             {/* Team 2 */}
-                                            <div className={`flex flex-col w-[40%] text-center ${m.score_team2 > m.score_team1 ? 'opacity-100' : 'opacity-60'}`}>
+                                            <div className={`flex flex-col w-[40%] text-center ${Number(m.score_team2) > Number(m.score_team1) ? 'opacity-100' : 'opacity-60'}`}>
                                                 <span className="text-sm font-bold text-slate-200 truncate">{m.team2_p1_text}</span>
                                                 <span>&</span>
                                                 <span className="text-sm font-bold text-slate-200 truncate">{m.team2_p2_text}</span>
-                                                <span className={`text-2xl font-black mt-1 ${m.score_team2 > m.score_team1 ? 'text-green-500' : 'text-slate-600'}`}>
+                                                <span className={`text-2xl font-black mt-1 ${Number(m.score_team2) > Number(m.score_team1) ? 'text-green-500' : 'text-slate-600'}`}>
                                                     {m.score_team2}
                                                 </span>
                                             </div>

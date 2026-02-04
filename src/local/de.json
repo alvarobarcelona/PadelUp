@@ -103,7 +103,7 @@
     "match_number": "Spiel Id: {{id}}",
     "confirm": "Bestätigen",
     "reject": "Ablehnen",
-    "unknown": "Unbekannt",
+    "inactive": "Inaktiv",
     "waiting_opponent": "Warte auf Bestätigung des Gegners...",
     "record_match": "Neues Spiel erfassen",
     "suggestions": "Spielervorschläge",
@@ -220,7 +220,6 @@
     "invalid_score": "Ungültiger Punktestand",
     "draw": "Unentschieden",
     "duplicate": "Doppeltes Spiel",
-    "deleted_user": "Gelöschter Benutzer",
     "enable": "Aktivieren",
     "on": "Ein",
     "active": "Aktiv",
@@ -386,22 +385,38 @@
     "no_tournaments": "Keine Turniere gefunden",
     "create_first": "Erstelle dein erstes Turnier",
     "delete_tournament": "Turnier löschen?",
+    "delete_tournament_description": "Dadurch werden das Turnier und alle seine Spiele dauerhaft gelöscht.",
     "delete_confirm": "Dadurch werden das Turnier und alle seine Spiele dauerhaft gelöscht.",
     "delete_button": "Löschen",
     "loading": "Lade Turnier...",
     "not_found": "Turnier nicht gefunden",
+    "participants_only": "Nur Teilnehmer können während des Spiels betreten",
     "created_by": "Erstellt von:",
+    "verification_pending_title": "Überprüfung ausstehend",
+    "verification_pending_desc": "Dieses Turnier wartet auf die Bestätigung durch einen Administrator, bevor es in der Rangliste erscheint.",
     "status": {
-      "setup": "Einrichtung",
-      "playing": "Läuft",
-      "completed": "Abgeschlossen"
+      "setup": "Einstellungen",
+      "playing": "Im Spiel",
+      "completed": "Abgeschlossen",
+      "pending_verification": "Überprüfung ausstehend",
+      "rejected": "Abgelehnt"
     },
     "visibility": {
       "public": "Öffentlich",
       "friends": "Freunde",
       "private": "Privat",
+      "private_desc": "Nur du kannst es sehen",
       "public_desc": "Zählt für Rangliste",
-      "public_note": "Nur öffentliche Turniere zählen für die Rangliste."
+      "public_note": "WICHTIG: Nur öffentliche Turniere zählen für die Rangliste. Am Ende bleiben sie zur Bestätigung durch einen Administrator ausstehend."
+    },
+    "results_validation": {
+      "winner": "Turniersieger",
+      "report_issue": "Problem melden",
+      "report_issue_title": "Ein Problem melden",
+      "report_issue_message": "Bitte beschreiben Sie das Problem mit diesem Turnier:",
+      "report_issue_placeholder": "z. B. Falsche Punktzahlen, falsche Teilnehmer usw.",
+      "issue_reported_title": "Problem gemeldet",
+      "issue_reported_message": "Ihr Problem wurde den Administratoren gemeldet. Danke für Ihr Feedback."
     },
     "modes": {
       "americano": "Americano",
@@ -434,7 +449,9 @@
       "must_participate": "Du musst teilnehmen",
       "must_participate_desc": "Als Ersteller musst du Teilnehmer in diesem Turnier sein.",
       "need_4_players": "Mindestens 4 Spieler erforderlich",
-      "invalid_player_count": "Spiele konnten nicht generiert werden. Stelle sicher, dass die Spieleranzahl gültig ist (Vielfaches von 4 für Americano)."
+      "invalid_player_count": "Spiele konnten nicht generiert werden. Stelle sicher, dass die Spieleranzahl gültig ist (Vielfaches von 4 für Americano).",
+      "add_guest": "Gastspieler Hinzufügen",
+      "guest_name_placeholder": "Gastname"
     },
     "play": {
       "loading_matches": "Lade Spiele...",
@@ -459,12 +476,26 @@
       "finish_tournament_btn": "Turnier beenden",
       "continue_playing": "Weiterspielen",
       "round_saved": "Rundenergebnisse gespeichert!",
-      "could_not_generate": "Weitere Spiele konnten nicht generiert werden."
+      "success": "Erfolgreich",
+      "could_not_generate": "Weitere Spiele konnten nicht generiert werden.",
+      "verification_pending_title": "Zur Überprüfung eingereicht",
+      "verification_pending_message": "Ihr Turnier wurde zur administrativen Überprüfung eingereicht. Sie werden benachrichtigt, sobald es genehmigt wurde.",
+      "tournament_completed_title": "Turnier abgeschlossen!",
+      "tournament_completed_message": "Ihr Turnier wurde erfolgreich abgeschlossen."
     },
     "results": {
       "final_standings": "Endstand",
       "leaderboard": "Rangliste",
-      "winner": "Gewinner",
+      "winner": "Turniersieger",
+      "report_issue": "Problem melden",
+      "report_issue_title": "Ein Problem melden",
+      "report_issue_message": "Bitte beschreiben Sie das Problem mit diesem Turnier:",
+      "report_issue_placeholder": "z. B. Falsche Punktzahlen, falsche Teilnehmer usw.",
+      "issue_reported_title": "Problem gemeldet",
+      "issue_reported_message": "Ihr Problem wurde den Administratoren gemeldet. Danke für Ihr Feedback.",
+      "no_admin": "Kein Administrator verfügbar.",
+      "dispute_prefix": "Streitfall für Turnier",
+      "reason": "Grund",
       "position": "{{position}}",
       "points": "{{points}} Pkt",
       "matches_played": "{{count}} Spiele",

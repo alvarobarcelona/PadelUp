@@ -20,6 +20,7 @@ interface Message {
     is_read?: boolean;
     deleted_by_sender?: boolean;
     deleted_by_receiver?: boolean;
+    type?: string;
 }
 
 interface ConversationUser {
@@ -36,9 +37,10 @@ interface ChatDrawerProps {
     onClose: () => void;
     activeUserId?: string | null; // If provided, opens chat with this user directly
     onActiveUserChange?: (userId: string | null) => void;
+    initialMessage?: string;
 }
 
-const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatDrawerProps) => {
+const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initialMessage }: ChatDrawerProps) => {
     const { t } = useTranslation();
     const { confirm, alert } = useModal();
     const [view, setView] = useState<'list' | 'chat'>('list');
@@ -99,12 +101,15 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
     useEffect(() => {
         if (isOpen && activeUserId) {
             loadUserForChat(activeUserId);
+            if (initialMessage) {
+                setNewMessage(initialMessage);
+            }
         } else if (isOpen && !activeUserId) {
             setView('list');
             setActiveChatUser(null);
             fetchConversations();
         }
-    }, [isOpen, activeUserId]);
+    }, [isOpen, activeUserId, initialMessage]);
 
     const { markAsRead } = useChat();
 
@@ -651,6 +656,21 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                             username: activeChatUser?.username,
                                             avatar_url: activeChatUser?.avatar_url
                                         };
+
+                                    // Handle System Messages
+                                    if (msg.type === 'system') {
+                                        return (
+                                            <div key={msg.id} className="flex justify-center my-4 px-4">
+                                                <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3 text-xs text-slate-400 text-center max-w-[85%]">
+                                                    <ShieldCheck size={16} className="mx-auto mb-1 text-purple-400" />
+                                                    {msg.content}
+                                                    <span className="block mt-1 text-[10px] opacity-60">
+                                                        {new Date(msg.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
 
                                     return (
                                         <div

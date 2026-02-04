@@ -285,7 +285,7 @@ const MatchCard = ({ match }: { match: Match }) => {
 
     // Extract Usernames safely (in case join returned null)
     // Supabase returns object { username: '...' } or null
-    const getUsername = (obj: any) => obj?.username || t('history.unknown');
+    const getUsername = (obj: any) => obj?.username || t('history.inactive');
     const getAvatar = (obj: any) => obj?.avatar_url || null;
 
     return (

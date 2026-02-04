@@ -119,7 +119,7 @@
     "reject": "Reject",
     "waiting_opponent": "Waiting for opponent confirmation...",
     "record_match": "Record New Match",
-    "unknown": "Unknown",
+    "inactive": "Inactive",
     "suggestions": "Player Suggestions",
     "suggestions_limit": "Max 10 suggestions",
     "get_in_touch": "Get in\ntouch",
@@ -224,7 +224,6 @@
     "invalid_score": "Invalid Score",
     "draw": "Draw",
     "duplicate": "Duplicate Match",
-    "deleted_user": "Deleted User",
     "enable": "Enable",
     "on": "On",
     "active": "Active",
@@ -391,22 +390,30 @@
     "no_tournaments": "No tournaments found",
     "create_first": "Create your first tournament",
     "delete_tournament": "Delete Tournament?",
+    "cancel_delete": "Cancel Delete",
+    "delete_tournament_description": "This will delete the tournament and all its matches permanently.",
     "delete_confirm": "This will delete the tournament and all its matches permanently.",
     "delete_button": "Delete",
     "loading": "Loading tournament...",
     "not_found": "Tournament not found",
+    "participants_only": "Only participants can enter while playing",
     "created_by": "Created by:",
+    "verification_pending_title": "Verification pending",
+    "verification_pending_desc": "This tournament is awaiting confirmation from an administrator before appearing in the rankings.",
     "status": {
       "setup": "Setup",
       "playing": "Playing",
-      "completed": "Completed"
+      "completed": "Completed",
+      "pending_verification": "Pending Verification",
+      "rejected": "Rejected"
     },
     "visibility": {
       "public": "Public",
       "friends": "Friends",
       "private": "Private",
+      "private_desc": "Only you can see it",
       "public_desc": "Counts for ranking",
-      "public_note": "Only tournaments set as public will count towards the ranking."
+      "public_note": "IMPORTANT: Only public tournaments will count towards the ranking. At the end, they will remain pending confirmation by an administrator."
     },
     "modes": {
       "americano": "Americano",
@@ -439,7 +446,9 @@
       "must_participate": "You must participate",
       "must_participate_desc": "As the creator, you must be a participant in this tournament.",
       "need_4_players": "Need at least 4 players",
-      "invalid_player_count": "Could not generate matches. Ensure player count is valid (multiple of 4 for Americano)."
+      "invalid_player_count": "Could not generate matches. Ensure player count is valid (multiple of 4 for Americano).",
+      "add_guest": "Add Guest Player",
+      "guest_name_placeholder": "Guest Name"
     },
     "play": {
       "loading_matches": "Loading matches...",
@@ -457,6 +466,7 @@
       "finish_confirm_title": "Finish Tournament?",
       "finish_confirm_message": "Are you sure you want to finish this tournament? Once finished, you cannot edit matches or add new rounds.",
       "finish_yes": "Yes, Finish",
+      "finish_no": "Cancel",
       "cycle_complete_title": "Cycle Complete!",
       "cycle_complete_message": "Everyone has played everyone! (Round {{current}} / {{max}}).\n\nDo you want to finish the tournament now?",
       "mexicano_cycle_title": "Mexicano Cycle Complete!",
@@ -464,12 +474,26 @@
       "finish_tournament_btn": "Finish Tournament",
       "continue_playing": "Continue Playing",
       "round_saved": "Round results saved!",
-      "could_not_generate": "Could not generate more matches."
+      "success": "Success",
+      "could_not_generate": "Could not generate more matches.",
+      "verification_pending_title": "Submitted for Verification",
+      "verification_pending_message": "Your tournament has been submitted for admin verification. You will be notified once it is approved.",
+      "tournament_completed_title": "Tournament Completed!",
+      "tournament_completed_message": "Your tournament has been completed successfully."
     },
     "results": {
       "final_standings": "Final Standings",
       "leaderboard": "Leaderboard",
-      "winner": "Winner",
+      "winner": "Tournament Winner",
+      "report_issue": "Report Issue",
+      "report_issue_title": "Report an Issue",
+      "report_issue_message": "Please describe the issue with this tournament:",
+      "report_issue_placeholder": "e.g., Incorrect scores, wrong participants, etc.",
+      "issue_reported_title": "Issue Reported",
+      "issue_reported_message": "Your issue has been reported to the administrators. Thank you for your feedback.",
+      "no_admin": "No administrator available to contact.",
+      "dispute_prefix": "Dispute for Tournament",
+      "reason": "Reason",
       "position": "{{position}}",
       "points": "{{points}} pts",
       "matches_played": "{{count}} matches",

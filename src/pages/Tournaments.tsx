@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { Plus, Trophy, ChevronRight, Calendar, Trash2, X } from 'lucide-react';
+import { Plus, Trophy, ChevronRight, Calendar, Trash2, X, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
@@ -42,7 +42,8 @@ export default function Tournaments() {
 
             let query = supabase
                 .from('tournaments')
-                .select('*');
+                .select('*, tournament_participants(player_id)')
+                .neq('status', 'rejected');
 
             // Filter by Tab
             if (activeTab === 'public') {
@@ -155,10 +156,10 @@ export default function Tournaments() {
         e.stopPropagation(); // Stop bubbling to Link
 
         const confirmed = await confirm({
-            title: 'Delete Tournament?',
-            message: 'This will delete the tournament and all its matches permanently.',
+            title: `${t('tournaments.delete_tournament', { defaultValue: 'Delete Tournament?' })}`,
+            message: `${t('tournaments.delete_tournament_description', { defaultValue: 'This will delete the tournament and all its matches permanently.' })}`,
             type: 'danger',
-            confirmText: 'Delete'
+            confirmText: `${t('tournaments.delete_button', { defaultValue: 'Delete' })}`
         });
 
         if (confirmed) {
@@ -207,7 +208,7 @@ export default function Tournaments() {
                                         onClick={() => setShowCreateModal(false)}
                                         className="flex-1 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl hover:bg-slate-700 transition-colors"
                                     >
-                                        {t('tournaments.cancel', { defaultValue: 'Cancel' })}
+                                        {t('tournaments.cancel_button', { defaultValue: 'Cancel' })}
                                     </button>
                                     <button
                                         type="submit"
@@ -281,56 +282,76 @@ export default function Tournaments() {
                             )}
                         </div>
                     ) : (
-                        tournaments.map((tournament: any) => (
-                            <Link
-                                key={tournament.id}
-                                to={`/tournaments/${tournament.id}`}
-                                className="block group relative overflow-hidden rounded-xl bg-slate-800/60 border border-slate-700/50 p-5 hover:bg-slate-800 hover:border-slate-600 transition-all"
-                            >
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="text-lg font-bold text-white group-hover:text-green-400 transition-colors">
-                                        {tournament.name}
-                                    </h3>
-                                    <div className="flex gap-2 items-center">
-                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${tournament.status === 'completed' ? 'bg-slate-700 text-slate-400' :
-                                            tournament.status === 'playing' ? 'bg-green-500/20 text-green-400 animate-pulse' :
-                                                'bg-yellow-500/20 text-yellow-500'
-                                            }`}>
-                                            {t(`tournaments.status.${tournament.status}`, { defaultValue: tournament.status })}
-                                        </span>
 
-                                        {/* Delete Button (Admin Only) */}
-                                        {(isAdmin) && (
-                                            <button
-                                                onClick={(e) => handleDelete(e, tournament.id)}
-                                                className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors z-10"
-                                                title="Delete Tournament"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                        tournaments.map((tournament: any) => {
+                            const isParticipant = tournament.tournament_participants?.some((p: any) => p.player_id === userId);
+                            const isPlaying = tournament.status === 'playing';
+                            const isRestricted = isPlaying && !isParticipant && !isAdmin;
+
+                            // @ts-ignore
+                            const Wrapper = (isRestricted ? 'div' : Link) as any;
+                            // @ts-ignore
+                            const linkProps = isRestricted ? {} : { to: `/tournaments/${tournament.id}` };
+
+                            return (
+                                <Wrapper
+                                    key={tournament.id}
+                                    {...linkProps}
+                                    className={`block group relative overflow-hidden rounded-xl border p-5 transition-all ${isRestricted
+                                        ? 'bg-slate-800/40 border-slate-700/30 opacity-60 cursor-not-allowed'
+                                        : 'bg-slate-800/60 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
+                                        }`}
+                                    title={isRestricted ? t('tournaments.participants_only', { defaultValue: 'Only participants can enter while playing' }) : ''}
+                                >
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className={`text-lg font-bold transition-colors ${isRestricted ? 'text-slate-400' : 'text-white group-hover:text-green-400'}`}>
+                                            {tournament.name}
+                                        </h3>
+                                        <div className="flex gap-2 items-center">
+                                            <span className={`text-[10px] font-bold text-center uppercase tracking-wider px-2 py-0.5 rounded-full ${tournament.status === 'completed' ? 'bg-slate-700 text-slate-400' :
+                                                tournament.status === 'playing' ? 'bg-green-500/20 text-green-400 animate-pulse' :
+                                                    'bg-yellow-500/20 text-yellow-500'
+                                                }`}>
+                                                {t(`tournaments.status.${tournament.status}`, { defaultValue: tournament.status })}
+                                            </span>
+
+                                            {/* Delete Button (Admin Only) */}
+                                            {(isAdmin || (tournament.created_by === userId && (tournament.visibility === 'private' || tournament.status === 'setup'))) && (
+                                                <button
+                                                    onClick={(e) => handleDelete(e, tournament.id)}
+                                                    className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors z-10"
+                                                    title="Delete Tournament"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 text-xs text-slate-400">
+                                        <span className="flex items-center gap-1">
+                                            <Trophy size={14} />
+                                            <span className="capitalize">{tournament.mode}</span>
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <Calendar size={14} />
+                                            {new Date(tournament.created_at).toLocaleDateString()}
+                                        </span>
+                                        {isAdmin && (
+                                            <span className="text-[10px] bg-slate-700 px-1.5 rounded text-slate-300">
+                                                {tournament.created_by === userId ? 'Yours' : 'User'}
+                                            </span>
                                         )}
                                     </div>
-                                </div>
 
-                                <div className="flex items-center gap-4 text-xs text-slate-400">
-                                    <span className="flex items-center gap-1">
-                                        <Trophy size={14} />
-                                        <span className="capitalize">{tournament.mode}</span>
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <Calendar size={14} />
-                                        {new Date(tournament.created_at).toLocaleDateString()}
-                                    </span>
-                                    {isAdmin && (
-                                        <span className="text-[10px] bg-slate-700 px-1.5 rounded text-slate-300">
-                                            {tournament.created_by === userId ? 'Yours' : 'User'}
-                                        </span>
+                                    {isRestricted ? (
+                                        <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 opacity-50" size={20} />
+                                    ) : (
+                                        <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
                                     )}
-                                </div>
-
-                                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
-                            </Link>
-                        ))
+                                </Wrapper>
+                            );
+                        })
                     )}
                 </div>
             </div>

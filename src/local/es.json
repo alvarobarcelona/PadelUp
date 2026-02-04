@@ -107,7 +107,7 @@
     "match_number": "Id del partido: {{id}}",
     "confirm": "Confirmar",
     "reject": "Rechazar",
-    "unknown": "Desconocido",
+    "inactive": "Inactivo",
     "waiting_opponent": "Esperando confirmación del oponente...",
     "record_match": "Registrar Resultado",
     "suggestions": "Sugerencias Jugadores",
@@ -223,11 +223,10 @@
     "invalid_score": "Puntuación Inválida",
     "draw": "Empate",
     "duplicate": "Partido Duplicado",
-    "deleted_user": "Usuario Eliminado",
+    "inactive": "Inactivo",
     "enable": "Activar",
     "on": "Activo",
-    "active": "Activo",
-    "inactive": "Inactivo"
+    "active": "Activo"
   },
   "new_match": {
     "title": "Seleccionar Jugadores",
@@ -373,6 +372,19 @@
     "no_data": "No hay datos de torneos públicos todavía"
   },
   "tournaments": {
+    "results": {
+      "winner": "Ganador del Torneo",
+      "report_issue": "Reportar Problema",
+      "report_issue_title": "Reportar un Problema",
+      "report_issue_message": "Por favor describe el problema con este torneo:",
+      "report_issue_placeholder": "ej., Puntuación incorrecta, participantes erróneos, etc.",
+      "issue_reported_title": "Problema Reportado",
+      "issue_reported_message": "Tu problema ha sido reportado a los administradores. Gracias por tu feedback.",
+      "no_admin": "No hay administrador disponible para contactar.",
+      "dispute_prefix": "Disputa por Torneo",
+      "reason": "Motivo",
+      "round_history": "Historial de Rondas"
+    },
     "title": "Torneos",
     "subtitle": "Gestiona tus eventos Americano y Mexicano",
     "new_tournament": "Nuevo Torneo",
@@ -389,22 +401,30 @@
     "no_tournaments": "No se encontraron torneos",
     "create_first": "Crea tu primer torneo",
     "delete_tournament": "¿Eliminar Torneo?",
+    "delete_tournament_description": "Esto eliminará el torneo y todos sus partidos permanentemente.",
     "delete_confirm": "Esto eliminará el torneo y todos sus partidos permanentemente.",
     "delete_button": "Eliminar",
+    "cancel_button": "Cancelar",
+    "participants_only": "Solo los participantes pueden entrar mientras juegan",
     "loading": "Cargando torneo...",
     "not_found": "Torneo no encontrado",
     "created_by": "Creado por:",
+    "verification_pending_title": "Verificación pendiente",
+    "verification_pending_desc": "Este torneo está pendiente de confirmación por parte de un administrador antes de aparecer en la clasificación.",
     "status": {
       "setup": "Configuración",
       "playing": "Jugando",
-      "completed": "Completado"
+      "completed": "Completado",
+      "pending_verification": "Pendiente de Verificación",
+      "rejected": "Rechazado"
     },
     "visibility": {
       "public": "Público",
       "friends": "Amigos",
       "private": "Privado",
+      "private_desc": "Solo tú puedes verlo",
       "public_desc": "Cuenta para el ranking",
-      "public_note": "Solo los torneos públicos contarán para el ranking."
+      "public_note": "IMPORTANTE: Solo los torneos públicos contarán para el ranking. Al finalizar quedaran pendientes de confirmación por parte de un administrador."
     },
     "modes": {
       "americano": "Americano",
@@ -437,7 +457,9 @@
       "must_participate": "Debes participar",
       "must_participate_desc": "Como creador, debes ser participante en este torneo.",
       "need_4_players": "Se necesitan al menos 4 jugadores",
-      "invalid_player_count": "No se pudieron generar partidos. Asegúrate de que el número de jugadores sea válido (múltiplo de 4 para Americano)."
+      "invalid_player_count": "No se pudieron generar partidos. Asegúrate de que el número de jugadores sea válido (múltiplo de 4 para Americano).",
+      "add_guest": "Añadir Jugador Invitado",
+      "guest_name_placeholder": "Nombre del Invitado"
     },
     "play": {
       "loading_matches": "Cargando partidos...",
@@ -452,27 +474,28 @@
       "next_round": "Siguiente Ronda",
       "generating": "Generando...",
       "finish_tournament": "Finalizar Torneo",
-      "finish_confirm_title": "¿Finalizar Torneo?",
-      "finish_confirm_message": "¿Estás seguro de que quieres finalizar este torneo? Una vez finalizado, no podrás editar partidos ni agregar nuevas rondas.",
-      "finish_yes": "Sí, Finalizar",
+      "finish_confirm_title": "¿Terminar Torneo?",
+      "finish_confirm_message": "¿Estás seguro de que quieres terminar este torneo? Una vez terminado, no podrás editar partidos ni añadir nuevas rondas.",
+      "finish_yes": "Sí, Terminar",
+      "finish_no": "Cancelar",
       "cycle_complete_title": "¡Ciclo Completo!",
-      "cycle_complete_message": "¡Todos han jugado con todos! (Ronda {{current}} / {{max}}).\n\n¿Quieres finalizar el torneo ahora?",
+      "cycle_complete_message": "¡Todos han jugado contra todos! (Ronda {{current}} / {{max}}).\n\n¿Quieres terminar el torneo ahora?",
       "mexicano_cycle_title": "¡Ciclo Mexicano Completo!",
-      "mexicano_cycle_message": "Difícil, pero sucedió. ¡Todos han sido pareja con todos al menos una vez! (Ronda {{current}}).\n\n¿Quieres finalizar el torneo ahora?",
-      "finish_tournament_btn": "Finalizar Torneo",
-      "continue_playing": "Continuar Jugando",
+      "mexicano_cycle_message": "Difícil, pero ocurrió. ¡Todos han sido compañeros de todos al menos una vez! (Ronda {{current}}).\n\n¿Quieres terminar el torneo ahora?",
+      "finish_tournament_btn": "Terminar Torneo",
+      "continue_playing": "Seguir Jugando",
+      "verification_pending_title": "Enviado para Verificación",
+      "verification_pending_message": "Tu torneo ha sido enviado para verificación administrativa. Se te notificará una vez sea aprobado.",
+      "tournament_completed_title": "¡Torneo Completado!",
+      "tournament_completed_message": "Tu torneo ha sido completado exitosamente.",
       "round_saved": "¡Resultados de ronda guardados!",
-      "could_not_generate": "No se pudieron generar más partidos."
-    },
-    "results": {
-      "final_standings": "Clasificación Final",
-      "leaderboard": "Tabla de Posiciones",
+      "success": "Éxito",
+      "could_not_generate": "No se pudieron generar más partidos.",
       "winner": "Ganador",
       "position": "{{position}}",
       "points": "{{points}} pts",
       "matches_played": "{{count}} partidos",
       "round_history": "Historial de Rondas",
-      "round": "Ronda {{number}}",
       "vs": "vs",
       "no_matches": "Aún no hay partidos registrados"
     }
@@ -503,6 +526,7 @@
     "no_matches_found": "No se encontraron partidos para \"{{query}}\"",
     "match_num": "Partido Id: {{id}}",
     "unknown": "Desconocido",
+    "inactive": "Inactivo",
     "note": "Nota",
     "created_by": "Creado por:",
     "recent_activity": "Actividad Reciente",
