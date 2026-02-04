@@ -9,6 +9,8 @@ interface ModalOptions {
     cancelText?: string;
     defaultValue?: string;
     placeholder?: string;
+    autoCloseDuration?: number;
+    hideButtons?: boolean;
 }
 
 interface ModalContextType {
@@ -44,13 +46,24 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
 
     const alert = useCallback((options: ModalOptions) => {
         return new Promise<void>((resolve) => {
+            let timerId: ReturnType<typeof setTimeout> | null = null;
+
+            const handleResolve = () => {
+                if (timerId) clearTimeout(timerId);
+                close();
+                resolve();
+            };
+
+            if (options.autoCloseDuration) {
+                timerId = setTimeout(() => {
+                    handleResolve();
+                }, options.autoCloseDuration);
+            }
+
             setModalState({
                 isOpen: true,
                 options: { ...options, type: options.type || 'info', cancelText: 'Close' },
-                resolve: () => {
-                    close();
-                    resolve();
-                }
+                resolve: handleResolve
             });
         });
     }, [close]);
@@ -121,6 +134,7 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
                 inputValue={modalState.options.type === 'prompt' ? inputValue : undefined}
                 onInputChange={modalState.options.type === 'prompt' ? setInputValue : undefined}
                 placeholder={modalState.options.placeholder}
+                hideButtons={modalState.options.hideButtons}
             />
         </ModalContext.Provider>
     );

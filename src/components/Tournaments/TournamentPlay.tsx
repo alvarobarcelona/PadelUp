@@ -79,7 +79,6 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
     });
 
     // Helper to get display name (username if available, else display_name)
-    // We match by player_id because matches store player_id (UUID) not participant_id (int)
     const getPlayerName = (playerId: string | null, fallbackText: string) => {
         if (!playerId) return fallbackText;
         const p = participants.find((p: any) => p.player_id === playerId);
@@ -88,53 +87,14 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
 
     // Helper: Recalculate ALL scores from match history
     const recalculateAllScores = async () => {
-        // Fetch ALL matches
-        const { data: allMatches } = await supabase
-            .from('tournament_matches')
-            .select('*')
-            .eq('tournament_id', tournament.id)
-            .eq('completed', true);
-
-        // Fetch Participants fresh to ensure we have the full list
-        const { data: currentParticipants } = await supabase
-            .from('tournament_participants')
-            .select('*')
-            .eq('tournament_id', tournament.id);
-
-        if (!allMatches || !currentParticipants) return;
-
-        // Reset scores
-        const participantScores: Record<string, { score: number, matches: number }> = {};
-        currentParticipants.forEach((p: any) => {
-            participantScores[p.display_name] = { score: 0, matches: 0 };
+        const { error } = await supabase.rpc('recalculate_tournament_scores', {
+            t_id: tournament.id
         });
 
-        // Sum up
-        allMatches.forEach(m => {
-            // Team 1
-            [m.team1_p1_text, m.team1_p2_text].forEach(name => {
-                if (participantScores[name]) {
-                    participantScores[name].score += m.score_team1;
-                    participantScores[name].matches += 1;
-                }
-            });
-            // Team 2
-            [m.team2_p1_text, m.team2_p2_text].forEach(name => {
-                if (participantScores[name]) {
-                    participantScores[name].score += m.score_team2;
-                    participantScores[name].matches += 1;
-                }
-            });
-        });
-
-        // Bulk Update
-        for (const p of currentParticipants) {
-            const stats = participantScores[p.display_name];
-            if (stats) {
-                await supabase.from('tournament_participants')
-                    .update({ score: stats.score, matches_played: stats.matches })
-                    .eq('id', p.id);
-            }
+        if (error) {
+            console.error('Error recalculating scores:', error);
+            // Fallback (optional) or throw
+            throw error;
         }
     };
 
@@ -158,7 +118,6 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
                     s = { s1: defaultScore, s2: defaultScore };
                 }
 
-                // Using update instead of upsert to avoid "cannot insert non-DEFAULT value into column id"
                 return supabase
                     .from('tournament_matches')
                     .update({
@@ -180,7 +139,13 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['matches', tournament.id] });
             queryClient.invalidateQueries({ queryKey: ['participants'] });
-            alert({ title: t('success', { defaultValue: 'Success' }), message: t('tournaments.play.round_saved', { defaultValue: 'Round results saved!' }), type: 'success' });
+            alert({
+                title: t('tournaments.play.success', { defaultValue: 'Success' }),
+                message: t('tournaments.play.round_saved', { defaultValue: 'Round results saved!' }),
+                type: 'success',
+                autoCloseDuration: 1000,
+                hideButtons: true
+            });
         },
         onError: (err) => {
             alert({ title: t('error', { defaultValue: 'Error' }), message: err.message, type: 'danger' });
@@ -219,7 +184,9 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
                 });
 
                 if (finish) {
-                    await supabase.from('tournaments').update({ status: 'completed' }).eq('id', tournament.id);
+                    await supabase.rpc('finish_tournament_with_verification', {
+                        tournament_id_param: tournament.id
+                    });
                     return; // Stop generation
                 }
             }
@@ -277,7 +244,9 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
                     });
 
                     if (finish) {
-                        await supabase.from('tournaments').update({ status: 'completed' }).eq('id', tournament.id);
+                        await supabase.rpc('finish_tournament_with_verification', {
+                            tournament_id_param: tournament.id
+                        });
                         return; // Stop generation
                     }
                 }
@@ -318,16 +287,36 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
 
     const finishTournamentMutation = useMutation({
         mutationFn: async () => {
-            await supabase.from('tournaments')
-                .update({ status: 'completed' })
-                .eq('id', tournament.id);
+            // Call the new RPC function that handles verification workflow
+            const { data, error } = await supabase
+                .rpc('finish_tournament_with_verification', {
+                    tournament_id_param: tournament.id
+                });
+
+            if (error) throw error;
+            return data;
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['tournament'] });
             queryClient.invalidateQueries({ queryKey: ['participants'] });
             queryClient.invalidateQueries({ queryKey: ['matches'] });
             queryClient.invalidateQueries({ queryKey: ['tournament-rankings'] });
-        }
+
+            // Show appropriate message based on tournament visibility
+            if (data?.status === 'pending_verification') {
+                alert({
+                    title: t('tournaments.play.verification_pending_title', { defaultValue: 'Submitted for Verification' }),
+                    message: t('tournaments.play.verification_pending_message', { defaultValue: 'Your tournament has been submitted for admin verification. You will be notified once it is approved.' }),
+                    type: 'success'
+                });
+            } else {
+                alert({
+                    title: t('tournaments.play.tournament_completed_title', { defaultValue: 'Tournament Completed!' }),
+                    message: t('tournaments.play.tournament_completed_message', { defaultValue: 'Your tournament has been completed successfully.' }),
+                    type: 'success'
+                });
+            }
+        },
     });
 
     if (matchesLoading) return <div>{t('tournaments.play.loading_matches', { defaultValue: 'Loading matches...' })}</div>;

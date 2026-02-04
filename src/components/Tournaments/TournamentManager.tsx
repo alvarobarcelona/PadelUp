@@ -65,7 +65,7 @@ export default function TournamentManager() {
 
             {tournament.status === 'setup' && <Setup tournament={tournament} onModeChange={setCurrentMode} />}
             {tournament.status === 'playing' && <TournamentPlay tournament={tournament} />}
-            {tournament.status === 'completed' && <TournamentResults tournament={tournament} />}
+            {(tournament.status === 'completed' || tournament.status === 'pending_verification' || tournament.status === 'rejected') && <TournamentResults tournament={tournament} />}
         </div>
     );
 }

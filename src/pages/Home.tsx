@@ -141,14 +141,7 @@ const Home = () => {
                         // Only fallback if diffs not present
                         else if (prevElo !== undefined) {
                             points = currentElo - prevElo;
-                            // Sanity check for Legacy Race Conditions (Match 33 fix)
-                            // If we WON but points < 0, it means we compared against a FUTURE/HIGHER elo from an unseen match
-                            // We can't know the real points, but we know it shouldn't be negative.
-                            // We can estimate based on result? Or just clamp to 0. 
                             if (won && points < 0) {
-                                // Attempt to estimate standard points (e.g., +15) or just show +?
-                                // Let's just clamp to 0 for now as 'Unknown Positive' to avoid confusion.
-                                // Or better: If it's a win, and we have negative points, it's definitely an error.
                                 points = 0;
                             }
                             if (!won && points > 0) points = 0;
@@ -168,8 +161,6 @@ const Home = () => {
         staleTime: 1000 * 60 * 5, // 5 minutes
         queryFn: async () => {
             if (!user || !profile) return [];
-            // Optimistic approach: fetch all approved, filter locally. 
-            // In a larger app, using RPC or DB function is better.
             const { data: candidates } = await supabase
                 .from('profiles')
                 .select('id, username, elo, avatar_url')
@@ -219,7 +210,7 @@ const Home = () => {
 
             return pending.map((m: any) => ({
                 ...m,
-                creator: m.created_by ? { username: creatorsMap[m.created_by] || t('common.deleted_user') } : null
+                creator: m.created_by ? { username: creatorsMap[m.created_by] || t('common.inactive') } : null
             })) as unknown as MatchPreview[];
         }
     });
@@ -290,9 +281,7 @@ const Home = () => {
             return matchId;
         },
         onSuccess: () => {
-            // Find match for logging before invalidating - tricky since we invalidated but maybe we can find it in cache
-            // Actually logActivity is side effect, let's do it here
-            // We need match details.
+            
 
             // Invalidate to refresh UI
             queryClient.invalidateQueries({ queryKey: ['pendingMatches'] });
@@ -300,7 +289,6 @@ const Home = () => {
             queryClient.invalidateQueries({ queryKey: ['matchForm'] }); // User form updates
             queryClient.invalidateQueries({ queryKey: ['profile'] }); // Elo updates
 
-            // Re-fetch rankings too if we want, but fine to let it be stale till user visits
         },
         onError: (error: any) => {
             alert({ title: 'Error', message: 'Error rejecting match: ' + error.message, type: 'danger' });
@@ -719,11 +707,11 @@ const Home = () => {
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
                                                 <span className={cn(match.winner_team === 1 ? "text-green-400" : "text-slate-400")}>
-                                                    {match.t1p1?.username || t('home.unknown')} & {match.t1p2?.username || t('home.unknown')}
+                                                    {match.t1p1?.username || t('home.inactive')} & {match.t1p2?.username || t('home.inactive')}
                                                 </span>
                                                 <span className="text-slate-600 text-[10px]">VS</span>
                                                 <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
-                                                    {match.t2p1?.username || t('home.unknown')} & {match.t2p2?.username || t('home.unknown')}
+                                                    {match.t2p1?.username || t('home.inactive')} & {match.t2p2?.username || t('home.inactive')}
                                                 </span>
 
                                             </div>

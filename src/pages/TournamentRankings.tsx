@@ -26,12 +26,13 @@ interface TournamentPlayerStats {
 const TournamentRankings = () => {
     const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeTab, setActiveTab] = useState<'americano' | 'mexicano'>('americano');
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
     // Fetch Tournament Rankings
     const { data: rankings = [], isLoading: loading } = useQuery({
-        queryKey: ['tournament-rankings'],
+        queryKey: ['tournament-rankings', activeTab],
         queryFn: async () => {
             // Get all participants from completed public tournaments
             const { data: participants, error } = await supabase
@@ -45,11 +46,13 @@ const TournamentRankings = () => {
                         id,
                         visibility,
                         status,
-                        created_at
+                        created_at,
+                        mode
                     )
                 `)
                 .eq('tournaments.visibility', 'public')
                 .eq('tournaments.status', 'completed')
+                .eq('tournaments.mode', activeTab)
                 .not('player_id', 'is', null);
 
             if (error) throw error;
@@ -172,6 +175,32 @@ const TournamentRankings = () => {
                         <h1 className="text-3xl font-bold text-white">{t('tournament_rankings.title') || 'Tournament Rankings'}</h1>
                         <p className="text-slate-400">{t('tournament_rankings.subtitle') || 'Top players from only public tournaments'} </p>
                         <button onClick={() => navigate('/tournaments')} className="text-white mt-2 flex justify-center gap-2 bg-orange-500 rounded-2xl px-4 py-2">{t('tournament_rankings.create_tournament') || 'Create Tournament'}<Plus size={24} /></button>
+                    </div>
+
+                    {/* Mode Tabs */}
+                    <div className="flex p-1 bg-slate-800/50 rounded-xl">
+                        <button
+                            onClick={() => setActiveTab('americano')}
+                            className={cn(
+                                "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
+                                activeTab === 'americano'
+                                    ? "bg-slate-700 text-white shadow"
+                                    : "text-slate-400 hover:text-white"
+                            )}
+                        >
+                            {t('tournaments.modes.americano') || 'Americano'}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('mexicano')}
+                            className={cn(
+                                "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
+                                activeTab === 'mexicano'
+                                    ? "bg-slate-700 text-white shadow"
+                                    : "text-slate-400 hover:text-white"
+                            )}
+                        >
+                            {t('tournaments.modes.mexicano') || 'Mexicano'}
+                        </button>
                     </div>
 
                     {/* Search Bar */}

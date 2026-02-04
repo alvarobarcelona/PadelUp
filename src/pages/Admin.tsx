@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
-import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save, Filter, Trophy, ClipboardEdit } from 'lucide-react';
+import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save, Filter, Trophy, ClipboardEdit, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getMatchPointsFromHistory } from '../lib/elo';
 import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
@@ -49,6 +49,8 @@ const Admin = () => {
     const [newClubLocation, setNewClubLocation] = useState('');
     const [editingClub, setEditingClub] = useState<any | null>(null);
     const [editingMatch, setEditingMatch] = useState<any | null>(null);
+    const [verificationFilter, setVerificationFilter] = useState<'all' | 'pending' | 'rejected'>('all');
+    const [expandedTournamentId, setExpandedTournamentId] = useState<number | null>(null);
     const [editingTournamentResults, setEditingTournamentResults] = useState<any | null>(null);
     const [tournamentMatches, setTournamentMatches] = useState<any[]>([]);
     const [loadingMatches, setLoadingMatches] = useState(false);
@@ -325,6 +327,49 @@ const Admin = () => {
             await alert({ title: 'Error', message: error.message, type: 'danger' });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleVerifyTournament = async (tournamentId: number, approved: boolean) => {
+        let adminNotes = null;
+        if (!approved) {
+            const reason = await prompt({
+                title: t('admin.reject_title', { defaultValue: 'Reject Tournament' }),
+                message: t('admin.reject_reason_prompt', { defaultValue: 'Please provide a reason for rejection:' }),
+                placeholder: "Reason..."
+            });
+            if (reason === null) return; // Cancelled
+            adminNotes = reason;
+        } else {
+            const confirmApprove = await confirm({
+                title: t('admin.approve_title', { defaultValue: 'Approve Tournament' }),
+                message: t('admin.approve_message', { defaultValue: 'Are you sure you want to approve this tournament?' }),
+                confirmText: t('admin.approve', { defaultValue: 'Approve' }),
+            });
+            if (!confirmApprove) return;
+        }
+
+        try {
+            const { error } = await supabase.rpc('verify_tournament', {
+                tournament_id_param: tournamentId,
+                admin_id_param: (await supabase.auth.getUser()).data.user?.id,
+                approved: approved,
+                admin_notes: adminNotes
+            });
+
+            if (error) throw error;
+
+            // Refresh data
+            fetchData();
+            alert({
+                title: t('common.success'),
+                message: approved ? t('admin.tournament_approved', { defaultValue: 'Tournament Approved' }) : t('admin.tournament_rejected', { defaultValue: 'Tournament Rejected' }),
+                type: 'success'
+            });
+
+        } catch (error: any) {
+            console.error('Error verifying tournament:', error);
+            alert({ title: t('common.error'), message: error.message, type: 'danger' });
         }
     };
 
@@ -1028,10 +1073,10 @@ const Admin = () => {
 
                         <div className="space-y-2">
                             {paginate(filteredMatches, matchesPage).map(m => {
-                                const p1 = players.find(p => p.id === m.team1_p1)?.username || t('common.deleted_user');
-                                const p2 = players.find(p => p.id === m.team1_p2)?.username || t('common.deleted_user');
-                                const p3 = players.find(p => p.id === m.team2_p1)?.username || t('common.deleted_user');
-                                const p4 = players.find(p => p.id === m.team2_p2)?.username || t('common.deleted_user');
+                                const p1 = players.find(p => p.id === m.team1_p1)?.username || t('common.inactive');
+                                const p2 = players.find(p => p.id === m.team1_p2)?.username || t('common.inactive');
+                                const p3 = players.find(p => p.id === m.team2_p1)?.username || t('common.inactive');
+                                const p4 = players.find(p => p.id === m.team2_p2)?.username || t('common.inactive');
 
                                 const scoreList = Array.isArray(m.score) ? m.score : [];
 
@@ -1212,7 +1257,7 @@ const Admin = () => {
                                                     </div>
                                                     {log.actor && (
                                                         <span className="text-xs text-slate-500 font-mono">
-                                                            By: {log.actor?.username || t('common.deleted_user')}
+                                                            By: {log.actor?.username || t('common.inactive')}
                                                         </span>
                                                     )}
                                                 </div>
@@ -1288,37 +1333,74 @@ const Admin = () => {
                 {/* TOURNAMENTS TAB */}
                 {activeTab === 'tournaments' && (
                     <div className="space-y-4">
-                        {/* Search Bar */}
-                        <div className="relative">
-                            <Search className="absolute left-3 top-3 text-slate-500" size={18} />
-                            <input
-                                type="text"
-                                placeholder={t('admin.search_tournament_placeholder') || 'Search tournament by name or ID...'}
-                                className="w-full bg-slate-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-purple-500 border border-slate-700"
-                                value={tournamentSearch}
-                                onChange={(e) => setTournamentSearch(e.target.value)}
-                            />
+                        {/* Filters and Search */}
+                        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                            {/* Verification Filter */}
+                            <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700 self-start">
+                                <button
+                                    onClick={() => setVerificationFilter('all')}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${verificationFilter === 'all' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                                >
+                                    All
+                                </button>
+                                <button
+                                    onClick={() => setVerificationFilter('pending')}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${verificationFilter === 'pending' ? 'bg-yellow-500/20 text-yellow-500' : 'text-slate-400 hover:text-white'}`}
+                                >
+                                    Pending
+                                </button>
+                                <button
+                                    onClick={() => setVerificationFilter('rejected')}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${verificationFilter === 'rejected' ? 'bg-red-500/20 text-red-500' : 'text-slate-400 hover:text-white'}`}
+                                >
+                                    Rejected
+                                </button>
+                            </div>
+
+                            {/* Search Bar */}
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-3 text-slate-500" size={18} />
+                                <input
+                                    type="text"
+                                    placeholder={t('admin.search_tournament_placeholder') || 'Search tournament by name or ID...'}
+                                    className="w-full bg-slate-800 text-white rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500 border border-slate-700"
+                                    value={tournamentSearch}
+                                    onChange={(e) => setTournamentSearch(e.target.value)}
+                                />
+                            </div>
                         </div>
 
                         <div className="space-y-2">
                             {paginate(
                                 tournaments.filter(t => {
+                                    // Status Filter
+                                    if (verificationFilter === 'pending' && t.status !== 'pending_verification') return false;
+                                    if (verificationFilter === 'rejected' && t.status !== 'rejected') return false;
+
                                     if (!tournamentSearch) return true;
                                     const search = tournamentSearch.toLowerCase();
                                     return t.name.toLowerCase().includes(search) || t.id.toString().includes(search);
                                 }),
                                 tournamentsPage
                             ).map(tournament => {
-                                const creatorName = tournament.creator?.username || t('common.deleted_user');
+                                const creatorName = tournament.creator?.username || t('common.inactive');
                                 const participantCount = tournament.participant_count || 0;
+                                const isPending = tournament.status === 'pending_verification';
+                                const hasIssues = tournament.reported_issues && tournament.reported_issues.length > 0;
 
                                 return (
-                                    <div key={tournament.id} className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                                    <div key={tournament.id} className={`bg-slate-800 p-4 rounded-lg border ${isPending ? 'border-yellow-500/50' : 'border-slate-700'}`}>
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <p className="font-bold text-white text-lg">{tournament.name}</p>
                                                     <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">ID: {tournament.id}</span>
+                                                    {hasIssues && (
+                                                        <span className="flex items-center gap-1 text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold animate-pulse">
+                                                            <AlertTriangle size={12} />
+                                                            {tournament.reported_issues.length} Issues
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
                                                     <span className="flex items-center gap-1">
@@ -1327,9 +1409,11 @@ const Admin = () => {
                                                     </span>
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${tournament.status === 'completed' ? 'bg-slate-700 text-slate-400' :
                                                         tournament.status === 'playing' ? 'bg-green-500/20 text-green-400' :
-                                                            'bg-yellow-500/20 text-yellow-500'
+                                                            tournament.status === 'pending_verification' ? 'bg-yellow-500/20 text-yellow-500' :
+                                                                tournament.status === 'rejected' ? 'bg-red-500/20 text-red-500' :
+                                                                    'bg-slate-700 text-slate-400'
                                                         }`}>
-                                                        {tournament.status}
+                                                        {tournament.status === 'pending_verification' ? 'Pending Admin' : tournament.status}
                                                     </span>
                                                     <span className="px-2 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-400">
                                                         {tournament.visibility || 'public'}
@@ -1337,12 +1421,64 @@ const Admin = () => {
                                                     <span>👥 {participantCount} players</span>
                                                     <span>📍 Round {tournament.current_round_number}</span>
                                                 </div>
+
+                                                {hasIssues && (
+                                                    <div className="mt-2 text-xs p-2 bg-red-500/10 rounded border border-red-500/20">
+                                                        <button
+                                                            onClick={() => setExpandedTournamentId(expandedTournamentId === tournament.id ? null : tournament.id)}
+                                                            className="flex items-center gap-1 font-bold text-red-400 hover:text-red-300 mb-1"
+                                                        >
+                                                            <AlertTriangle size={12} />
+                                                            {tournament.reported_issues.length} Issues Reported
+                                                            <span className="underline ml-1">{expandedTournamentId === tournament.id ? '(Hide)' : '(Show)'}</span>
+                                                        </button>
+
+                                                        {expandedTournamentId === tournament.id && (
+                                                            <div className="mt-2 space-y-2 pl-2 border-l-2 border-red-500/30">
+                                                                {tournament.reported_issues.map((issue: any, idx: number) => (
+                                                                    <div key={idx} className="bg-slate-900/50 p-2 rounded">
+                                                                        <div className="flex justify-between mb-1 opacity-70 text-[10px]">
+                                                                            <span>User: {issue.reporter_id?.slice(0, 8)}</span>
+                                                                            <span>{new Date(issue.reported_at).toLocaleString()}</span>
+                                                                        </div>
+                                                                        <p className="text-slate-200">{issue.issue_text}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
                                                 <div className="mt-2 text-xs text-slate-500">
                                                     <p>Created by: <span className="text-slate-400">{creatorName}</span></p>
                                                     <p>Date: {new Date(tournament.created_at).toLocaleString()}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2">
+
+                                            <div className="flex flex-col gap-2">
+                                                {/* Verification Buttons */}
+                                                {isPending && (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="primary"
+                                                            className="bg-green-600 hover:bg-green-700 text-white border-none"
+                                                            onClick={() => handleVerifyTournament(tournament.id, true)}
+                                                            title="Approve"
+                                                        >
+                                                            <CheckCircle size={16} />
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="danger"
+                                                            onClick={() => handleVerifyTournament(tournament.id, false)}
+                                                            title="Reject"
+                                                        >
+                                                            <XCircle size={16} />
+                                                        </Button>
+                                                    </>
+                                                )}
+
                                                 <Button size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10" onClick={() => setEditingTournament(tournament)}>
                                                     <Pencil size={16} />
                                                 </Button>
@@ -1365,15 +1501,13 @@ const Admin = () => {
                                     </div>
                                 );
                             })}
-                            {tournaments.filter(t => {
-                                if (!tournamentSearch) return true;
-                                const search = tournamentSearch.toLowerCase();
-                                return t.name.toLowerCase().includes(search) || t.id.toString().includes(search);
-                            }).length === 0 && <p className="text-center text-slate-500 py-4">{t('admin.no_tournaments') || 'No tournaments found.'}</p>}
 
                             <PaginationControls
                                 currentPage={tournamentsPage}
                                 totalItems={tournaments.filter(t => {
+                                    if (verificationFilter === 'pending' && t.status !== 'pending_verification') return false;
+                                    if (verificationFilter === 'rejected' && t.status !== 'rejected') return false;
+
                                     if (!tournamentSearch) return true;
                                     const search = tournamentSearch.toLowerCase();
                                     return t.name.toLowerCase().includes(search) || t.id.toString().includes(search);
@@ -1636,7 +1770,9 @@ const Admin = () => {
                                     >
                                         <option value="setup">Setup</option>
                                         <option value="playing">Playing</option>
+                                        <option value="pending_verification">Pending Verification</option>
                                         <option value="completed">Completed</option>
+                                        <option value="rejected">Rejected</option>
                                     </select>
                                 </div>
                                 <div>

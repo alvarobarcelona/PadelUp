@@ -21,6 +21,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
     const [mode, setMode] = useState<'americano' | 'mexicano'>(tournament.mode || 'americano');
     const [visibility, setVisibility] = useState<'public' | 'friends' | 'private'>('public');
     const [courtNames, setCourtNames] = useState<string[]>([]);
+    const [guestName, setGuestName] = useState('');
 
     // Notify parent when mode changes
     useEffect(() => {
@@ -76,7 +77,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
 
     const addParticipantMutation = useMutation({
         mutationFn: async ({ id, firstName, lastName }: { id?: string, firstName?: string, lastName?: string }) => {
-            const fullName = firstName + ' ' + lastName;
+            const fullName = (firstName + ' ' + (lastName || '')).trim();
             const { error } = await supabase.from('tournament_participants').insert({
                 tournament_id: tournament.id,
                 display_name: fullName,
@@ -90,6 +91,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['participants', tournament.id] });
             setSearchQuery('');
+            setGuestName('');
         }
     });
 
@@ -123,7 +125,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
             }
 
             if (matches.length === 0) {
-                throw new Error('Could not generate matches. Ensure player count is valid (multiple of 4 for Americano).');
+                throw new Error(t('tournaments.setup.invalid_player_count'));
             }
 
             // 1.5. Clean up any existing matches (in case of restart/retry)
@@ -234,6 +236,32 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                     )}
                 </div>
 
+                {/* Guest Input (Private Tournaments Only) */}
+                {visibility === 'private' && (
+                    <div className="mb-4 pt-4 border-t border-slate-700">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                            {t('tournaments.setup.add_guest', { defaultValue: 'Add Guest Player' })}
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                placeholder={t('tournaments.setup.guest_name_placeholder', { defaultValue: 'Guest Name' })}
+                                className="flex-1 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                                value={guestName}
+                                onChange={(e) => setGuestName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && guestName.trim() && addParticipantMutation.mutate({ firstName: guestName })}
+                            />
+                            <button
+                                disabled={!guestName.trim()}
+                                onClick={() => addParticipantMutation.mutate({ firstName: guestName })}
+                                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-colors"
+                            >
+                                {t('add', { defaultValue: 'Add' })}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* List */}
                 <div className="space-y-2">
                     {participants.map((p: any) => (
@@ -312,9 +340,10 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                         >
                             <Lock size={20} className="mb-1" />
                             <span className="text-xs font-bold">{t('tournaments.visibility.private', { defaultValue: 'Private' })}</span>
+                            <span className="text-xs text-slate-400">{t('tournaments.visibility.private_desc', { defaultValue: 'Only you can see it' })}</span>
                         </button>
                     </div>
-                    <div className="text-xs text-slate-400">{t('tournaments.visibility.public_note', { defaultValue: 'Only tournaments set as public will count towards the ranking.' })}</div>
+                    <div className="text-xs text-red-400">{t('tournaments.visibility.public_note', { defaultValue: 'Only tournaments set as public will count towards the ranking.' })}</div>
                 </div>
 
                 {/* Points Per Match */}

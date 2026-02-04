@@ -17,6 +17,7 @@ interface ModalProps {
     inputValue?: string;
     onInputChange?: (value: string) => void;
     placeholder?: string;
+    hideButtons?: boolean;
 }
 
 export const Modal = ({
@@ -32,7 +33,8 @@ export const Modal = ({
     isLoading,
     inputValue,
     onInputChange,
-    placeholder
+    placeholder,
+    hideButtons
 }: ModalProps) => {
     const [isVisible, setIsVisible] = useState(false);
 
@@ -131,28 +133,30 @@ export const Modal = ({
                         </div>
                     )}
 
-                    <div className="mt-8 flex justify-end gap-3">
-                        {(onConfirm || type === 'confirm') && (
+                    {!hideButtons && (
+                        <div className="mt-8 flex justify-end gap-3">
+                            {(onConfirm || type === 'confirm') && (
+                                <Button
+                                    variant="ghost"
+                                    onClick={onClose}
+                                    disabled={isLoading}
+                                >
+                                    {cancelText}
+                                </Button>
+                            )}
                             <Button
-                                variant="ghost"
-                                onClick={onClose}
-                                disabled={isLoading}
+                                variant={getConfirmVariant()}
+                                onClick={() => {
+                                    onConfirm?.();
+                                    if (!isLoading) onClose();
+                                }}
+                                isLoading={isLoading}
+                                className={cn(type !== 'danger' && "bg-green-600 hover:bg-green-500")}
                             >
-                                {cancelText}
+                                {confirmText}
                             </Button>
-                        )}
-                        <Button
-                            variant={getConfirmVariant()}
-                            onClick={() => {
-                                onConfirm?.();
-                                if (!isLoading) onClose();
-                            }}
-                            isLoading={isLoading}
-                            className={cn(type !== 'danger' && "bg-green-600 hover:bg-green-500")}
-                        >
-                            {confirmText}
-                        </Button>
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
