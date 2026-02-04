@@ -374,7 +374,8 @@
   "tournaments": {
     "results": {
       "winner": "Ganador del Torneo",
-      "report_issue": "Reportar Problema",
+      "report_issue": "Reportar Incidencia",
+      "share_results": "Compartir Resultados",
       "report_issue_title": "Reportar un Problema",
       "report_issue_message": "Por favor describe el problema con este torneo:",
       "report_issue_placeholder": "ej., Puntuación incorrecta, participantes erróneos, etc.",

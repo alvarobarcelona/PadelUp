@@ -488,6 +488,7 @@
       "leaderboard": "Leaderboard",
       "winner": "Tournament Winner",
       "report_issue": "Report Issue",
+      "share_results": "Share Results",
       "report_issue_title": "Report an Issue",
       "report_issue_message": "Please describe the issue with this tournament:",
       "report_issue_placeholder": "e.g., Incorrect scores, wrong participants, etc.",

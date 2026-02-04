@@ -2,7 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Trophy, Medal, AlertTriangle, Lock } from 'lucide-react';
+import { Trophy, Medal, AlertTriangle, Lock, Share2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { useModal } from '../../context/ModalContext';
@@ -10,6 +11,109 @@ import { getFriends } from '../../lib/friends';
 
 type ResultsProps = {
     tournament: any;
+};
+
+// Snapshot Component for Image Generation
+const ResultsSnapshot = ({ tournament, winner, participants, rounds }: any) => {
+    return (
+        <div
+            id="results-snapshot"
+            className="absolute top-0 left-0 w-[600px] h-auto min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 pointer-events-none opacity-0 -z-50"
+            style={{ fontFamily: 'Inter, sans-serif' }}
+        >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8 border-b border-slate-700 pb-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-blue-400">
+                        PadelUp
+                    </h1>
+                    <p className="text-slate-400 text-sm mt-1">Tournament Results</p>
+                </div>
+                <div className="text-right">
+                    <h2 className="text-xl font-bold text-white">{tournament.name}</h2>
+                    <p className="text-slate-500 text-xs mt-1">
+                        {new Date().toLocaleDateString()}
+                    </p>
+                </div>
+            </div>
+
+            {/* Winner Section */}
+            {winner && (
+                <div className="mb-8 flex flex-col items-center justify-center bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-2xl p-6">
+                    <Trophy size={48} className="text-yellow-400 mb-2 drop-shadow-md" />
+                    <h3 className="text-yellow-200 font-bold uppercase tracking-wider text-sm mb-1">Champion</h3>
+                    <div className="text-3xl font-extrabold text-white mb-1">{winner.display_name}</div>
+                    <div className="text-lg text-yellow-500 font-mono">{winner.score} PTS</div>
+                </div>
+            )}
+
+            {/* Rankings */}
+            <div className="mb-8">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Final Leaderboard</h3>
+                <div className="space-y-2">
+                    {participants.slice(0, 8).map((p: any, i: number) => (
+                        <div key={i} className={`flex items-center justify-between p-3 rounded-lg ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' :
+                            i === 1 ? 'bg-slate-700/50' :
+                                i === 2 ? 'bg-slate-800/50' : 'bg-transparent border-b border-slate-800'
+                            }`}>
+                            <div className="flex items-center gap-3 ">
+                                <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm pb-3 ${i === 0 ? 'bg-yellow-500 text-black' :
+                                    i === 1 ? 'bg-slate-700 text-black' :
+                                        i === 2 ? 'bg-slate-800 text-white' : 'bg-slate-800 text-slate-400'
+                                    }`}>
+                                    {i === 0 ? '🥇 ' :
+                                        i === 1 ? '🥈' :
+                                            i === 2 ? '🥉' :
+                                                (i + 1)}
+                                </div>
+                                <span className={`font-medium ${i === 0 ? 'text-yellow-100' : 'text-slate-200'}`}>
+                                    {p.display_name}
+                                </span>
+                            </div>
+                            <span className="font-mono font-bold text-slate-400">{p.score} pts</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            {/* Match History */}
+            {rounds && Object.keys(rounds).length > 0 && (
+                <div className="mb-8">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Match History</h3>
+                    <div className="space-y-6">
+                        {Object.entries(rounds).map(([roundNum, roundMatches]: [string, any]) => (
+                            <div key={roundNum}>
+                                <div className="inline-block px-3 py-1 bg-slate-800 rounded mb-2">
+                                    <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">Round {roundNum}</span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {roundMatches.map((m: any, idx: number) => (
+                                        <div key={idx} className="bg-slate-800/40 p-3 rounded flex justify-between items-center text-sm border border-slate-700/50">
+                                            <div className={`flex-1 text-right ${Number(m.score_team1) > Number(m.score_team2) ? 'text-green-400 font-bold' : 'text-slate-300'}`}>
+                                                {m.team1_p1_text} & {m.team1_p2_text}
+                                            </div>
+                                            <div className="px-3 font-mono font-bold text-white whitespace-nowrap">
+                                                {m.score_team1} - {m.score_team2}
+                                            </div>
+                                            <div className={`flex-1 text-left ${Number(m.score_team2) > Number(m.score_team1) ? 'text-green-400 font-bold' : 'text-slate-300'}`}>
+                                                {m.team2_p1_text} & {m.team2_p2_text}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Footer */}
+            <div className="mt-8 pt-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-500">
+                <div>Play like a Pro, Count like a Legend</div>
+                <div className="flex items-center gap-1">PadelUp Web-App</div>
+                <div><img src="/apple-touch-icon.png" alt="PadelUp" className="w-6 h-6" /></div>
+            </div>
+        </div>
+    );
 };
 
 export default function TournamentResults({ tournament }: ResultsProps) {
@@ -285,21 +389,90 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                     </div>
 
                     {/* Report Issue Button (only for participants) */}
-                    {isParticipant && (tournament.status === 'completed' && tournament.visibility === 'public') && (
+                    <div className="flex flex-col items-end justify-end gap-2">
+                        {isParticipant && (tournament.status === 'completed' && tournament.visibility === 'public') && (
+                            <button
+                                onClick={handleReportIssue}
+                                className="flex items-center gap-1 px-3 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 rounded-lg transition-colors border border-yellow-500/30 ml-2"
+                            >
+                                <AlertTriangle size={16} />
+                                <span className="text-sm font-medium">{t('tournaments.results.report_issue', { defaultValue: 'Report Issue' })}</span>
+                            </button>
+                        )}
+
+                        {/* Share Results Button */}
                         <button
-                            onClick={handleReportIssue}
-                            className="flex items-center gap-1 px-2 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 rounded-lg transition-colors border border-yellow-500/30"
+                            onClick={() => {
+                                const element = document.getElementById('results-snapshot');
+                                if (!element) return;
+
+                                html2canvas(element, {
+                                    backgroundColor: null,
+                                    scale: 2,
+                                    useCORS: true,
+                                    // Make sure we capture the FULL content height
+                                    height: element.scrollHeight,
+                                    windowHeight: element.scrollHeight,
+                                    scrollY: 0, // Reset scroll so we start from top
+
+                                    onclone: (clonedDoc) => {
+                                        const el = clonedDoc.getElementById('results-snapshot');
+                                        if (el) {
+                                            el.style.opacity = '1';
+                                            el.style.zIndex = '99999';
+                                            el.style.position = 'absolute';
+                                            el.style.top = '0';
+                                            el.style.left = '0';
+                                            el.style.height = 'auto'; // Force auto height to fit content
+                                            el.style.minHeight = '100vh';
+                                        }
+                                    }
+                                }).then(canvas => {
+                                    canvas.toBlob(async (blob) => {
+                                        if (!blob) return;
+
+                                        const file = new File([blob], 'tournament-results-PadelUp.png', { type: 'image/png' });
+
+                                        if (navigator.share) {
+                                            try {
+                                                await navigator.share({
+                                                    files: [file],
+                                                    title: 'PadelUp Results',
+                                                });
+                                            } catch (err) {
+                                                console.error('Share failed', err);
+                                            }
+                                        } else {
+                                            const link = document.createElement('a');
+                                            link.download = `results-${tournament.name}-PadelUp.png`;
+                                            link.href = canvas.toDataURL();
+                                            link.click();
+                                        }
+                                    });
+                                });
+                            }}
+                            className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors border border-green-500/30"
+                            title={t('tournaments.results.share_results', { defaultValue: 'Share Results' })}
                         >
-                            <AlertTriangle size={16} />
-                            <span className="text-sm font-medium">{t('tournaments.results.report_issue', { defaultValue: 'Report Issue' })}</span>
+                            <Share2 size={20} />
                         </button>
-                    )}
+
+
+                    </div>
                 </div>
                 <div className="flex justify-start gap-3 items-center mb-2">
                     <div className="text-xs text-slate-500 font-medium">{t('tournaments.created_by', { defaultValue: 'Created by:' })}</div>
                     <div className="text-sm text-slate-300 font-bold">{creatorName}</div>
                     <div className="text-xs text-slate-500 font-medium">{createdDate}</div>
                 </div>
+                {/* Hidden Snapshot Component */}
+                <ResultsSnapshot
+                    tournament={tournament}
+                    winner={winner}
+                    participants={participants}
+                    rounds={rounds}
+                />
+
                 {/* Winner Card */}
                 <div className="relative flex flex-col items-center justify-center p-8 text-center rounded-2xl overflow-hidden">
                     {/* Animated gradient background */}
@@ -345,11 +518,13 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                             <div key={p.id} className={`flex flex-col p-4 rounded-xl border ${i === 0 ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-slate-800/40 border-slate-700/50'}`}>
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-4">
-                                        {i < 3 ? (
-                                            <Medal size={24} className={`${getMedalColor(i)} drop-shadow-lg`} />
-                                        ) : (
-                                            <span className="font-mono font-bold text-lg w-6 text-slate-500">#{i + 1}</span>
-                                        )}
+                                        <div className="w-8 flex justify-center">
+                                            {i < 3 ? (
+                                                <Medal size={24} className={`${getMedalColor(i)} drop-shadow-lg`} />
+                                            ) : (
+                                                <span className="font-mono font-bold text-lg text-slate-500">#{i + 1}</span>
+                                            )}
+                                        </div>
                                         <span className="font-bold text-slate-200">{p.display_name}</span>
                                     </div>
                                     <div className="text-xl font-black text-white">{p.score} <span className="text-xs font-normal text-slate-500">pts</span></div>
