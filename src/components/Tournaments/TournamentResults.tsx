@@ -2,10 +2,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Trophy, Medal, AlertTriangle } from 'lucide-react';
+import { Trophy, Medal, AlertTriangle, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { useModal } from '../../context/ModalContext';
+import { getFriends } from '../../lib/friends';
 
 type ResultsProps = {
     tournament: any;
@@ -15,41 +16,158 @@ export default function TournamentResults({ tournament }: ResultsProps) {
     const { t } = useTranslation();
     const { alert } = useModal();
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [hasAccess, setHasAccess] = useState<boolean | null>(null);
 
     useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            if (user) setCurrentUserId(user.id);
-        });
-    }, []);
+        const checkAccess = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                // Not logged in - only allow public tournaments
+                setHasAccess(tournament.visibility === 'public');
+                return;
+            }
 
+            setCurrentUserId(user.id);
+
+            // Check if user is admin
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('is_admin')
+                .eq('id', user.id)
+                .single();
+
+            if (profile?.is_admin) {
+                setHasAccess(true);
+                return;
+            }
+
+            // Check if user is creator
+            if (tournament.created_by === user.id) {
+                setHasAccess(true);
+                return;
+            }
+
+            // Check visibility-based access
+            if (tournament.visibility === 'public') {
+                setHasAccess(true);
+            } else if (tournament.visibility === 'friends') {
+                // Check if user is friend of creator OR participant
+                const { data: creatorFriends } = await getFriends(tournament.created_by);
+                const isFriend = creatorFriends?.includes(user.id) || false;
+
+                // Also check if user is a participant
+                const { data: participants } = await supabase
+                    .from('tournament_participants')
+                    .select('player_id')
+                    .eq('tournament_id', tournament.id)
+                    .eq('player_id', user.id);
+
+                const isParticipant = participants && participants.length > 0;
+                setHasAccess(isFriend || isParticipant);
+            } else if (tournament.visibility === 'private') {
+                // Only participants can view
+                const { data: participants } = await supabase
+                    .from('tournament_participants')
+                    .select('player_id')
+                    .eq('tournament_id', tournament.id)
+                    .eq('player_id', user.id);
+
+                setHasAccess(participants && participants.length > 0);
+            } else {
+                setHasAccess(false);
+            }
+        };
+
+        checkAccess();
+    }, [tournament.id, tournament.visibility, tournament.created_by]);
+
+    // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
     const { data: participants = [] } = useQuery({
         queryKey: ['participants', tournament.id],
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('tournament_participants')
                 .select('*')
                 .eq('tournament_id', tournament.id)
                 .order('score', { ascending: false }) // Highest score first
                 .order('matches_played', { ascending: true }) // Fewer matches = better efficiency
                 .order('display_name', { ascending: true }); // Alphabetical for consistency
+            if (error) throw error;
             return data || [];
-        }
+        },
+        enabled: hasAccess === true
     });
-
-    const isParticipant = currentUserId ? participants.some((p: any) => p.player_id === currentUserId) : false;
 
     const { data: matches = [] } = useQuery({
         queryKey: ['matches', tournament.id],
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('tournament_matches')
                 .select('*')
                 .eq('tournament_id', tournament.id)
                 .order('round_number', { ascending: true })
                 .order('court_number', { ascending: true });
+            if (error) throw error;
             return data || [];
+        },
+        enabled: hasAccess === true
+    });
+
+    // Fetch Creator Profile
+    const { data: creatorProfile } = useQuery({
+        queryKey: ['creator-profile', tournament.created_by],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('username')
+                .eq('id', tournament.created_by)
+                .single();
+            return data;
+        },
+        enabled: !!tournament.created_by
+    });
+
+    // Fetch an Admin to chat with
+    const { data: adminUser } = useQuery({
+        queryKey: ['adminUser'],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('is_admin', true)
+                .limit(1)
+                .single();
+            return data;
         }
     });
+
+    // NOW WE CAN DO CONDITIONAL RENDERING AFTER ALL HOOKS
+    const isParticipant = currentUserId ? participants.some((p: any) => p.player_id === currentUserId) : false;
+
+    // Access control check
+    if (hasAccess === null) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-slate-400">{t('loading', { defaultValue: 'Loading...' })}</div>
+            </div>
+        );
+    }
+
+    if (hasAccess === false) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+                <Lock className="text-slate-600" size={64} />
+                <div className="text-center">
+                    <h2 className="text-xl font-bold text-white mb-2">
+                        {t('tournaments.results.access_denied_title', { defaultValue: 'Access Denied' })}
+                    </h2>
+                    <p className="text-slate-400 text-sm">
+                        {t('tournaments.results.access_denied_message', { defaultValue: 'You do not have permission to view this tournament.' })}
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     // Group by Round
     const rounds = matches.reduce((acc: any, match: any) => {
@@ -87,41 +205,14 @@ export default function TournamentResults({ tournament }: ResultsProps) {
 
     const winner = participants[0];
 
-    // Fetch Creator Profile
-    const { data: creator } = useQuery({
-        queryKey: ['profile', tournament.created_by],
-        queryFn: async () => {
-            const { data } = await supabase
-                .from('profiles')
-                .select('username, first_name, last_name')
-                .eq('id', tournament.created_by)
-                .single();
-            return data;
-        },
-        enabled: !!tournament.created_by
-    });
-
-    const creatorName = creator?.username || (creator?.first_name ? `${creator.first_name} ${creator.last_name || ''}` : 'Unknown');
+    // Use the creator profile data fetched at the top
+    const creatorName = creatorProfile?.username || 'Unknown';
     const createdDate = new Date(tournament.created_at).toLocaleString(undefined, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
         minute: 'numeric'
-    });
-
-    // Fetch an Admin to chat with
-    const { data: adminUser } = useQuery({
-        queryKey: ['adminUser'],
-        queryFn: async () => {
-            const { data } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('is_admin', true)
-                .limit(1)
-                .single();
-            return data;
-        }
     });
 
     const handleReportIssue = async () => {
@@ -185,8 +276,8 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                             <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">{tournament.mode}</span>
                             <span className="text-xs text-slate-500">•</span>
                             <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${tournament.visibility === 'public' ? 'bg-indigo-500/20 text-indigo-400' :
-                                    tournament.visibility === 'friends' ? 'bg-purple-500/20 text-purple-400' :
-                                        'bg-slate-500/20 text-slate-400'
+                                tournament.visibility === 'friends' ? 'bg-purple-500/20 text-purple-400' :
+                                    'bg-slate-500/20 text-slate-400'
                                 }`}>
                                 {t(`tournaments.visibility.${tournament.visibility}`, { defaultValue: tournament.visibility })}
                             </span>
