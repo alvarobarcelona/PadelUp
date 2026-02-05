@@ -18,7 +18,7 @@ const ResultsSnapshot = ({ tournament, winner, participants, rounds, exportMode 
     return (
         <div
             id="results-snapshot"
-            className="absolute top-0 left-0 w-[1080px] h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 pointer-events-none opacity-0 -z-50"
+            className={`absolute top-0 left-0 ${exportMode === 'ranking' ? 'w-[600px]' : 'w-[1080px]'} h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 pointer-events-none opacity-0 -z-50`}
             style={{ fontFamily: 'Inter, sans-serif' }}
         >
             {/* Header */}
