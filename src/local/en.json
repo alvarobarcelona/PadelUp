@@ -640,7 +640,7 @@
     "ios_instruction": "In Safari, tap the three dots icon, then the option more, then tap Add to Home Screen.",
     "android_instruction": "In Chrome, tap the menu icon and then Install App.",
     "dismiss": "Maybe later",
-    "ios_instruction_footer": "Access your PadelUp with one touch"
+    "ios_instruction_footer": "Access your PadelUp with one touch. It is recommended to perform this step to improve the user experience."
   },
   "info_modal": {
     "title": "How PadelUp Works",

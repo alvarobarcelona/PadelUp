@@ -173,7 +173,17 @@ export default function TournamentManager() {
             <header className="mb-6 sticky top-0 bg-slate-900/90 backdrop-blur-md z-20 py-4 -mx-4 px-4 border-b border-slate-800/50">
                 <div className="flex items-center gap-3">
 
-                    <div><button onClick={() => navigate(-1)}><ChevronLeft size={20} className="text-white" /></button></div>
+                    <div>
+                        <button onClick={() => {
+                            if (tournament?.visibility) {
+                                navigate(`/tournaments?tab=${tournament.visibility}`);
+                            } else {
+                                navigate(-1);
+                            }
+                        }}>
+                            <ChevronLeft size={20} className="text-white" />
+                        </button>
+                    </div>
                     <div className="bg-yellow-500/20 p-2 rounded-lg">
                         <Trophy size={20} className="text-yellow-500" />
                     </div>

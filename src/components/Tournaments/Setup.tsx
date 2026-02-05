@@ -19,7 +19,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [pointsPerMatch, setPointsPerMatch] = useState(24);
     const [mode, setMode] = useState<'americano' | 'mexicano'>(tournament.mode || 'americano');
-    const [visibility, setVisibility] = useState<'public' | 'friends' | 'private'>('public');
+    const [visibility, setVisibility] = useState<'public' | 'friends' | 'private'>(tournament.visibility || 'public');
     const [courtNames, setCourtNames] = useState<string[]>([]);
     const [guestName, setGuestName] = useState('');
 
@@ -105,6 +105,25 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
         }
     });
 
+    const updateSettingsMutation = useMutation({
+        mutationFn: async (updates: any) => {
+            const { error } = await supabase
+                .from('tournaments')
+                .update(updates)
+                .eq('id', tournament.id);
+            if (error) throw error;
+        },
+        onError: (err) => {
+            console.error('Failed to save settings', err);
+        }
+    });
+
+    const handleVisibilityChange = (newVisibility: 'public' | 'friends' | 'private') => {
+        setVisibility(newVisibility);
+        updateSettingsMutation.mutate({ visibility: newVisibility });
+    };
+
+
     const startTournamentMutation = useMutation({
         mutationFn: async () => {
             // 1. Generate Matches
@@ -188,9 +207,9 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" >
             {/* Players List */}
-            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+            < div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700" >
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                         <Users size={16} /> {t('tournaments.setup.players', { defaultValue: 'Players' })} ({participants.length})
@@ -198,7 +217,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                 </div>
 
                 {/* Search Input */}
-                <div className="relative mb-4">
+                <div className="relative mb-4" >
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                     <input
                         type="text"
@@ -239,31 +258,33 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                 </div>
 
                 {/* Guest Input (Private Tournaments Only) */}
-                {visibility === 'private' && (
-                    <div className="mb-4 pt-4 border-t border-slate-700">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
-                            {t('tournaments.setup.add_guest', { defaultValue: 'Add Guest Player' })}
-                        </label>
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                placeholder={t('tournaments.setup.guest_name_placeholder', { defaultValue: 'Guest Name' })}
-                                className="flex-1 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
-                                value={guestName}
-                                onChange={(e) => setGuestName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && guestName.trim() && !addParticipantMutation.isPending && addParticipantMutation.mutate({ firstName: guestName })}
-                                disabled={addParticipantMutation.isPending}
-                            />
-                            <button
-                                disabled={!guestName.trim() || addParticipantMutation.isPending}
-                                onClick={() => addParticipantMutation.mutate({ firstName: guestName })}
-                                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-colors"
-                            >
-                                {addParticipantMutation.isPending ? t('tournaments.setup.adding', { defaultValue: 'Adding...' }) : t('add', { defaultValue: 'Add' })}
-                            </button>
+                {
+                    visibility === 'private' && (
+                        <div className="mb-4 pt-4 border-t border-slate-700">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                                {t('tournaments.setup.add_guest', { defaultValue: 'Add Guest Player' })}
+                            </label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder={t('tournaments.setup.guest_name_placeholder', { defaultValue: 'Guest Name' })}
+                                    className="flex-1 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                                    value={guestName}
+                                    onChange={(e) => setGuestName(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && guestName.trim() && !addParticipantMutation.isPending && addParticipantMutation.mutate({ firstName: guestName })}
+                                    disabled={addParticipantMutation.isPending}
+                                />
+                                <button
+                                    disabled={!guestName.trim() || addParticipantMutation.isPending}
+                                    onClick={() => addParticipantMutation.mutate({ firstName: guestName })}
+                                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-colors"
+                                >
+                                    {addParticipantMutation.isPending ? t('tournaments.setup.adding', { defaultValue: 'Adding...' }) : t('add', { defaultValue: 'Add' })}
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* List */}
                 <div className="space-y-2">
@@ -323,7 +344,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                     <label className="text-sm font-medium text-slate-300 block mb-2">{t('tournaments.setup.settings', { defaultValue: 'Visibility' })}</label>
                     <div className="grid grid-cols-3 gap-2">
                         <button
-                            onClick={() => setVisibility('public')}
+                            onClick={() => handleVisibilityChange('public')}
                             className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${visibility === 'public' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}
                         >
                             <Globe size={20} className="mb-1" />
@@ -331,7 +352,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                             <span className="text-xs text-slate-400">{t('tournaments.visibility.public_desc', { defaultValue: 'Counts for ranking' })}</span>
                         </button>
                         <button
-                            onClick={() => setVisibility('friends')}
+                            onClick={() => handleVisibilityChange('friends')}
                             className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${visibility === 'friends' ? 'bg-purple-500/20 border-purple-500 text-purple-400' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}
 
                         >
@@ -340,7 +361,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                             <span className="text-xs text-slate-400">{t('tournaments.visibility.friends_desc', { defaultValue: 'Only friends can see it' })}</span>
                         </button>
                         <button
-                            onClick={() => setVisibility('private')}
+                            onClick={() => handleVisibilityChange('private')}
                             className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${visibility === 'private' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}
                         >
                             <Lock size={20} className="mb-1" />
@@ -377,29 +398,31 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                 </div>
 
                 {/* Court Names */}
-                {participants.length >= 4 && (
-                    <div className="border-t border-slate-700 pt-4">
-                        <label className="text-sm font-medium text-slate-300 block mb-3">{t('tournaments.setup.court_names', { defaultValue: 'Court Names' })}</label>
-                        <div className="grid gap-3">
-                            {Array.from({ length: Math.floor(participants.length / 4) }).map((_, i) => (
-                                <div key={i} className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-slate-500 w-16 uppercase tracking-wider">Court {i + 1}</span>
-                                    <input
-                                        type="text"
-                                        placeholder={`e.g. Center Court`}
-                                        className="flex-1 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-500 outline-none transition-colors"
-                                        value={courtNames[i] || ''}
-                                        onChange={(e) => {
-                                            const newNames = [...courtNames];
-                                            newNames[i] = e.target.value;
-                                            setCourtNames(newNames);
-                                        }}
-                                    />
-                                </div>
-                            ))}
+                {
+                    participants.length >= 4 && (
+                        <div className="border-t border-slate-700 pt-4">
+                            <label className="text-sm font-medium text-slate-300 block mb-3">{t('tournaments.setup.court_names', { defaultValue: 'Court Names' })}</label>
+                            <div className="grid gap-3">
+                                {Array.from({ length: Math.floor(participants.length / 4) }).map((_, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <span className="text-xs font-bold text-slate-500 w-16 uppercase tracking-wider">Court {i + 1}</span>
+                                        <input
+                                            type="text"
+                                            placeholder={`e.g. Center Court`}
+                                            className="flex-1 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-500 outline-none transition-colors"
+                                            value={courtNames[i] || ''}
+                                            onChange={(e) => {
+                                                const newNames = [...courtNames];
+                                                newNames[i] = e.target.value;
+                                                setCourtNames(newNames);
+                                            }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* Time Estimate */}
                 <div className="border-t border-slate-700 pt-4 flex items-center justify-between">
@@ -414,17 +437,17 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                     </div>
                 </div>
 
-            </div>
+            </div >
 
             {/* Start Button */}
-            <button
+            < button
                 onClick={handleStart}
                 disabled={participants.length < 4}
                 className="w-full py-4 bg-green-500 disabled:bg-slate-700 disabled:text-slate-500 text-slate-900 font-bold rounded-xl shadow-lg shadow-green-500/20 active:scale-95 transition-all text-lg tracking-tight hover:bg-green-400"
             >
                 {t('tournaments.setup.start_tournament', { defaultValue: 'Start Tournament' })}
-            </button>
-        </div>
+            </button >
+        </div >
     );
 
 }

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { Plus, Trophy, ChevronRight, Calendar, Trash2, X, Lock } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useModal } from '../context/ModalContext';
@@ -18,7 +18,9 @@ export default function Tournaments() {
     const { confirm, alert } = useModal();
     const [isAdmin, setIsAdmin] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'public' | 'friends' | 'private'>('public');
+    const [searchParams] = useSearchParams();
+    const initialTab = (searchParams.get('tab') as 'public' | 'friends' | 'private') || 'public';
+    const [activeTab, setActiveTab] = useState<'public' | 'friends' | 'private'>(initialTab);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newTournamentName, setNewTournamentName] = useState('');
 
@@ -29,6 +31,20 @@ export default function Tournaments() {
                 setUserId(user.id);
                 const { data } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
                 if (data?.is_admin) setIsAdmin(true);
+
+                // Automated Cleanup: Delete 'setup' tournaments older than 1 week
+                const cleanupThreshold = new Date();
+                cleanupThreshold.setDate(cleanupThreshold.getDate() - 7);
+
+                const { error } = await supabase
+                    .from('tournaments')
+                    .delete()
+                    .eq('status', 'setup')
+                    .lt('created_at', cleanupThreshold.toISOString());
+
+                if (error) {
+                    console.error('Error cleaning up stale tournaments:', error);
+                }
             }
         };
         checkUser();
@@ -286,10 +302,10 @@ export default function Tournaments() {
                             <Trophy size={48} className="mx-auto text-slate-600 mb-4" />
                             <p className="text-slate-400 font-medium">
                                 {activeTab === 'public' ? t('tournaments.no_public', { defaultValue: 'No public tournaments' }) :
-                                    activeTab === 'friends' ? t('tournaments.no_friends', { defaultValue: 'No tournaments from friends' }) :
+                                    activeTab === 'private' ? t('tournaments.no_private', { defaultValue: 'No private tournaments' }) :
                                         t('tournaments.no_tournaments', { defaultValue: 'No tournaments found' })}
                             </p>
-                            {activeTab === 'private' && (
+                            {(activeTab === 'private' || activeTab === 'friends') && (
                                 <button
                                     onClick={handleCreateClick}
                                     className="mt-4 text-green-400 font-bold hover:underline"

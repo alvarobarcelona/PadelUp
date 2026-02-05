@@ -14,7 +14,7 @@ type ResultsProps = {
 };
 
 // Snapshot Component for Image Generation
-const ResultsSnapshot = ({ tournament, winner, participants, rounds }: any) => {
+const ResultsSnapshot = ({ tournament, winner, participants, rounds, exportMode }: any) => {
     return (
         <div
             id="results-snapshot"
@@ -47,9 +47,9 @@ const ResultsSnapshot = ({ tournament, winner, participants, rounds }: any) => {
                 </div>
             )}
 
-            <div className="grid grid-cols-2 gap-8 items-start">
+            <div className={`gap-8 items-start ${exportMode === 'ranking' ? 'flex justify-center' : 'grid grid-cols-2'}`}>
                 {/* Rankings */}
-                <div>
+                <div className={`${exportMode === 'ranking' ? 'w-full max-w-lg' : ''}`}>
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Final Leaderboard</h3>
                     <div className="space-y-2">
                         {participants.slice(0, 8).map((p: any, i: number) => (
@@ -78,7 +78,7 @@ const ResultsSnapshot = ({ tournament, winner, participants, rounds }: any) => {
                 </div>
 
                 {/* Match History */}
-                {rounds && Object.keys(rounds).length > 0 && (
+                {exportMode === 'full' && rounds && Object.keys(rounds).length > 0 && (
                     <div>
                         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Match History</h3>
                         <div className="space-y-6">
@@ -124,6 +124,60 @@ export default function TournamentResults({ tournament }: ResultsProps) {
     const { alert } = useModal();
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+    const [exportMode, setExportMode] = useState<'ranking' | 'full'>('full');
+
+    const handleExport = async (mode: 'ranking' | 'full') => {
+        setExportMode(mode);
+        // Wait for render
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const element = document.getElementById('results-snapshot');
+        if (!element) return;
+
+        html2canvas(element, {
+            backgroundColor: null,
+            scale: 2,
+            useCORS: true,
+            // Make sure we capture the FULL content height
+            height: element.scrollHeight,
+            windowHeight: element.scrollHeight,
+            scrollY: 0, // Reset scroll so we start from top
+
+            onclone: (clonedDoc) => {
+                const el = clonedDoc.getElementById('results-snapshot');
+                if (el) {
+                    el.style.opacity = '1';
+                    el.style.zIndex = '99999';
+                    el.style.position = 'absolute';
+                    el.style.top = '0';
+                    el.style.left = '0';
+                    el.style.height = 'auto'; // Force auto height to fit content
+                }
+            }
+        }).then(canvas => {
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+
+                const file = new File([blob], `tournament-${mode}-PadelUp.png`, { type: 'image/png' });
+
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'PadelUp Results',
+                        });
+                    } catch (err) {
+                        console.error('Share failed', err);
+                    }
+                } else {
+                    const link = document.createElement('a');
+                    link.download = `results-${tournament.name}-${mode}-PadelUp.png`;
+                    link.href = canvas.toDataURL();
+                    link.click();
+                }
+            });
+        });
+    };
 
     useEffect(() => {
         const checkAccess = async () => {
@@ -396,68 +450,30 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                         {isParticipant && (tournament.status === 'completed' && tournament.visibility === 'public') && (
                             <button
                                 onClick={handleReportIssue}
-                                className="flex items-center gap-1 px-3 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 rounded-lg transition-colors border border-yellow-500/30 ml-2"
+                                className="flex items-center gap-1 px-3 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 rounded-lg transition-colors border border-yellow-500/30"
                             >
                                 <AlertTriangle size={16} />
                                 <span className="text-sm font-medium">{t('tournaments.results.report_issue', { defaultValue: 'Report Issue' })}</span>
                             </button>
                         )}
 
-                        {/* Share Results Button */}
-                        <button
-                            onClick={() => {
-                                const element = document.getElementById('results-snapshot');
-                                if (!element) return;
-
-                                html2canvas(element, {
-                                    backgroundColor: null,
-                                    scale: 2,
-                                    useCORS: true,
-                                    // Make sure we capture the FULL content height
-                                    height: element.scrollHeight,
-                                    windowHeight: element.scrollHeight,
-                                    scrollY: 0, // Reset scroll so we start from top
-
-                                    onclone: (clonedDoc) => {
-                                        const el = clonedDoc.getElementById('results-snapshot');
-                                        if (el) {
-                                            el.style.opacity = '1';
-                                            el.style.zIndex = '99999';
-                                            el.style.position = 'absolute';
-                                            el.style.top = '0';
-                                            el.style.left = '0';
-                                            el.style.height = 'auto'; // Force auto height to fit content
-                                        }
-                                    }
-                                }).then(canvas => {
-                                    canvas.toBlob(async (blob) => {
-                                        if (!blob) return;
-
-                                        const file = new File([blob], 'tournament-results-PadelUp.png', { type: 'image/png' });
-
-                                        if (navigator.share) {
-                                            try {
-                                                await navigator.share({
-                                                    files: [file],
-                                                    title: 'PadelUp Results',
-                                                });
-                                            } catch (err) {
-                                                console.error('Share failed', err);
-                                            }
-                                        } else {
-                                            const link = document.createElement('a');
-                                            link.download = `results-${tournament.name}-PadelUp.png`;
-                                            link.href = canvas.toDataURL();
-                                            link.click();
-                                        }
-                                    });
-                                });
-                            }}
-                            className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors border border-green-500/30"
-                            title={t('tournaments.results.share_results', { defaultValue: 'Share Results' })}
-                        >
-                            <Share2 size={20} />
-                        </button>
+                        {/* Share Results Buttons */}
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => handleExport('ranking')}
+                                className="flex flex-col items-center justify-center p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors border border-blue-500/30 min-w-[60px]"
+                            >
+                                <Share2 size={20} className="mb-1" />
+                                <span className="text-[10px] font-bold uppercase leading-none">Rank</span>
+                            </button>
+                            <button
+                                onClick={() => handleExport('full')}
+                                className="flex flex-col items-center justify-center p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors border border-green-500/30 min-w-[60px]"
+                            >
+                                <Share2 size={20} className="mb-1" />
+                                <span className="text-[10px] font-bold uppercase leading-none">Rank + Rounds</span>
+                            </button>
+                        </div>
 
 
                     </div>
@@ -473,6 +489,7 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                     winner={winner}
                     participants={participants}
                     rounds={rounds}
+                    exportMode={exportMode}
                 />
 
                 {/* Winner Card */}
