@@ -20,7 +20,7 @@ export const PushNotificationPrompt = () => {
 
             // 3. Check view count (Max 5 times)
             const count = parseInt(localStorage.getItem('push_prompt_count') || '0');
-            if (count >= 1000) return;
+            if (count >= 5) return;
 
             // 4. Show Prompt & Increment Count
             setIsOpen(true);
