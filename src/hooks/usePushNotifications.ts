@@ -75,34 +75,32 @@ export const usePushNotifications = () => {
         applicationServerKey: convertedVapidKey,
       });
 
-      // Save to Supabase
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("User not logged in");
 
-      // Deduplication: Check if this device (User Agent) already has a subscription
+      // Deduplication: Check if this user already has THIS specific subscription (endpoint)
       const { data: existingSub } = await supabase
         .from("push_subscriptions")
         .select("id")
         .eq("user_id", user.id)
-        .eq("user_agent", navigator.userAgent)
+        .contains("subscription", { endpoint: subscription.endpoint })
         .maybeSingle();
 
       if (existingSub) {
-        // Update existing subscription for this device
+        // Update existing subscription for this user/endpoint if needed
         const { error: updateError } = await supabase
           .from("push_subscriptions")
           .update({
             subscription: subscription.toJSON(),
-            // Update created_at to keep it "fresh" if desired, or just leave it
-            // created_at: new Date().toISOString()
+            user_agent: navigator.userAgent, // Keep user agent updated
           })
           .eq("id", existingSub.id);
 
         if (updateError) throw updateError;
       } else {
-        // Create new subscription
+        // Create new subscription for this user
         const { error: insertError } = await supabase
           .from("push_subscriptions")
           .insert({
@@ -134,21 +132,31 @@ export const usePushNotifications = () => {
       const subscription = await registration.pushManager.getSubscription();
 
       if (subscription) {
-        await subscription.unsubscribe();
-
-        // Remove from Supabase
         const {
           data: { user },
         } = await supabase.auth.getUser();
+
         if (user) {
-          // We match by the subscription object structure in JSON
-          // Ideally we would delete by endpoint, but let's try strict match or just endpoint
-          // For now, let's just ignore the DB error if it fails to find exact match
+          // 1. Remove THIS user's record from Supabase first
           await supabase
             .from("push_subscriptions")
             .delete()
             .eq("user_id", user.id)
             .contains("subscription", { endpoint: subscription.endpoint });
+
+          // 2. Check if ANY OTHER user is still using this endpoint
+          const { count } = await supabase
+            .from("push_subscriptions")
+            .select("*", { count: "exact", head: true })
+            .contains("subscription", { endpoint: subscription.endpoint });
+
+          // 3. Only unsubscribe from browser if NO ONE else is using it
+          if (count === 0) {
+            await subscription.unsubscribe();
+          }
+        } else {
+          // If no user is logged in, but there is a subscription, we might as well kill it
+          await subscription.unsubscribe();
         }
       }
     } catch (err: any) {

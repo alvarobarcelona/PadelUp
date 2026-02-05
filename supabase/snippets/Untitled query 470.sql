@@ -1,0 +1,3 @@
+
+TRUNCATE public.matches RESTART IDENTITY CASCADE;
+
