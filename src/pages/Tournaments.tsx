@@ -305,7 +305,7 @@ export default function Tournaments() {
                                     activeTab === 'private' ? t('tournaments.no_private', { defaultValue: 'No private tournaments' }) :
                                         t('tournaments.no_tournaments', { defaultValue: 'No tournaments found' })}
                             </p>
-                            {(activeTab === 'private' || activeTab === 'friends') && (
+                            {(activeTab === 'private' || activeTab === 'friends' || activeTab === 'public') && (
                                 <button
                                     onClick={handleCreateClick}
                                     className="mt-4 text-green-400 font-bold hover:underline"
