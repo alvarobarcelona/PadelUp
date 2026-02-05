@@ -422,21 +422,21 @@ export default function TournamentResults({ tournament }: ResultsProps) {
 
             {/* Header */}
             <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
-                <div className="flex justify-between items-start mb-4">
-                    <div>
-                        <h2 className="text-2xl font-bold text-white mb-1">{tournament.name}</h2>
+                <div className="flex flex-col justify-between items-start gap-6 mb-4">
+                    <div className="space-y-3 w-full">
+                        <h2 className="text-2xl font-bold text-white tracking-tight leading-tight">{tournament.name}</h2>
                         <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${tournament.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${tournament.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
                                 tournament.status === 'pending_verification' ? 'bg-yellow-500/20 text-yellow-400' :
                                     tournament.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
                                         'bg-green-500/20 text-green-400'
                                 }`}>
                                 {t(`tournaments.status.${tournament.status}`, { defaultValue: tournament.status })}
                             </span>
-                            <span className="text-xs text-slate-500">•</span>
-                            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">{tournament.mode}</span>
-                            <span className="text-xs text-slate-500">•</span>
-                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${tournament.visibility === 'public' ? 'bg-indigo-500/20 text-indigo-400' :
+                            <span className="text-[10px] text-slate-500 font-bold">•</span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{tournament.mode}</span>
+                            <span className="text-[10px] text-slate-500 font-bold">•</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${tournament.visibility === 'public' ? 'bg-indigo-500/20 text-indigo-400' :
                                 tournament.visibility === 'friends' ? 'bg-purple-500/20 text-purple-400' :
                                     'bg-slate-500/20 text-slate-400'
                                 }`}>
@@ -445,43 +445,47 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                         </div>
                     </div>
 
-                    {/* Report Issue Button (only for participants) */}
-                    <div className="flex flex-col items-end justify-end gap-2">
+                    {/* Actions Group */}
+                    <div className="flex flex-col gap-3 w-full">
+                        {/* Report Issue Button (only for participants) */}
                         {isParticipant && (tournament.status === 'completed' && tournament.visibility === 'public') && (
                             <button
                                 onClick={handleReportIssue}
-                                className="flex items-center gap-1 px-3 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 rounded-lg transition-colors border border-yellow-500/30"
+                                className="flex items-center gap-2 px-4 py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 rounded-xl transition-colors border border-yellow-500/30 w-full justify-center"
                             >
                                 <AlertTriangle size={16} />
-                                <span className="text-sm font-medium">{t('tournaments.results.report_issue', { defaultValue: 'Report Issue' })}</span>
+                                <span className="text-xs font-bold uppercase tracking-wider">{t('tournaments.results.report_issue', { defaultValue: 'Report Issue' })}</span>
                             </button>
                         )}
 
                         {/* Share Results Buttons */}
-                        <div className="flex gap-2">
+                        <div className="flex gap-3 w-full">
                             <button
                                 onClick={() => handleExport('ranking')}
-                                className="flex flex-col items-center justify-center p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors border border-blue-500/30 min-w-[60px]"
+                                className="flex-1 flex flex-col items-center justify-center p-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl transition-colors border border-blue-500/30"
                             >
                                 <Share2 size={20} className="mb-1" />
-                                <span className="text-[10px] font-bold uppercase leading-none">Rank</span>
+                                <span className="text-[10px] font-black uppercase leading-none">{t('tournaments.results.share_rank', { defaultValue: 'Rank' })}</span>
                             </button>
                             <button
                                 onClick={() => handleExport('full')}
-                                className="flex flex-col items-center justify-center p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors border border-green-500/30 min-w-[60px]"
+                                className="flex-1 flex flex-col items-center justify-center p-3 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-xl transition-colors border border-green-500/30"
                             >
                                 <Share2 size={20} className="mb-1" />
-                                <span className="text-[10px] font-bold uppercase leading-none">Rank + Rounds</span>
+                                <span className="text-[10px] font-black uppercase leading-none">{t('tournaments.results.share_full', { defaultValue: 'Full' })}</span>
                             </button>
                         </div>
-
-
                     </div>
                 </div>
-                <div className="flex justify-start gap-3 items-center mb-2">
-                    <div className="text-xs text-slate-500 font-medium">{t('tournaments.created_by', { defaultValue: 'Created by:' })}</div>
-                    <div className="text-sm text-slate-300 font-bold">{creatorName}</div>
-                    <div className="text-xs text-slate-500 font-medium">{createdDate}</div>
+
+                {/* Creator Meta */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 border-t border-slate-700/30">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">{t('tournaments.created_by', { defaultValue: 'Created by:' })}</span>
+                        <span className="text-xs text-blue-400 font-black">{creatorName}</span>
+                    </div>
+                    <div className="hidden sm:block text-slate-700">•</div>
+                    <div className="text-[10px] text-slate-500 font-medium">{createdDate}</div>
                 </div>
                 {/* Hidden Snapshot Component */}
                 <ResultsSnapshot

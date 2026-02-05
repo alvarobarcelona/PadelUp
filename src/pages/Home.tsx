@@ -281,7 +281,7 @@ const Home = () => {
             return matchId;
         },
         onSuccess: () => {
-            
+
 
             // Invalidate to refresh UI
             queryClient.invalidateQueries({ queryKey: ['pendingMatches'] });
@@ -447,7 +447,7 @@ const Home = () => {
                         {/* Recent played */}
                         <div
                             onClick={() => setShowHistoryModal(true)}
-                            className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg cursor-pointer hover:border-slate-500 transition-colors group"
+                            className="flex flex-col rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg cursor-pointer hover:border-slate-500 transition-colors group"
                         >
                             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">{t('home.recent_played')}</p>
                             <div className="flex flex-col gap-2 mt-2">
@@ -473,7 +473,7 @@ const Home = () => {
                                 )}
                             </div>
 
-                            <div className=" flex items-center justify-between mt-2">
+                            <div className="mt-auto pt-4 flex items-center justify-between">
                                 <p className="text-[10px] text-slate-500 font-medium group-hover:text-green-400 transition-colors flex items-center justify-between">
                                     {t('home.last_5')}</p>
                                 <p className="text-[10px] text-slate-500 font-medium group-hover:text-green-400 transition-colors flex items-center justify-between"><Info size={20} /></p>

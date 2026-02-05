@@ -111,12 +111,35 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
         }
     }, [isOpen, activeUserId, initialMessage]);
 
+    // Auto-resize textarea logic
+    const adjustTextareaHeight = () => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 150) + 'px';
+        }
+    };
+
+    // Trigger resize on content change or view switch
+    useEffect(() => {
+        if (isOpen && view === 'chat') {
+            // Use requestAnimationFrame or setTimeout to ensure the DOM is painted
+            const timer = setTimeout(adjustTextareaHeight, 0);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, view, newMessage]);
+
     const { markAsRead } = useChat();
 
     const loadUserForChat = async (userId: string) => {
         setLoading(true);
         setView('chat');
         setShowAdminSearch(false); // Close admin search if open
+
+        // Clear draft if switching users (unless it's the exact same user)
+        // This prevents dispute messages or drafts from leaking between chats.
+        if (activeChatUser?.id !== userId) {
+            setNewMessage('');
+        }
 
         // Mark as read immediately when opening chat
         markAsRead(userId);
@@ -728,11 +751,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
                                     value={newMessage}
                                     onChange={(e) => {
                                         setNewMessage(e.target.value);
-                                        // Auto resize
-                                        if (textareaRef.current) {
-                                            textareaRef.current.style.height = 'auto'; // Reset to recalc
-                                            textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 150) + 'px';
-                                        }
+                                        adjustTextareaHeight();
                                     }}
                                     placeholder={t('chat.type_message')}
                                     rows={1}

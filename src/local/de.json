@@ -502,6 +502,8 @@
       "points": "{{points}} Pkt",
       "matches_played": "{{count}} Spiele",
       "round_history": "Rundenverlauf",
+      "share_full": "Rang + Runden",
+      "share_rank": "Rangliste",
       "round": "Runde {{number}}",
       "vs": "vs",
       "no_matches": "Noch keine Spiele aufgezeichnet"
@@ -642,7 +644,7 @@
   },
   "push_prompt": {
     "title": "Benachrichtigungen aktivieren",
-    "description": "Verpassen Sie keine Neuigkeiten oder Chat-Nachrichten aus Ihrer Community. Aktivieren Sie Push-Benachrichtigungen, um auf dem Laufenden zu bleiben!",
+    "description": "Verpassen Sie keine Neuigkeiten oder Chat-Nachrichten aus Ihrer Community. Aktivieren Sie Push-Benachrichtigungen, um auf dem Laufenden zu bleiben! Sehr nützlich, um mit anderen Spielern in Kontakt zu treten.",
     "enable_button": "Einschalten",
     "not_now": "Vielleicht später"
   },

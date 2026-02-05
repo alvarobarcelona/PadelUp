@@ -384,7 +384,9 @@
       "no_admin": "No hay administrador disponible para contactar.",
       "dispute_prefix": "Disputa por Torneo",
       "reason": "Motivo",
-      "round_history": "Historial de Rondas"
+      "round_history": "Historial de Rondas",
+      "share_full": "Rank + Rondas",
+      "share_rank": "Ranking"
     },
     "title": "Torneos",
     "subtitle": "Gestiona tus eventos Americano y Mexicano",
@@ -630,7 +632,7 @@
   },
   "push_prompt": {
     "title": "Activar Notificaciones",
-    "description": "No te pierdas las novedades ni mensajes del chat de tu comunidad. ¡Activa las notificaciones push para estar al día!",
+    "description": "No te pierdas las novedades ni mensajes del chat de tu comunidad. ¡Activa las notificaciones push para estar al día! Muy utiles para contactar con otros jugadores",
     "enable_button": "Activar",
     "not_now": "Quizás luego"
   },

@@ -20,7 +20,7 @@ export const PushNotificationPrompt = () => {
 
             // 3. Check view count (Max 5 times)
             const count = parseInt(localStorage.getItem('push_prompt_count') || '0');
-            if (count >= 5) return;
+            if (count >= 1000) return;
 
             // 4. Show Prompt & Increment Count
             setIsOpen(true);
@@ -37,9 +37,6 @@ export const PushNotificationPrompt = () => {
             await subscribeToPush();
             setIsOpen(false);
         } catch (error) {
-            console.error(error);
-            // Error handling usually inside hook (alert), but we close modal anyway?
-            // If user denies permission in browser prompt, it throws.
             setIsOpen(false);
         }
     };

@@ -501,6 +501,8 @@
       "points": "{{points}} pts",
       "matches_played": "{{count}} matches",
       "round_history": "Round History",
+      "share_full": "Rank + Rounds",
+      "share_rank": "Ranking",
       "round": "Round {{number}}",
       "vs": "vs",
       "no_matches": "No matches recorded yet"
@@ -631,7 +633,7 @@
   },
   "push_prompt": {
     "title": "Enable Notifications",
-    "description": "Don't miss news or chat messages from your community. Enable push notifications to stay updated!",
+    "description": "Don't miss news or chat messages from your community. Enable push notifications to stay updated! Very useful for contacting other players.",
     "enable_button": "Enable",
     "not_now": "Maybe later"
   },
