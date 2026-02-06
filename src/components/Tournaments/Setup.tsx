@@ -70,7 +70,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                 .eq('banned', false)
                 .gte('subscription_end_date', new Date().toISOString())
                 .or(`username.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`)
-                .limit(5);
+                .limit(10);
             return data || [];
         }
     });

@@ -322,19 +322,19 @@ const Settings = () => {
     const handleDeleteAccount = async () => {
         const confirmed1 = await confirm({
             title: t('settings.delete_account'),
-            message: 'Are you absolutely sure? This action CANNOT be undone.',
-            type: 'danger',
-            confirmText: 'Yes, Delete',
-            cancelText: 'Cancel'
+            message: t("settings.delete_account_desc") || "Are you absolutely sure? This action CANNOT be undone.",
+            type: "danger",
+            confirmText: t("settings.delete_account_confirm_text") || "Yes, Delete",
+            cancelText: t("settings.delete_account_cancel_text") || "Cancel"
         });
         if (!confirmed1) return;
 
         const confirmed2 = await confirm({
-            title: 'Final Confirmation',
-            message: 'Really sure? All your match history and data will be permanently deleted.',
-            type: 'danger',
-            confirmText: 'Permanently Delete',
-            cancelText: 'Back'
+            title: t("settings.delete_account_final_title") || "Final Confirmation",
+            message: t("settings.delete_account_final_desc") || "Are you absolutely sure? This action CANNOT be undone.",
+            type: "danger",
+            confirmText: t("settings.delete_account_final_confirm_text") || "Permanently Delete",
+            cancelText: t("settings.delete_account_final_cancel_text") || "Back"
         });
         if (!confirmed2) return;
 
