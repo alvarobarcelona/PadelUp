@@ -1,7 +1,7 @@
--- Admin Broadcast Message Encryption Fix
+-- Force Secure Broadcast Message Encryption
+-- This uses a new name to ensure we bypass any potential stale caching or overloading issues.
 
--- RPC to securely broadcast encrypted messages
-CREATE OR REPLACE FUNCTION broadcast_chat_message(
+CREATE OR REPLACE FUNCTION broadcast_secure_message(
     recipient_ids uuid[],
     message_content text
 )
@@ -22,7 +22,7 @@ BEGIN
         RAISE EXCEPTION 'Not authenticated';
     END IF;
 
-    -- Check if user is admin (optional but recommended for broadcast)
+    -- Check if user is admin
     IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = current_user_id AND is_admin = true) THEN
         RAISE EXCEPTION 'Only admins can broadcast messages';
     END IF;
@@ -34,7 +34,7 @@ BEGIN
         VALUES (
             current_user_id, 
             r_id, 
-            NULL, -- content is NULL for security/chat visibility
+            NULL, -- content is NULL per user request
             encode(extensions.pgp_sym_encrypt(message_content, encryption_key, 'compress-algo=1, cipher-algo=aes256'), 'base64'),
             'chat'
         );
@@ -42,4 +42,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION broadcast_chat_message(uuid[], text) TO authenticated;
+GRANT EXECUTE ON FUNCTION broadcast_secure_message(uuid[], text) TO authenticated;

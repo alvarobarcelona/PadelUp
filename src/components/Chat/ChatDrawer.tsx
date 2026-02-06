@@ -379,7 +379,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
         setSending(true);
 
         try {
-            const { error } = await supabase.rpc('broadcast_chat_message', {
+            const { error } = await supabase.rpc('broadcast_secure_message', {
                 recipient_ids: recipients.map(u => u.id),
                 message_content: messageContent
             });
@@ -556,7 +556,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
                                     className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {sending ? <Loader2 className="animate-spin" size={18} /> : <Megaphone size={18} />}
-                                    Send Broadcast ({filteredAdminUsers.length} Users)
+                                    Send Secure Broadcast ({filteredAdminUsers.length} Users)
                                 </button>
                             </div>
                         ) : (
