@@ -18,12 +18,25 @@ export const PushNotificationPrompt = () => {
             // 2. Check current permission
             if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
 
-            // 3. Check view count (Max 5 times)
+            // 3. Platform Check: On iOS, Web Push ONLY works in standalone (PWA) mode
+            const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+
+            if (isIOS && !isStandalone) {
+                // Don't show on iOS Safari if not added to home screen (can't subscribe)
+                return;
+            }
+
+            // 4. Check view count (Max 5 times)
             const count = parseInt(localStorage.getItem('push_prompt_count') || '0');
             if (count >= 5) return;
 
-            // 4. Show Prompt & Increment Count
+            // 5. Show Prompt
             setIsOpen(true);
+            // We only increment if they actually interact with it now (see handleDismiss/handleEnable)
+            // or we can keep it here to avoid being too annoying.
+            // Let's increment here but maybe move it to "Maybe later" for better persistence.
+            // For now, let's keep it here to respect the 5-view limit.
             localStorage.setItem('push_prompt_count', (count + 1).toString());
         };
 
