@@ -1,19 +1,30 @@
 # PadelUp - Social Padel Tracker
 
 ## Important for recruiters:
+
 I am fully aware of the workflow involved in working with versions and branches, and I understand that working on the master branch is NOT the correct or logical approach in real projects. However, this is a private project, and if it were to grow, I would work with branches and push requests to the master branch as usual.
 
 **PadelUp** is a modern, mobile-first web application designed for amateur padel groups to track matches, maintain competitive ELO rankings, and foster community through social features and gamification.
 
 ## 📸 Screenshots
 
+### Auth & Main Views
+
 |                     Login                     |                    Sign Up                     |                     Home                     |                     Ranks                     |
 | :-------------------------------------------: | :--------------------------------------------: | :------------------------------------------: | :-------------------------------------------: |
 | <img src="screenshots/Login.JPG" width="200"> | <img src="screenshots/SignUp.JPG" width="200"> | <img src="screenshots/Home.JPG" width="200"> | <img src="screenshots/Ranks.JPG" width="200"> |
 
-|                     Community                     |                      Profile                      |                     Settings                     |     |
-| :-----------------------------------------------: | :-----------------------------------------------: | :----------------------------------------------: | :-: |
-| <img src="screenshots/Community.JPG" width="200"> | <img src="screenshots/MyProfile.JPG" width="200"> | <img src="screenshots/Settings.JPG" width="200"> |     |
+### Social & Settings
+
+|                     Community                     |                      Profile                      |                     Settings                     |
+| :-----------------------------------------------: | :-----------------------------------------------: | :----------------------------------------------: |
+| <img src="screenshots/Community.JPG" width="200"> | <img src="screenshots/MyProfile.JPG" width="200"> | <img src="screenshots/Settings.JPG" width="200"> |
+
+### Tournaments
+
+|                           Overview                           |                          Setup                           |                           Ranking                           |                       Export                        |
+| :----------------------------------------------------------: | :------------------------------------------------------: | :---------------------------------------------------------: | :-------------------------------------------------: |
+| <img src="screenshots/Tournaments_overview.JPG" width="200"> | <img src="screenshots/Setup_tournament.JPG" width="200"> | <img src="screenshots/Ranking_tournaments.JPG" width="200"> | <img src="screenshots/Export_rank.JPG" width="200"> |
 
 ## 🚀 Features
 
