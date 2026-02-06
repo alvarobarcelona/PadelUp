@@ -390,6 +390,7 @@
     },
     "title": "Torneos",
     "subtitle": "Gestiona tus eventos Americano y Mexicano",
+    "subtitle_2": "Torneos en modo Setup o Play serán eliminados SI no se FINALIZAN dentro de UNA SEMANA despues de ser creados.",
     "new_tournament": "Nuevo Torneo",
     "no_friends": "No hay torneos de amigos",
     "enter_name": "Introduce un nombre para tu evento",

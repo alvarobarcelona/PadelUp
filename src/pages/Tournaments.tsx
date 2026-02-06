@@ -32,14 +32,14 @@ export default function Tournaments() {
                 const { data } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
                 if (data?.is_admin) setIsAdmin(true);
 
-                // Automated Cleanup: Delete 'setup' tournaments older than 1 week
+                // Automated Cleanup: Delete 'setup' and 'playing' tournaments older than 1 week
                 const cleanupThreshold = new Date();
                 cleanupThreshold.setDate(cleanupThreshold.getDate() - 7);
 
                 const { error } = await supabase
                     .from('tournaments')
                     .delete()
-                    .eq('status', 'setup')
+                    .in('status', ['setup', 'playing'])
                     .lt('created_at', cleanupThreshold.toISOString());
 
                 if (error) {
@@ -256,20 +256,27 @@ export default function Tournaments() {
                     </div>
                 )}
 
-                <header className="flex items-center justify-between">
+                <header className="flex flex-col items-start gap-2">
                     <div>
                         <h1 className="text-3xl font-bold text-white tracking-tight">{t('tournaments.title', { defaultValue: 'Tournaments' })}</h1>
                         <p className="text-slate-400 font-medium">
                             {t('tournaments.subtitle', { defaultValue: 'Manage your Americano & Mexicano events' })}
                         </p>
                     </div>
+                    <p className="text-green-400 text-xs font-medium leading-relaxed">
+                        {t('tournaments.subtitle_2', { defaultValue: '#Tournaments in setup or play mode will be removed if they are not completed within one week.' })}
+                    </p>
+
                     {/* Add Button */}
-                    <button
-                        onClick={handleCreateClick}
-                        className="p-2 bg-green-500 rounded-full text-slate-900 shadow-lg shadow-green-500/20 hover:scale-105 transition-transform"
-                    >
-                        <Plus size={24} strokeWidth={3} />
-                    </button>
+                    <div className="w-full flex justify-center mt-2">
+                        <button
+                            onClick={handleCreateClick}
+                            className="p-3 bg-orange-500 rounded-full text-white shadow-lg shadow-orange-500/40 hover:scale-110 active:scale-95 active:brightness-90 transition-all duration-300 animate-float animate-pulse-orange relative group"
+                        >
+                            <div className="absolute inset-0 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Plus size={28} strokeWidth={3} />
+                        </button>
+                    </div>
                 </header>
 
                 {/* Tabs */}

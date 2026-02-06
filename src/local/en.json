@@ -376,6 +376,7 @@
   "tournaments": {
     "title": "Tournaments",
     "subtitle": "Manage your Americano & Mexicano events",
+    "subtitle_2": "Tournaments in setup or play mode will be removed IF they are not COMPLETED within ONE WEEK after being created.",
     "new_tournament": "New Tournament",
     "enter_name": "Enter a name for your event",
     "placeholder_name": "e.g. Saturday Padel Cup",

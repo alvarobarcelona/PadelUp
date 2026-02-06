@@ -174,7 +174,13 @@ const TournamentRankings = () => {
                     <div className="flex flex-col items-center">
                         <h1 className="text-3xl font-bold text-white">{t('tournament_rankings.title') || 'Tournament Rankings'}</h1>
                         <p className="text-slate-400">{t('tournament_rankings.subtitle') || 'Top players from only public tournaments'} </p>
-                        <button onClick={() => navigate('/tournaments')} className="text-white mt-2 flex justify-center gap-2 bg-orange-500 rounded-2xl px-4 py-2">{t('tournament_rankings.create_tournament') || 'Create Tournament'}<Plus size={24} /></button>
+                        <button
+                            onClick={() => navigate('/tournaments')}
+                            className="text-white mt-4 flex justify-center items-center gap-2 bg-orange-500 rounded-2xl px-6 py-3 font-bold shadow-lg shadow-orange-500/40 hover:scale-110 active:scale-95 active:brightness-90 transition-all duration-300 animate-float animate-pulse-orange"
+                        >
+                            {t('tournament_rankings.create_tournament') || 'Create Tournament'}
+                            <Plus size={24} strokeWidth={3} />
+                        </button>
                     </div>
 
                     {/* Mode Tabs */}

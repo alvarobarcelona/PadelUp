@@ -371,6 +371,7 @@
   "tournaments": {
     "title": "Turniere",
     "subtitle": "Verwalte deine Americano & Mexicano Events",
+    "subtitle_2": "Turniere in einstelungen oder im spiel Modus werden automatisch gelöscht, wenn sie NICHT innerhalb EINER WOCHE nach ihrer Erstellung ABGESCHLOSSEN werden.  ",
     "new_tournament": "Neues Turnier",
     "enter_name": "Gib einen Namen für dein Event ein",
     "placeholder_name": "z.B. Samstag Padel Cup",
