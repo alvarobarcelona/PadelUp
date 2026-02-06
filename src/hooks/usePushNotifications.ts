@@ -137,25 +137,12 @@ export const usePushNotifications = () => {
         } = await supabase.auth.getUser();
 
         if (user) {
-          // 1. Remove THIS user's record from Supabase first
           await supabase
             .from("push_subscriptions")
             .delete()
             .eq("user_id", user.id)
             .contains("subscription", { endpoint: subscription.endpoint });
-
-          // 2. Check if ANY OTHER user is still using this endpoint
-          const { count } = await supabase
-            .from("push_subscriptions")
-            .select("*", { count: "exact", head: true })
-            .contains("subscription", { endpoint: subscription.endpoint });
-
-          // 3. Only unsubscribe from browser if NO ONE else is using it
-          if (count === 0) {
-            await subscription.unsubscribe();
-          }
         } else {
-          // If no user is logged in, but there is a subscription, we might as well kill it
           await subscription.unsubscribe();
         }
       }

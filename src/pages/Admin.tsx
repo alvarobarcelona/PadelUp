@@ -988,6 +988,7 @@ const Admin = () => {
                                                     {p.subscription_end_date ? ` (${new Date(p.subscription_end_date).toLocaleDateString()})` : ' (No Date)'}
                                                     {!isExpired && <span className="text-slate-500 font-normal">[{daysLeft}d left]</span>}
                                                 </p>
+                                                
                                                 <p className=" flex text-[10px] text-slate-500 mt-1">
                                                     Terms: {p.terms_accepted_at ? <span className="text-green-500" title={new Date(p.terms_accepted_at).toLocaleString()}>Accepted ✅</span> : <span className="text-red-500">Not Accepted ❌</span>}
                                                     <span className="ml-2">Notifications: {pushSubscriptions.some(sub => sub.user_id === p.id) ? <span className="text-green-500">Enabled ✅</span> : <span className="text-red-500">Disabled ❌</span>}</span>
@@ -995,7 +996,7 @@ const Admin = () => {
 
                                             </div>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-col gap-1">
                                             <Button size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10" onClick={() => setEditingPlayer(p)}>
                                                 <Pencil size={16} />
                                             </Button>
