@@ -638,7 +638,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
 
                                     <button
                                         onClick={(e) => deleteConversation(e, conv.id)}
-                                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
                                         title={t('chat.delete_conversation')}
                                     >
                                         <Trash2 size={18} />
