@@ -379,13 +379,10 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
         setSending(true);
 
         try {
-            const messagesToInsert = recipients.map(u => ({
-                content: messageContent,
-                sender_id: currentUser.id,
-                receiver_id: u.id
-            }));
-
-            const { error } = await supabase.from('messages').insert(messagesToInsert);
+            const { error } = await supabase.rpc('broadcast_chat_message', {
+                recipient_ids: recipients.map(u => u.id),
+                message_content: messageContent
+            });
 
             if (error) throw error;
 
