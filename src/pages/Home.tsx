@@ -174,7 +174,7 @@ const Home = () => {
             const maxElo = profile.elo + 100;
             const filtered = candidates.filter(p => p.elo >= minElo && p.elo <= maxElo);
             filtered.sort((a, b) => Math.abs(a.elo - profile.elo) - Math.abs(b.elo - profile.elo));
-            return filtered.slice(0, 5);
+            return filtered.slice(0, 10);
         }
     });
 
