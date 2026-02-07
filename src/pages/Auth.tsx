@@ -10,7 +10,7 @@ import { padelUpSupportMail } from '../lib/constants';
 
 const Auth = () => {
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { alert } = useModal();
     const [loading, setLoading] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
@@ -207,7 +207,8 @@ const Auth = () => {
                         last_name: lastName,
                         main_club_id: selectedClubId || null,
                         elo: 1150,
-                        terms_accepted_at: new Date().toISOString()
+                        terms_accepted_at: new Date().toISOString(),
+                        language: i18n.resolvedLanguage || 'en'
                     });
 
                     if (profileError) {
