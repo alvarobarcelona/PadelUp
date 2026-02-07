@@ -278,6 +278,8 @@
     "approve_title": "Approve",
     "delete_title": "Delete",
     "cancel": "Cancel",
+    "created_by": "Created by",
+    "status": "Status",
     "tournament_approved": "Tournament approved successfully!",
     "tournament_rejected": "Tournament rejected successfully!",
     "title": "Admin Console",

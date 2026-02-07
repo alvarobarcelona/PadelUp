@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
-import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save, Filter, Trophy, ClipboardEdit, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save, Filter, Trophy, ClipboardEdit, CheckCircle, XCircle, AlertTriangle, MessageSquare, Calendar, User, Mail, Key, Globe, Activity, CreditCard, FileText, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getMatchPointsFromHistory } from '../lib/elo';
 import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
@@ -94,7 +94,10 @@ const Admin = () => {
     const fetchData = async () => {
         setLoading(true);
         // Fetch all profiles
-        const { data: p } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        const { data: p } = await supabase
+            .from('profiles')
+            .select('*, main_club:clubs(name)')
+            .order('created_at', { ascending: false });
         const { data: m } = await supabase.from('matches').select('*').order('created_at', { ascending: false });
         const { data: c } = await supabase.from('clubs').select('*').order('id', { ascending: true });
 
@@ -707,6 +710,9 @@ const Admin = () => {
                 .from('profiles')
                 .update({
                     username: editingPlayer.username,
+                    first_name: editingPlayer.first_name,
+                    last_name: editingPlayer.last_name,
+                    main_club_id: editingPlayer.main_club_id || null,
                     elo: parseInt(editingPlayer.elo), // Ensure ELO is a number
                     is_admin: editingPlayer.is_admin,
                     subscription_end_date: editingPlayer.subscription_end_date || null,
@@ -735,6 +741,9 @@ const Admin = () => {
             await logActivity('ADMIN_EDIT_USER', editingPlayer.id, {
                 changes: {
                     username: editingPlayer.username,
+                    first_name: editingPlayer.first_name,
+                    last_name: editingPlayer.last_name,
+                    main_club_id: editingPlayer.main_club_id,
                     elo: editingPlayer.elo,
                     subscription_end_date: editingPlayer.subscription_end_date,
                     is_admin: editingPlayer.is_admin,
@@ -970,36 +979,82 @@ const Admin = () => {
                                 const daysLeft = p.subscription_end_date ? Math.ceil((new Date(p.subscription_end_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)) : 0;
 
                                 return (
-                                    <div key={p.id} className="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700">
-                                        <div className='flex-1 pr-2'>
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-bold text-white">{p.username}</p>
-                                                {p.is_admin && <ShieldAlert size={14} className="text-red-400" />}
-                                                {p.is_admin && <span className='text-[10px] text-red-400 uppercase'>Admin</span>}
-                                                {(p.banned) && <span className='text-[10px] bg-red-500 text-white px-1 rounded uppercase font-bold'>BANNED</span>}
-                                                {(p.banned_until) && <span className='text-[10px] bg-red-500 text-white px-1 rounded uppercase font-bold'>BANNED UNTIL {p.banned_until ? (new Date(p.banned_until).toLocaleString()) : 'No Date'}</span>}
+                                    <div key={p.id} className="bg-slate-800 p-3 sm:p-4 rounded-lg border border-slate-700 flex flex-col sm:flex-row gap-2 sm:gap-4 relative group">
+                                        {/* Left Side: Info Grid */}
+                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                                            {/* Header: Identity & Status */}
+                                            <div className="col-span-1 md:col-span-2 flex flex-wrap items-center gap-2 mb-1 border-b border-slate-700 pb-2 pr-16 sm:pr-0">
+                                                <span className="font-bold text-white text-lg">{p.username}</span>
+                                                <span className="px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300 font-mono">M.ID: {p.member_id}</span>
+                                                <div className="flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-500/20">
+                                                    <Trophy size={10} />
+                                                    ELO: {p.elo}
+                                                </div>
+                                                {p.is_admin && <span className="px-2 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400 font-bold border border-red-500/20 uppercase">Admin</span>}
+                                                {p.banned && <span className="px-2 py-0.5 rounded text-[10px] bg-red-600 text-white font-bold uppercase">BANNED</span>}
+                                                {p.banned_until && (
+                                                    <span className="px-2 py-0.5 rounded text-[10px] bg-red-600 text-white font-bold uppercase">
+                                                        Until {new Date(p.banned_until).toLocaleDateString()}
+                                                    </span>
+                                                )}
                                             </div>
-                                            <div className="flex flex-col gap-1 mt-1">
-                                                <p className="text-xs text-slate-500">ELO: {p.elo} | AuthId: {p.id}</p>
-                                                <p className='text-xs text-slate-500'>Member-Id: {p.member_id}</p>
-                                                <p className="text-xs text-slate-400">{p.email}</p>
-                                                <p className={`text-xs font-mono flex items-center gap-1 ${isExpired ? 'text-red-400 font-bold' : 'text-green-400'}`}>
-                                                    {isExpired ? '⚠️ Expired' : '✅ Active'}
-                                                    {p.subscription_end_date ? ` (${new Date(p.subscription_end_date).toLocaleDateString()})` : ' (No Date)'}
-                                                    {!isExpired && <span className="text-slate-500 font-normal">[{daysLeft}d left]</span>}
-                                                </p>
-                                                <p className=" flex text-[10px] text-slate-500 mt-1">
-                                                    Terms: {p.terms_accepted_at ? <span className="text-green-500" title={new Date(p.terms_accepted_at).toLocaleString()}>Accepted ✅</span> : <span className="text-red-500">Not Accepted ❌</span>}
-                                                    <span className="ml-2">Notifications: {pushSubscriptions.some(sub => sub.user_id === p.id) ? <span className="text-green-500">Enabled ✅</span> : <span className="text-red-500">Disabled ❌</span>}</span>
-                                                </p>
 
+                                            {/* Column 1: Account Details */}
+                                            <div className="space-y-1 text-xs text-slate-400">
+                                                <div className="flex items-center gap-2" title="Email">
+                                                    <Mail size={12} className="text-slate-500" />
+                                                    {p.email}
+                                                </div>
+                                                <div className="flex items-center gap-2 font-mono text-[10px]" title="Auth ID">
+                                                    <Key size={12} className="text-slate-500" />
+                                                    <span className="text-slate-500">Auth:</span> {p.id}
+                                                </div>
+                                                <div className="flex items-center gap-2" title="App Language">
+                                                    <Globe size={12} className="text-slate-500" />
+                                                    <span className="text-slate-500 text-[10px]">Language:</span> {p.language || 'en'}
+                                                    <span className="text-slate-500 text-[10px] ml-4">Club:</span> {p.main_club?.name || 'No Club'}                                              
+                                                </div>                                            
+                                            </div>
+
+                                            {/* Column 2: Stats & Membership */}
+                                            <div className="space-y-1 text-xs text-slate-400">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 flex-wrap">
+                                                    <span className="flex items-center gap-1.5" title="Matches Validated">
+                                                        <Activity size={12} className="text-green-500" />
+                                                        <span className="text-slate-300">M.Validated:</span> {p.matches_validated}
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5" title="Matches Rejected">
+                                                        <Activity size={12} className="text-red-500" />
+                                                        <span className="text-slate-300">M.Rejected:</span> {p.matches_rejected}
+                                                    </span>
+                                                </div>
+
+                                                <div className={`flex items-center gap-2 font-mono ${isExpired ? 'text-red-400' : 'text-green-400'}`}>
+                                                    <CreditCard size={12} />
+                                                    <span className="font-bold">{isExpired ? 'EXPIRED' : 'ACTIVE'}</span>
+                                                    <span className="text-[10px] opacity-80">
+                                                        {p.subscription_end_date ? new Date(p.subscription_end_date).toLocaleDateString() : 'No Date'}
+                                                        {!isExpired && ` (${daysLeft}d left)`}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 text-[10px]">
+                                                    <span className={`flex items-center gap-1 ${p.terms_accepted_at ? 'text-green-500' : 'text-red-500'}`} title={p.terms_accepted_at ? `Accepted: ${new Date(p.terms_accepted_at).toLocaleDateString()}` : 'Terms not accepted'}>
+                                                        <FileText size={10} /> Terms
+                                                    </span>
+                                                    <span className={`flex items-center gap-1 ${pushSubscriptions.some(sub => sub.user_id === p.id) ? 'text-green-500' : 'text-slate-600'}`}>
+                                                        <Bell size={10} /> Push
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col gap-1">
-                                            <Button size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10" onClick={() => setEditingPlayer(p)}>
+
+                                        {/* Right Side: Actions (Absolute on Mobile, Flex on Desktop) */}
+                                        <div className="absolute top-3 right-3 flex sm:static sm:flex-col gap-2 shrink-0 sm:border-l border-slate-700 sm:pl-3 justify-end sm:justify-start">
+                                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-md" onClick={() => setEditingPlayer(p)}>
                                                 <Pencil size={16} />
                                             </Button>
-                                            <Button size="sm" variant="danger" onClick={() => handleDeletePlayer(p.id)}>
+                                            <Button size="sm" variant="danger" className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md" onClick={() => handleDeletePlayer(p.id)}>
                                                 <Trash2 size={16} />
                                             </Button>
                                         </div>
@@ -1100,69 +1155,102 @@ const Admin = () => {
 
                                 return (
                                     <div key={m.id} className="relative bg-slate-800 p-3 rounded-lg border border-slate-700 overflow-hidden group">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <p className="font-bold text-white flex items-center gap-2 text-sm">
-                                                    Match #{m.id}
-                                                    <span className="text-[10px] font-normal text-slate-500 bg-slate-900/50 px-2 py-0.5 rounded-full">
+                                        {/* Status Strip */}
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.winner_team === 1 ? 'bg-green-500' : 'bg-blue-500'}`} />
+
+                                        {/* Header Grid: Compact & Aligned */}
+                                        <div className="grid grid-cols-[1fr_auto] gap-2 mb-3 pl-2 items-start">
+                                            {/* Left: Metadata */}
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-white text-sm">Match #{m.id}</span>
+                                                    <div className={`px-1.5 py-0.5 rounded font-bold uppercase text-[9px] tracking-wider border ${m.status === 'confirmed' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                        m.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                                            m.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                                                'bg-slate-700 text-slate-400 border-slate-600'
+                                                        }`}>
+                                                        {m.status}
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                                                    <span className="flex items-center gap-1">
+                                                        <Calendar size={10} />
                                                         {new Date(m.created_at).toLocaleString()}
                                                     </span>
-                                                </p>
-                                                {/* Extra Info: Club & Commentary */}
-                                                <div className="flex flex-col gap-1 mt-1">
                                                     {m.club_id && (
-                                                        <p className="text-xs text-indigo-400 flex items-center gap-1">
-                                                            📍 {clubs.find(c => c.id === m.club_id)?.name || 'Unknown Club'}
-                                                        </p>
+                                                        <span className="flex items-center gap-1 text-indigo-400">
+                                                            <span>📍</span>
+                                                            {clubs.find(c => c.id === m.club_id)?.name}
+                                                        </span>
                                                     )}
-                                                    {m.commentary && (
-                                                        <p className="text-xs text-slate-400 italic flex items-center gap-1">
-                                                            💬 "{m.commentary}"
-                                                        </p>
-                                                    )}
+                                                    <span className="flex items-center gap-1" title={`Created by ${players.find(p => p.id === m.created_by)?.username}`}>
+                                                        <User size={10} />
+                                                        {players.find(p => p.id === m.created_by)?.username || 'Unknown'}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <Button size="sm" variant="ghost" className="h-6 w-6 px-0 text-blue-400 hover:bg-blue-500/10" onClick={() => setEditingMatch(m)}>
+
+                                            {/* Right: Actions */}
+                                            <div className="flex gap-3 bg-slate-900/50 rounded-lg p-0.5 border border-slate-700/50 shrink-0">
+                                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-md" onClick={() => setEditingMatch(m)}>
                                                     <Pencil size={14} />
                                                 </Button>
-                                                <Button size="sm" variant="danger" className='h-6 w-6 px-0' onClick={() => handleDeleteMatch(m.id)}>
+                                                <Button size="sm" variant="danger" className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md" onClick={() => handleDeleteMatch(m.id)}>
                                                     <Trash2 size={14} />
                                                 </Button>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center justify-between gap-2 mt-1 text-xs bg-slate-900/40 p-2 rounded-lg">
+                                        {/* Commentary (if exists) */}
+                                        {m.commentary && (
+                                            <div className="mb-2 pl-2 text-xs">
+                                                <div className="flex items-start gap-2 bg-slate-900/30 p-2 rounded border border-slate-800 italic text-slate-400">
+                                                    <MessageSquare size={12} className="mt-0.5 shrink-0 opacity-50" />
+                                                    <span>"{m.commentary}"</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Score Board - Full Width & Centered */}
+                                        {/* Fixed typo in margin-left */}
+                                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-slate-900/60 p-2 rounded-lg border border-slate-800/50 ml-1">
                                             {/* Team 1 */}
-                                            <div className={`flex-1 min-w-0 ${m.winner_team === 1 ? 'font-bold text-green-400' : 'text-slate-400'}`}>
-                                                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Team 1 {m.winner_team === 1 && '👑'}</p>
-                                                <p className="truncate">{p1}</p>
-                                                <p className="truncate">{p2}</p>
+                                            <div className={`min-w-0 ${m.winner_team === 1 ? 'font-bold text-green-400' : 'text-slate-400'}`}>
+                                                <div className="flex items-center gap-1 mb-1 opacity-70 text-[10px] uppercase tracking-wider">
+                                                    {m.winner_team === 1 && <span>👑</span>} Team 1
+                                                </div>
+                                                <div className="text-xs space-y-0.5">
+                                                    <p className="truncate">{p1}</p>
+                                                    <p className="truncate">{p2}</p>
+                                                </div>
                                             </div>
 
-                                            {/* Score */}
-                                            <div className="flex flex-col items-center justify-center px-2 py-1 font-mono font-bold text-white text-sm bg-slate-800/50 rounded min-w-[60px] shrink-0 mx-1">
+                                            {/* Scores */}
+                                            <div className="flex flex-col gap-1 px-2">
                                                 {scoreList.length > 0 ? (
                                                     scoreList.map((s: any, i: number) => (
-                                                        <div key={i} className="whitespace-nowrap">
-                                                            {s.t1}-{s.t2}
+                                                        <div key={i} className="flex items-center justify-center bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-sm font-mono font-bold">
+                                                            <span className={m.winner_team === 1 ? 'text-green-400' : 'text-slate-500'}>{s.t1}</span>
+                                                            <span className="text-slate-600 mx-1">-</span>
+                                                            <span className={m.winner_team === 2 ? 'text-blue-400' : 'text-slate-500'}>{s.t2}</span>
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    <span className="text-slate-600">-</span>
+                                                    <span className="text-slate-600 font-mono">-</span>
                                                 )}
                                             </div>
 
                                             {/* Team 2 */}
-                                            <div className={`flex-1 min-w-0 text-right ${m.winner_team === 2 ? 'font-bold text-blue-400' : 'text-slate-400'}`}>
-                                                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Team 2 {m.winner_team === 2 && '👑'}</p>
-                                                <p className="truncate">{p3}</p>
-                                                <p className="truncate">{p4}</p>
+                                            <div className={`min-w-0 text-right ${m.winner_team === 2 ? 'font-bold text-blue-400' : 'text-slate-400'}`}>
+                                                <div className="flex items-center justify-end gap-1 mb-1 opacity-70 text-[10px] uppercase tracking-wider">
+                                                    Team 2 {m.winner_team === 2 && <span>👑</span>}
+                                                </div>
+                                                <div className="text-xs space-y-0.5">
+                                                    <p className="truncate">{p3}</p>
+                                                    <p className="truncate">{p4}</p>
+                                                </div>
                                             </div>
                                         </div>
-
-                                        {/* Winner Strip */}
-                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.winner_team === 1 ? 'bg-green-500' : 'bg-blue-500'}`} />
                                     </div>
                                 );
                             })}
@@ -1544,7 +1632,7 @@ const Admin = () => {
             {
                 editingPlayer && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-                        <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative">
+                        <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
                             <button onClick={() => { setEditingPlayer(null); setNewPassword(''); }} className="absolute top-4 right-4 text-slate-500 hover:text-white">
                                 <X size={24} />
                             </button>
@@ -1558,6 +1646,39 @@ const Admin = () => {
                                         value={editingPlayer.username}
                                         onChange={(e) => setEditingPlayer({ ...editingPlayer, username: e.target.value })}
                                     />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs text-slate-400 block mb-1">First Name</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                            value={editingPlayer.first_name || ''}
+                                            onChange={(e) => setEditingPlayer({ ...editingPlayer, first_name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-slate-400 block mb-1">Last Name</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                            value={editingPlayer.last_name || ''}
+                                            onChange={(e) => setEditingPlayer({ ...editingPlayer, last_name: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1">Club</label>
+                                    <select
+                                        className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                        value={editingPlayer.main_club_id || ''}
+                                        onChange={(e) => setEditingPlayer({ ...editingPlayer, main_club_id: e.target.value || null })}
+                                    >
+                                        <option value="">No Club</option>
+                                        {clubs.map((c: any) => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="text-xs text-slate-400 block mb-1">New Password (Optional)</label>

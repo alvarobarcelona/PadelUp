@@ -274,6 +274,8 @@
     "approve_title": "Genehmigen",
     "delete_title": "Löschen",
     "cancel": "Abbrechen",
+    "status": "Status",
+    "created_by": "Erstellt von",
     "tournament_approved": "Turnier erfolgreich genehmigt!",
     "tournament_rejected": "Turnier erfolgreich abgelehnt!",
     "title": "Admin-Konsole",
