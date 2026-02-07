@@ -383,8 +383,16 @@ const Settings = () => {
         navigate('/auth');
     };
 
-    const changeLanguage = (lng: string) => {
+    const changeLanguage = async (lng: string) => {
         i18n.changeLanguage(lng);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await supabase.from('profiles').update({ language: lng }).eq('id', user.id);
+            }
+        } catch (error) {
+            console.error('Error updating language preference:', error);
+        }
     };
 
     return (

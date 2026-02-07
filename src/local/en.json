@@ -270,6 +270,16 @@
     "must_include_self": "You must be a participant to create a match."
   },
   "admin": {
+    "approve_message": "Are you sure you want to approve this tournament?",
+    "reject_message": "Are you sure you want to reject this tournament?",
+    "approve_success": "Tournament approved successfully!",
+    "reject_success": "Tournament rejected successfully!",
+    "reject_title": "Reject",
+    "approve_title": "Approve",
+    "delete_title": "Delete",
+    "cancel": "Cancel",
+    "tournament_approved": "Tournament approved successfully!",
+    "tournament_rejected": "Tournament rejected successfully!",
     "title": "Admin Console",
     "tab_requests": "Requests",
     "tab_members": "Members",
@@ -625,7 +635,12 @@
     "broadcast_message": "Broadcast message",
     "cleanup_disclaimer": "Messages older than 90 days can be deleted for security.\nConversations are encrypted and 100% private.",
     "read": "Read",
-    "sent": "Sent"
+    "sent": "Sent",
+    "system_messages": {
+      "verify_request": "🏆 Tournament \"{{name}}\" needs verification by an admin. You will be notified via chat when verified.",
+      "verified_approved": "✅ Your tournament \"{{name}}\" has been verified and approved!",
+      "verified_rejected": "❌ Your tournament \"{{name}}\" was rejected. Reason: {{reason}}"
+    }
   },
   "welcome_modal": {
     "title": "Welcome to PadelUp",

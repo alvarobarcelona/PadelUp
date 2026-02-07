@@ -626,7 +626,19 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
                                                 "text-sm truncate",
                                                 conv.has_unread ? "text-white font-medium" : "text-slate-400"
                                             )}>
-                                                {conv.last_message}
+                                                {(() => {
+                                                    try {
+                                                        if (conv.last_message && conv.last_message.startsWith('{')) {
+                                                            const parsed = JSON.parse(conv.last_message);
+                                                            if (parsed.key) {
+                                                                return t(parsed.key, parsed.params) as string;
+                                                            }
+                                                        }
+                                                    } catch (e) {
+                                                        // Fallback
+                                                    }
+                                                    return conv.last_message;
+                                                })()}
                                             </p>
                                             {conv.has_unread && (
                                                 <span className="bg-green-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-sm flex-shrink-0">
@@ -679,11 +691,26 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
 
                                     // Handle System Messages
                                     if (msg.type === 'system') {
+                                        let displayContent = msg.content;
+                                        try {
+                                            // Try to parse JSON for dynamic translation
+                                            // Format: { "key": "chat.system_messages.xyz", "params": { "name": "..." } }
+                                            if (msg.content.startsWith('{')) {
+                                                const parsed = JSON.parse(msg.content);
+                                                if (parsed.key) {
+                                                    displayContent = t(parsed.key, parsed.params) as string;
+                                                }
+                                            }
+                                        } catch (e) {
+                                            // Fallback to raw content if not JSON or parsing fails
+                                            // This handles old messages that are plain text
+                                        }
+
                                         return (
                                             <div key={msg.id} className="flex justify-center my-4 px-4">
                                                 <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3 text-xs text-slate-400 text-center max-w-[85%]">
                                                     <ShieldCheck size={16} className="mx-auto mb-1 text-purple-400" />
-                                                    {msg.content}
+                                                    {displayContent}
                                                     <span className="block mt-1 text-[10px] opacity-60">
                                                         {new Date(msg.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                     </span>

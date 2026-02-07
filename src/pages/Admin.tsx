@@ -351,7 +351,7 @@ const Admin = () => {
         if (!approved) {
             const reason = await prompt({
                 title: t('admin.reject_title', { defaultValue: 'Reject Tournament' }),
-                message: t('admin.reject_reason_prompt', { defaultValue: 'Please provide a reason for rejection:' }),
+                message: t('admin.reject_message', { defaultValue: 'Please provide a reason for rejection:' }),
                 placeholder: "Reason..."
             });
             if (reason === null) return; // Cancelled
@@ -988,7 +988,6 @@ const Admin = () => {
                                                     {p.subscription_end_date ? ` (${new Date(p.subscription_end_date).toLocaleDateString()})` : ' (No Date)'}
                                                     {!isExpired && <span className="text-slate-500 font-normal">[{daysLeft}d left]</span>}
                                                 </p>
-                                                
                                                 <p className=" flex text-[10px] text-slate-500 mt-1">
                                                     Terms: {p.terms_accepted_at ? <span className="text-green-500" title={new Date(p.terms_accepted_at).toLocaleString()}>Accepted ✅</span> : <span className="text-red-500">Not Accepted ❌</span>}
                                                     <span className="ml-2">Notifications: {pushSubscriptions.some(sub => sub.user_id === p.id) ? <span className="text-green-500">Enabled ✅</span> : <span className="text-red-500">Disabled ❌</span>}</span>
@@ -1413,7 +1412,7 @@ const Admin = () => {
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <p className="font-bold text-white text-lg">{tournament.name}</p>
-                                                    <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">ID: {tournament.id}</span>
+
                                                     {hasIssues && (
                                                         <span className="flex items-center gap-1 text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold animate-pulse">
                                                             <AlertTriangle size={12} />
@@ -1468,7 +1467,8 @@ const Admin = () => {
                                                     </div>
                                                 )}
 
-                                                <div className="mt-2 text-xs text-slate-500">
+                                                <div className="mt-2 text-xs text-slate-500 flex flex-wrap gap-2">
+                                                    <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">ID: {tournament.id}</span>
                                                     <p>Created by: <span className="text-slate-400">{creatorName}</span></p>
                                                     <p>Date: {new Date(tournament.created_at).toLocaleString()}</p>
                                                 </div>

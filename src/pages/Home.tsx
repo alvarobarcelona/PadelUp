@@ -41,6 +41,7 @@ interface MatchPreview {
     team1_p2: string;
     team2_p1: string;
     team2_p2: string;
+    club?: { name: string } | null;
 }
 
 const Home = () => {
@@ -187,12 +188,13 @@ const Home = () => {
             const { data: pending } = await supabase
                 .from('matches')
                 .select(`
-                    id, created_at, winner_team, commentary, status, score, created_by,
+                    id, created_at, winner_team, commentary, status, score, created_by, club_id,
                     team1_p1, team1_p2, team2_p1, team2_p2,
                     t1p1:team1_p1(username, elo),
                     t1p2:team1_p2(username, elo),
                     t2p1:team2_p1(username, elo),
-                    t2p2:team2_p2(username, elo)
+                    t2p2:team2_p2(username, elo),
+                    club:clubs(name)
                 `)
                 .eq('status', 'pending')
                 .or(`team1_p1.eq.${profile.id},team1_p2.eq.${profile.id},team2_p1.eq.${profile.id},team2_p2.eq.${profile.id}`)
@@ -520,8 +522,14 @@ const Home = () => {
 
                                             <span className="text-[10px] text-slate-500 font-mono">{t('home.match_number', { id: match.id })}</span>
                                         </div>
-                                        <div className="flex justify-end pb-2 border-b border-yellow-500/10">
-
+                                        <div className="flex justify-between pb-2 border-b border-yellow-500/10">
+                                            <span className="text-[10px] text-slate-500 font-medium">
+                                                {match.club?.name && (
+                                                    <span className="mr-2 text-slate-500">
+                                                        {match.club.name}
+                                                    </span>
+                                                )}
+                                            </span>
                                             <p className="text-[10px] text-slate-400 font-medium">
                                                 {match.creator?.username && (
                                                     <span className="mr-2 text-slate-500">

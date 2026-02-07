@@ -269,6 +269,16 @@
     "must_include_self": "Debes participar en el partido para poder registrarlo."
   },
   "admin": {
+    "approve_message": "¿Estás seguro de que quieres aprobar este torneo?",
+    "reject_message": "¿Estás seguro de que quieres rechazar este torneo?",
+    "approve_success": "¡Torneo aprobado correctamente!",
+    "reject_success": "¡Torneo rechazado correctamente!",
+    "reject_title": "Rechazar",
+    "approve_title": "Aprobar",
+    "delete_title": "Eliminar",
+    "cancel": "Cancelar",
+    "tournament_approved": "Torneo aprobado correctamente!",
+    "tournament_rejected": "Torneo rechazado correctamente!",
     "title": "Consola de Admin",
     "tab_requests": "Solicitudes",
     "tab_members": "Miembros",
@@ -624,7 +634,12 @@
     "confirm_delete_conversation": "¿Estás seguro de querer eliminar esta conversación? Solo se eliminará para ti.",
     "cleanup_disclaimer": "Mensajes antiguos a 90 dias podran ser eliminados por seguridad.\nLas conversacions estan encriptadas y son 100% privadas.",
     "read": "Leído",
-    "sent": "Enviado"
+    "sent": "Enviado",
+    "system_messages": {
+      "verify_request": "🏆 El torneo \"{{name}}\" necesita verificación de un administrador. Se te notificará por chat cuando sea verificado.",
+      "verified_approved": "✅ ¡Tu torneo \"{{name}}\" ha sido verificado y aprobado!",
+      "verified_rejected": "❌ Tu torneo \"{{name}}\" fue rechazado. Razón: {{reason}}"
+    }
   },
   "welcome_modal": {
     "title": "Bienvenido a PadelUp",

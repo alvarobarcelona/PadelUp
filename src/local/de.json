@@ -266,6 +266,16 @@
     "must_include_self": "Sie müssen einer der registrierten Spieler sein, um das Spiel zu erstellen."
   },
   "admin": {
+    "approve_message": "Sind Sie sicher, dass Sie dieses Turnier genehmigen möchten?",
+    "reject_message": "Sind Sie sicher, dass Sie dieses Turnier ablehnen möchten?",
+    "approve_success": "Turnier erfolgreich genehmigt!",
+    "reject_success": "Turnier erfolgreich abgelehnt!",
+    "reject_title": "Ablehnen",
+    "approve_title": "Genehmigen",
+    "delete_title": "Löschen",
+    "cancel": "Abbrechen",
+    "tournament_approved": "Turnier erfolgreich genehmigt!",
+    "tournament_rejected": "Turnier erfolgreich abgelehnt!",
     "title": "Admin-Konsole",
     "tab_requests": "Anfragen",
     "tab_members": "Mitglieder",
@@ -636,7 +646,12 @@
     "confirm_delete_conversation": "Sind Sie sicher, dass Sie diese Konversation löschen möchten? Sie wird nur für Sie gelöscht.",
     "cleanup_disclaimer": "Nachrichten älter als 90 Tage können aus Sicherheitsgründen gelöscht werden. \nDie Konversationen sind verschlüsselt und 100% privat.",
     "read": "Gelesen",
-    "sent": "Gesendet"
+    "sent": "Gesendet",
+    "system_messages": {
+      "verify_request": "🏆 Turnier \"{{name}}\" muss von einem Administrator überprüft werden. Du wirst per Chat benachrichtigt, sobald es verifiziert ist.",
+      "verified_approved": "✅ Dein Turnier \"{{name}}\" wurde überprüft und genehmigt!",
+      "verified_rejected": "❌ Dein Turnier \"{{name}}\" wurde abgelehnt. Grund: {{reason}}"
+    }
   },
   "welcome_modal": {
     "title": "Willkommen bei PadelUp",

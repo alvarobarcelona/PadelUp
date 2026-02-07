@@ -23,6 +23,7 @@ import Install from './pages/Install';
 
 import { useEffect } from 'react';
 import { supabase } from './lib/supabase';
+import i18n from './lib/i18n';
 
 import { ChatProvider } from './context/ChatContext';
 // import CookieBanner from './components/CookieBanner';
@@ -37,10 +38,37 @@ function AppRoutes() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, _session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       // Listen for PASSWORD_RECOVERY event to redirect to reset page
       if (event === 'PASSWORD_RECOVERY') {
         navigate('/reset-password');
+      }
+
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        if (session?.user) {
+          setTimeout(async () => {
+            try {
+              if (!session?.user?.id) return;
+
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('language')
+                .eq('id', session.user.id)
+                .maybeSingle();
+
+              if (error) {
+                console.warn('App: Background language sync failed (non-critical):', error.message);
+              } else if (profile?.language) {
+                if (i18n.language !== profile.language) {
+                  i18n.changeLanguage(profile.language);
+                }
+              }
+            } catch (err) {
+              console.warn('App: Background language sync error:', err);
+            }
+            //IMPORTANT delay to prevent render blocking/loops during auth state change
+          }, 1000);
+        }
       }
     });
 
