@@ -55,7 +55,8 @@ const Rankings = () => {
                     .select('*')
                     .eq('approved', true)
                     .eq('is_admin', false)
-                    .order('elo', { ascending: false });
+                    .order('elo', { ascending: false })
+                    .order('username', { ascending: true });
 
                 if (error) throw error;
                 return data || [];
@@ -204,7 +205,7 @@ const Rankings = () => {
                     )}
                 </div>
             </header>
-            
+
             <div className='text-center text-slate-400'>{t('rankings.fire_motivation')}</div>
 
             <div className="space-y-3">
