@@ -985,7 +985,7 @@ const Admin = () => {
                                             {/* Header: Identity & Status */}
                                             <div className="col-span-1 md:col-span-2 flex flex-wrap items-center gap-2 mb-1 border-b border-slate-700 pb-2 pr-16 sm:pr-0">
                                                 <span className="font-bold text-white text-lg">{p.username}</span>
-                                                <span className="px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300 font-mono">M.ID: {p.member_id}</span>
+                                                <span className="px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300 font-mono">Member.ID: {p.member_id}</span>
                                                 <div className="flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-500/20">
                                                     <Trophy size={10} />
                                                     ELO: {p.elo}
