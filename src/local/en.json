@@ -141,7 +141,10 @@
     "subscription_expired_alert": "Your subscription has expired. Please renew to access tournaments.",
     "tournaments": "Tournaments",
     "diff_of": "Diff of {{diff}}",
-    "by": "Created by:"
+    "by": "Created by:",
+    "delete_match_title": "Delete Match",
+    "delete_match_confirm": "Are you sure you want to delete this match? This action cannot be undone.",
+    "delete": "Delete before it is confirmed"
   },
   "profile": {
     "title": "My Profile",

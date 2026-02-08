@@ -130,7 +130,10 @@
     "subscription_expired_alert": "Tu suscripción ha caducado. Por favor renueva para acceder a los torneos.",
     "tournaments": "Torneos",
     "diff_of": "Dif de {{diff}}",
-    "by": "Creado por:"
+    "by": "Creado por:",
+    "delete_match_title": "Eliminar Partido",
+    "delete_match_confirm": "¿Estás seguro de que quieres eliminar este partido? Esta acción no se puede deshacer.",
+    "delete": "Eliminar antes de que sea confirmado"
   },
   "profile": {
     "title": "Mi Perfil",

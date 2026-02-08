@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy, Info, MessageCircle } from 'lucide-react';
+import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy, Info, MessageCircle, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
@@ -311,6 +311,20 @@ const Home = () => {
         }
     });
 
+    const deleteMutation = useMutation({
+        mutationFn: async (matchId: number) => {
+            const { error } = await supabase.from('matches').delete().eq('id', matchId);
+            if (error) throw error;
+            return matchId;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pendingMatches'] });
+        },
+        onError: (error: any) => {
+            alert({ title: 'Error', message: 'Error deleting match: ' + error.message, type: 'danger' });
+        }
+    });
+
 
     const handleConfirm = async (matchId: number) => {
         const confirmed = await confirm({
@@ -364,6 +378,18 @@ const Home = () => {
                 }
             }
         });
+    };
+
+    const handleDelete = async (matchId: number) => {
+        const confirmed = await confirm({
+            title: t('home.delete_match_title'),
+            message: t('home.delete_match_confirm'),
+            type: 'danger',
+            confirmText: t('home.delete')
+        });
+        if (!confirmed) return;
+
+        deleteMutation.mutate(matchId);
     };
 
 
@@ -507,6 +533,8 @@ const Home = () => {
                                     ? (isUserTeam1 && !isCreatorTeam1) || (!isUserTeam1 && !isCreatorTeam2)
                                     : true;
 
+                                const canDelete = match.created_by === profile?.id;
+
 
                                 const scoreList = Array.isArray(match.score) ? match.score : [];
 
@@ -592,6 +620,15 @@ const Home = () => {
                                                     <Clock size={12} /> {t('home.waiting_opponent')}
                                                 </p>
                                             </div>
+                                        )}
+
+                                        {canDelete && (
+                                            <button
+                                                onClick={() => handleDelete(match.id)}
+                                                className="mt-2 w-full bg-slate-800/50 hover:bg-red-500/20 text-slate-400 hover:text-red-500 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 border border-slate-700/50 hover:border-red-500/30"
+                                            >
+                                                <Trash2 size={14} /> {t('home.delete')}
+                                            </button>
                                         )}
                                     </div>
                                 );
