@@ -38,3 +38,4 @@ supabase/.temp
 supabase/.branches
 supabase/functions
 supabase/sql
+supabase/migrations

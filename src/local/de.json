@@ -199,7 +199,7 @@
   "clubs": {
     "all_clubs": "Alle Clubs",
     "search_club": "Suche Club",
-    "select_club": "Wähle Club, wo du das Spiel gespielt hast",
+    "select_club": "Wo hast du das Spiel gespielt?",
     "no_club": "Kein Club",
     "main_club": "HauptClub",
     "select_club_if_you_wish": "Wähle Club (optional)",
@@ -397,6 +397,7 @@
     "enter_name": "Gib einen Namen für dein Event ein",
     "placeholder_name": "z.B. Samstag Padel Cup",
     "create": "Erstellen",
+    "start_date": "Datum und Uhrzeit des Turniers",
     "creating": "Erstelle...",
     "no_friends": "Keine Turniere von Freunden",
     "cancel": "Abbrechen",
@@ -652,6 +653,8 @@
     "cleanup_disclaimer": "Nachrichten älter als 90 Tage können aus Sicherheitsgründen gelöscht werden. \nDie Konversationen sind verschlüsselt und 100% privat.",
     "read": "Gelesen",
     "sent": "Gesendet",
+    "match_created_notification": "Spiel #{{matchId}} gegen {{opponent}} erstellt. Warten auf Bestätigung. Automatische Bestätigung in 24 Std.",
+    "match_rejected": "❌ Spiel #{{matchId}} abgelehnt. Grund: {{reason}}",
     "system_messages": {
       "verify_request": "🏆 Turnier \"{{name}}\" muss von einem Administrator überprüft werden. Du wirst per Chat benachrichtigt, sobald es verifiziert ist.",
       "verified_approved": "✅ Dein Turnier \"{{name}}\" wurde überprüft und genehmigt!",
@@ -671,7 +674,7 @@
   },
   "push_prompt": {
     "title": "Benachrichtigungen aktivieren",
-    "description": "Verpassen Sie keine Neuigkeiten oder Chat-Nachrichten aus Ihrer Community. Aktivieren Sie Push-Benachrichtigungen, um auf dem Laufenden zu bleiben! Sehr nützlich, um mit anderen Spielern in Kontakt zu treten.",
+    "description": "Nicht verpassen, wenn jemand ein Spiel registriert, in dem du gespielt hast. Aktivieren Sie Push-Benachrichtigungen, um auf dem Laufenden zu bleiben! Sehr nützlich, um mit anderen Spielern in Kontakt zu treten.",
     "enable_button": "Einschalten",
     "not_now": "Vielleicht später"
   },

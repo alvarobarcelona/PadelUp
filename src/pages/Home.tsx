@@ -45,7 +45,7 @@ interface MatchPreview {
 }
 
 const Home = () => {
-    const { alert, confirm } = useModal();
+    const { alert, confirm, prompt } = useModal();
     const { t } = useTranslation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
@@ -351,8 +351,16 @@ const Home = () => {
     };
 
     const handleReject = async (matchId: number) => {
-        const reason = prompt(t('home.reject_reason_prompt'));
-        if (reason === null) return;
+        // Use custom prompt from useModal
+        const reason = await prompt({
+            title: t('home.reject_title') || 'Reject',
+            message: t('home.reject_reason_prompt'),
+            placeholder: "Reason...",
+            confirmText: t('home.reject'),
+            cancelText: t('common.cancel')
+        });
+
+        if (reason === null) return; // Cancelled
         if (reason.trim() === '') {
             await alert({ title: 'Warning', message: t('home.reject_reason_required'), type: 'warning' });
             return;

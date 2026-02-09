@@ -402,6 +402,7 @@
     "enter_name": "Enter a name for your event",
     "placeholder_name": "e.g. Saturday Padel Cup",
     "create": "Create",
+    "start_date": "Tournament Date & Time",
     "creating": "Creating...",
     "no_friends": "No tournaments from friends",
     "cancel": "Cancel",
@@ -641,6 +642,8 @@
     "cleanup_disclaimer": "Messages older than 90 days can be deleted for security.\nConversations are encrypted and 100% private.",
     "read": "Read",
     "sent": "Sent",
+    "match_created_notification": "Match #{{matchId}} with opponents {{opponent}} created. Waiting for confirmation. Auto-confirmation in 24h.",
+    "match_rejected": "❌ Match #{{matchId}} rejected. Reason: {{reason}}",
     "system_messages": {
       "verify_request": "🏆 Tournament \"{{name}}\" needs verification by an admin. You will be notified via chat when verified.",
       "verified_approved": "✅ Your tournament \"{{name}}\" has been verified and approved!",
@@ -660,7 +663,7 @@
   },
   "push_prompt": {
     "title": "Enable Notifications",
-    "description": "Don't miss news or chat messages from your community. Enable push notifications to stay updated! Very useful for contacting other players.",
+    "description": "Don't miss when someone registers a match where you played. Enable push notifications to stay updated! Very useful for contacting other players.",
     "enable_button": "Enable",
     "not_now": "Maybe later"
   },

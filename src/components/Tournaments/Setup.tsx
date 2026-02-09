@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Users, Search, X, Globe, Lock } from 'lucide-react';
+import { Users, Search, X, Globe, Lock, Calendar, Type } from 'lucide-react';
 import { useModal } from '../../context/ModalContext';
 import { generateAmericanoRound, generateMexicanoRound, type TournamentParticipant } from '../../lib/tournament-logic';
 
@@ -17,11 +17,26 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
     const queryClient = useQueryClient();
     const { alert } = useModal();
     const [searchQuery, setSearchQuery] = useState('');
-    const [pointsPerMatch, setPointsPerMatch] = useState(24);
+    const [pointsPerMatch, setPointsPerMatch] = useState(tournament.settings?.pointsPerMatch || 24);
     const [mode, setMode] = useState<'americano' | 'mexicano'>(tournament.mode || 'americano');
     const [visibility, setVisibility] = useState<'public' | 'friends' | 'private'>(tournament.visibility || 'public');
-    const [courtNames, setCourtNames] = useState<string[]>([]);
+    const [courtNames, setCourtNames] = useState<string[]>(tournament.settings?.courtNames || []);
     const [guestName, setGuestName] = useState('');
+    const [name, setName] = useState(tournament.name || '');
+    const toLocalISOString = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        // Get local time components
+        const pad = (num: number) => num.toString().padStart(2, '0');
+        const year = date.getFullYear();
+        const month = pad(date.getMonth() + 1);
+        const day = pad(date.getDate());
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    const [startDate, setStartDate] = useState(toLocalISOString(tournament.start_date));
 
     // Notify parent when mode changes
     useEffect(() => {
@@ -29,6 +44,18 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
             onModeChange(mode);
         }
     }, [mode, onModeChange]);
+
+    // Sync local state with tournament prop when it changes (e.g. on refetch/navigation)
+    useEffect(() => {
+        if (tournament) {
+            setName(tournament.name || '');
+            setStartDate(toLocalISOString(tournament.start_date));
+            setPointsPerMatch(tournament.settings?.pointsPerMatch || 24);
+            setCourtNames(tournament.settings?.courtNames || []);
+            setMode(tournament.mode || 'americano');
+            setVisibility(tournament.visibility || 'public');
+        }
+    }, [tournament]);
 
     // Calculate time estimate helper
     const getEstimatedTime = (numPlayers: number, points: number) => {
@@ -113,14 +140,54 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                 .eq('id', tournament.id);
             if (error) throw error;
         },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tournament', String(tournament.id)] });
+            queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+        },
         onError: (err) => {
             console.error('Failed to save settings', err);
         }
     });
 
+    const handleNameBlur = () => {
+        if (name !== tournament.name && name.trim()) {
+            updateSettingsMutation.mutate({ name: name.trim() });
+        }
+    };
+
+    const handleDateBlur = () => {
+        const dateStr = new Date(startDate).toISOString();
+        if (startDate && dateStr !== tournament.start_date) {
+            updateSettingsMutation.mutate({ start_date: dateStr });
+        }
+    };
+
+    const handlePointsSave = () => {
+        const newSettings = {
+            ...tournament.settings,
+            pointsPerMatch: pointsPerMatch,
+            courtNames: courtNames
+        };
+        updateSettingsMutation.mutate({ settings: newSettings });
+    };
+
+    const handleCourtSave = () => {
+        const newSettings = {
+            ...tournament.settings,
+            pointsPerMatch: pointsPerMatch,
+            courtNames: courtNames
+        };
+        updateSettingsMutation.mutate({ settings: newSettings });
+    };
+
     const handleVisibilityChange = (newVisibility: 'public' | 'friends' | 'private') => {
         setVisibility(newVisibility);
         updateSettingsMutation.mutate({ visibility: newVisibility });
+    };
+
+    const handleModeChange = (newMode: 'americano' | 'mexicano') => {
+        setMode(newMode);
+        updateSettingsMutation.mutate({ mode: newMode });
     };
 
 
@@ -208,6 +275,43 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
 
     return (
         <div className="space-y-6" >
+            {/* General Details */}
+            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 space-y-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Type size={16} /> {t('tournaments.setup.details', { defaultValue: 'General Details' })}
+                </h3>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-xs text-slate-400 font-bold uppercase">{t('tournaments.name', { defaultValue: 'Tournament Name' })}</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                onBlur={handleNameBlur}
+                                className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-green-500 outline-none transition-colors"
+                                placeholder={t('tournaments.placeholder_name', { defaultValue: 'Tournament Name' })}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs text-slate-400 font-bold uppercase">{t('tournaments.start_date', { defaultValue: 'Date & Time' })}</label>
+                        <div className="relative">
+                            <input
+                                type="datetime-local"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                onBlur={handleDateBlur}
+                                className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-green-500 outline-none transition-colors"
+                            />
+                            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Players List */}
             < div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700" >
                 <div className="flex justify-between items-center mb-4">
@@ -318,14 +422,14 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                     <label className="text-sm font-medium text-slate-300 block mb-2">{t('tournaments.setup.tournament_mode', { defaultValue: 'Tournament Mode' })}</label>
                     <div className="grid grid-cols-2 gap-3">
                         <button
-                            onClick={() => setMode('americano')}
+                            onClick={() => handleModeChange('americano')}
                             className={`flex flex-col items-start justify-center p-4 rounded-xl border transition-all ${mode === 'americano' ? 'bg-green-500/20 border-green-500 text-green-400' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}
                         >
                             <span className="text-sm font-bold mb-1">{t('tournaments.modes.americano', { defaultValue: 'Americano' })}</span>
                             <span className="text-[10px] text-slate-400 leading-tight">{t('tournaments.modes.americano_full', { defaultValue: 'Rotating partners. Play with everyone in the tournament.' })}</span>
                         </button>
                         <button
-                            onClick={() => setMode('mexicano')}
+                            onClick={() => handleModeChange('mexicano')}
                             className={`flex flex-col items-start justify-center p-4 rounded-xl border transition-all ${mode === 'mexicano' ? 'bg-orange-500/20 border-orange-500 text-orange-400' : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:bg-slate-800'}`}
                         >
                             <span className="text-sm font-bold mb-1">{t('tournaments.modes.mexicano', { defaultValue: 'Mexicano' })}</span>
@@ -386,6 +490,8 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                             step="4"
                             value={pointsPerMatch}
                             onChange={(e) => setPointsPerMatch(Number(e.target.value))}
+                            onMouseUp={handlePointsSave}
+                            onTouchEnd={handlePointsSave}
                             className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500"
                         />
                         <div className="relative text-[10px] text-slate-500 font-mono font-medium mt-2 h-6">
@@ -416,6 +522,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                                                 newNames[i] = e.target.value;
                                                 setCourtNames(newNames);
                                             }}
+                                            onBlur={handleCourtSave}
                                         />
                                     </div>
                                 ))}

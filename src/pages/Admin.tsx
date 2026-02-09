@@ -774,6 +774,10 @@ const Admin = () => {
         if (!editingMatch) return;
         setLoading(true);
         try {
+            // Resolve club name from the selected club_id
+            const selectedClub = clubs.find(c => c.id === editingMatch.club_id);
+            const clubName = selectedClub ? selectedClub.name : null;
+
             const { error } = await supabase
                 .from('matches')
                 .update({
@@ -787,9 +791,9 @@ const Admin = () => {
 
             await logActivity('ADMIN_EDIT_MATCH', editingMatch.id, {
                 changes: {
-                    club_id: editingMatch.club_id,
+                    club_name: clubName,
                     created_at: editingMatch.created_at,
-                    commentary: editingMatch.commentary
+                    commentary: editingMatch.commentary,
                 }
             });
 
@@ -1012,8 +1016,8 @@ const Admin = () => {
                                                 <div className="flex items-center gap-2" title="App Language">
                                                     <Globe size={12} className="text-slate-500" />
                                                     <span className="text-slate-500 text-[10px]">Language:</span> {p.language || 'en'}
-                                                    <span className="text-slate-500 text-[10px] ml-4">Club:</span> {p.main_club?.name || 'No Club'}                                              
-                                                </div>                                            
+                                                    <span className="text-slate-500 text-[10px] ml-4">Club:</span> {p.main_club?.name || 'No Club'}
+                                                </div>
                                             </div>
 
                                             {/* Column 2: Stats & Membership */}

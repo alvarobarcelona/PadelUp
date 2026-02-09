@@ -1,6 +1,4 @@
 
-
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -23,6 +21,7 @@ export default function Tournaments() {
     const [activeTab, setActiveTab] = useState<'public' | 'friends' | 'private'>(initialTab);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newTournamentName, setNewTournamentName] = useState('');
+    const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 16));
 
     useEffect(() => {
         const checkUser = async () => {
@@ -107,7 +106,7 @@ export default function Tournaments() {
     });
 
     const createMutation = useMutation({
-        mutationFn: async (name: string) => {
+        mutationFn: async ({ name, start_date }: { name: string, start_date: string }) => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
@@ -118,7 +117,8 @@ export default function Tournaments() {
                     created_by: user.id,
                     mode: 'americano',
                     status: 'setup',
-                    visibility: 'public' // Default to public
+                    visibility: 'public', // Default to public
+                    start_date: start_date
                 })
                 .select()
                 .single();
@@ -155,6 +155,7 @@ export default function Tournaments() {
             queryClient.invalidateQueries({ queryKey: ['tournaments'] });
             setShowCreateModal(false);
             setNewTournamentName('');
+            setStartDate(new Date().toISOString().slice(0, 16));
             navigate(`/tournaments/${newTournament.id}`);
         }
     });
@@ -174,13 +175,14 @@ export default function Tournaments() {
     });
 
     const handleCreateClick = () => {
+        setStartDate(new Date().toISOString().slice(0, 16));
         setShowCreateModal(true);
     };
 
     const submitCreate = (e: React.FormEvent) => {
         e.preventDefault();
         if (newTournamentName.trim()) {
-            createMutation.mutate(newTournamentName.trim());
+            createMutation.mutate({ name: newTournamentName.trim(), start_date: startDate });
         }
     };
 
@@ -235,6 +237,15 @@ export default function Tournaments() {
                                     onChange={(e) => setNewTournamentName(e.target.value)}
                                     autoFocus
                                 />
+                                <div className="space-y-1">
+                                    <label className="text-xs text-slate-400 ml-1">{t('tournaments.start_date', { defaultValue: 'Date & Time' })}</label>
+                                    <input
+                                        type="datetime-local"
+                                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 transition-colors"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                    />
+                                </div>
                                 <div className="flex gap-3">
                                     <button
                                         type="button"
@@ -328,68 +339,112 @@ export default function Tournaments() {
                             const isPlaying = tournament.status === 'playing';
                             const isRestricted = isPlaying && !isParticipant && !isAdmin;
 
-                            // @ts-ignore
-                            const Wrapper = (isRestricted ? 'div' : Link) as any;
-                            // @ts-ignore
-                            const linkProps = isRestricted ? {} : { to: `/tournaments/${tournament.id}` };
-
                             return (
-                                <Wrapper
-                                    key={tournament.id}
-                                    {...linkProps}
-                                    className={`block group relative overflow-hidden rounded-xl border p-5 transition-all ${isRestricted
-                                        ? 'bg-slate-800/40 border-slate-700/30 opacity-60 cursor-not-allowed'
-                                        : 'bg-slate-800/60 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
-                                        }`}
-                                    title={isRestricted ? t('tournaments.participants_only', { defaultValue: 'Only participants can enter while playing' }) : ''}
-                                >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className={`text-lg font-bold transition-colors ${isRestricted ? 'text-slate-400' : 'text-white group-hover:text-green-400'}`}>
-                                            {tournament.name}
-                                        </h3>
-                                        <div className="flex gap-2 items-center">
-                                            <span className={`text-[10px] font-bold text-center uppercase tracking-wider px-2 py-0.5 rounded-full ${tournament.status === 'completed' ? 'bg-slate-700 text-slate-400' :
-                                                tournament.status === 'playing' ? 'bg-green-500/20 text-green-400 animate-pulse' :
-                                                    'bg-yellow-500/20 text-yellow-500'
-                                                }`}>
-                                                {t(`tournaments.status.${tournament.status}`, { defaultValue: tournament.status })}
-                                            </span>
+                                isRestricted ? (
+                                    <div
+                                        key={tournament.id}
+                                        className="block group relative overflow-hidden rounded-xl border p-5 transition-all bg-slate-800/40 border-slate-700/30 opacity-60 cursor-not-allowed"
+                                        title={t('tournaments.participants_only', { defaultValue: 'Only participants can enter while playing' })}
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="text-lg font-bold transition-colors text-slate-400">
+                                                {tournament.name}
+                                            </h3>
+                                            <div className="flex gap-2 items-center">
+                                                <span className={`text-[10px] font-bold text-center uppercase tracking-wider px-2 py-0.5 rounded-full ${tournament.status === 'completed' ? 'bg-slate-700 text-slate-400' :
+                                                    tournament.status === 'playing' ? 'bg-green-500/20 text-green-400 animate-pulse' :
+                                                        'bg-yellow-500/20 text-yellow-500'
+                                                    }`}>
+                                                    {t(`tournaments.status.${tournament.status}`, { defaultValue: tournament.status })}
+                                                </span>
 
-                                            {/* Delete Button (Admin Only) */}
-                                            {(isAdmin || (tournament.created_by === userId && (tournament.visibility === 'private' || tournament.status === 'setup'))) && (
-                                                <button
-                                                    onClick={(e) => handleDelete(e, tournament.id)}
-                                                    className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors z-10"
-                                                    title="Delete Tournament"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                {/* Delete Button (Admin Only) */}
+                                                {(isAdmin || (tournament.created_by === userId && (tournament.visibility === 'private' || tournament.status === 'setup'))) && (
+                                                    <button
+                                                        onClick={(e) => handleDelete(e, tournament.id)}
+                                                        className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors z-10"
+                                                        title="Delete Tournament"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-4 text-xs text-slate-400">
+                                            <span className="flex items-center gap-1">
+                                                <Trophy size={14} />
+                                                <span className="capitalize">{tournament.mode}</span>
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Calendar size={14} />
+                                                {new Date(tournament.start_date || tournament.created_at).toLocaleDateString()}
+                                                <span className="text-[10px] opacity-70">
+                                                    {new Date(tournament.start_date || tournament.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </span>
+                                            {isAdmin && (
+                                                <span className="text-[10px] bg-slate-700 px-1.5 rounded text-slate-300">
+                                                    {tournament.created_by === userId ? 'Yours' : 'User'}
+                                                </span>
                                             )}
                                         </div>
-                                    </div>
 
-                                    <div className="flex items-center gap-4 text-xs text-slate-400">
-                                        <span className="flex items-center gap-1">
-                                            <Trophy size={14} />
-                                            <span className="capitalize">{tournament.mode}</span>
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <Calendar size={14} />
-                                            {new Date(tournament.created_at).toLocaleDateString()}
-                                        </span>
-                                        {isAdmin && (
-                                            <span className="text-[10px] bg-slate-700 px-1.5 rounded text-slate-300">
-                                                {tournament.created_by === userId ? 'Yours' : 'User'}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {isRestricted ? (
                                         <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 opacity-50" size={20} />
-                                    ) : (
+                                    </div>
+                                ) : (
+                                    <Link
+                                        key={tournament.id}
+                                        to={`/tournaments/${tournament.id}`}
+                                        className="block group relative overflow-hidden rounded-xl border p-5 transition-all bg-slate-800/60 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600"
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="text-lg font-bold transition-colors text-white group-hover:text-green-400">
+                                                {tournament.name}
+                                            </h3>
+                                            <div className="flex gap-2 items-center">
+                                                <span className={`text-[10px] font-bold text-center uppercase tracking-wider px-2 py-0.5 rounded-full ${tournament.status === 'completed' ? 'bg-slate-700 text-slate-400' :
+                                                    tournament.status === 'playing' ? 'bg-green-500/20 text-green-400 animate-pulse' :
+                                                        'bg-yellow-500/20 text-yellow-500'
+                                                    }`}>
+                                                    {t(`tournaments.status.${tournament.status}`, { defaultValue: tournament.status })}
+                                                </span>
+
+                                                {/* Delete Button (Admin Only) */}
+                                                {(isAdmin || (tournament.created_by === userId && (tournament.visibility === 'private' || tournament.status === 'setup'))) && (
+                                                    <button
+                                                        onClick={(e) => handleDelete(e, tournament.id)}
+                                                        className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors z-10"
+                                                        title="Delete Tournament"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-4 text-xs text-slate-400">
+                                            <span className="flex items-center gap-1">
+                                                <Trophy size={14} />
+                                                <span className="capitalize">{tournament.mode}</span>
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Calendar size={14} />
+                                                {new Date(tournament.start_date || tournament.created_at).toLocaleDateString()}
+                                                <span className="text-[10px] opacity-70">
+                                                    {new Date(tournament.start_date || tournament.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </span>
+                                            {isAdmin && (
+                                                <span className="text-[10px] bg-slate-700 px-1.5 rounded text-slate-300">
+                                                    {tournament.created_by === userId ? 'Yours' : 'User'}
+                                                </span>
+                                            )}
+                                        </div>
+
                                         <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
-                                    )}
-                                </Wrapper>
+                                    </Link>
+                                )
                             );
                         })
                     )}
