@@ -653,7 +653,7 @@
     "cleanup_disclaimer": "Nachrichten älter als 90 Tage können aus Sicherheitsgründen gelöscht werden. \nDie Konversationen sind verschlüsselt und 100% privat.",
     "read": "Gelesen",
     "sent": "Gesendet",
-    "match_created_notification": "Spiel #{{matchId}} gegen {{opponent}} erstellt. Warten auf Bestätigung. Automatische Bestätigung in 24 Std.",
+    "match_created_notification": "🎾 Spiel eingetragen #{{matchId}}: {{team1}} vs {{team2}}. Warten auf Bestätigung.",
     "match_rejected": "❌ Spiel #{{matchId}} abgelehnt. Grund: {{reason}}",
     "system_messages": {
       "verify_request": "🏆 Turnier \"{{name}}\" muss von einem Administrator überprüft werden. Du wirst per Chat benachrichtigt, sobald es verifiziert ist.",

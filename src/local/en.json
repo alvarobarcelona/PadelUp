@@ -642,7 +642,7 @@
     "cleanup_disclaimer": "Messages older than 90 days can be deleted for security.\nConversations are encrypted and 100% private.",
     "read": "Read",
     "sent": "Sent",
-    "match_created_notification": "Match #{{matchId}} with opponents {{opponent}} created. Waiting for confirmation. Auto-confirmation in 24h.",
+    "match_created_notification": "🎾 Match recorded #{{matchId}}: {{team1}} vs {{team2}}. Waiting for confirmation.",
     "match_rejected": "❌ Match #{{matchId}} rejected. Reason: {{reason}}",
     "system_messages": {
       "verify_request": "🏆 Tournament \"{{name}}\" needs verification by an admin. You will be notified via chat when verified.",

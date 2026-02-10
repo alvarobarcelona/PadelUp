@@ -641,7 +641,7 @@
     "cleanup_disclaimer": "Mensajes antiguos a 90 dias podran ser eliminados por seguridad.\nLas conversacions estan encriptadas y son 100% privadas.",
     "read": "Leído",
     "sent": "Enviado",
-    "match_created_notification": "Partido #{{matchId}} contra {{opponent}} creado. Esperando confirmación. Autoconfirmacion en 24h.",
+    "match_created_notification": "🎾 Partido registrado #{{matchId}}: {{team1}} vs {{team2}}. Esperando confirmación.",
     "match_rejected": "❌ Partido #{{matchId}} rechazado. Razón: {{reason}}",
     "system_messages": {
       "verify_request": "🏆 El torneo \"{{name}}\" necesita verificación de un administrador. Se te notificará por chat cuando sea verificado.",

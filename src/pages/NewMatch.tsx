@@ -418,12 +418,9 @@ const NewMatch = () => {
                     ? [selectedPlayers.t2p1, selectedPlayers.t2p2]
                     : [selectedPlayers.t1p1, selectedPlayers.t1p2];
 
-                // Determine the "opponent" names from the perspective of the receiver (i.e., the creator's team)
-                const myTeam = isCreatorInT1
-                    ? [selectedPlayers.t1p1, selectedPlayers.t1p2]
-                    : [selectedPlayers.t2p1, selectedPlayers.t2p2];
-
-                const opponentNames = myTeam.map(p => p?.username).filter(Boolean).join(' & ');
+                // Construct Team Names for the notification
+                const t1Names = [selectedPlayers.t1p1?.username, selectedPlayers.t1p2?.username].filter(Boolean).join(' & ');
+                const t2Names = [selectedPlayers.t2p1?.username, selectedPlayers.t2p2?.username].filter(Boolean).join(' & ');
 
                 // Send to each opponent (fire and forget to not block UI, or await if critical)
                 // We await to ensure it goes through before navigation
@@ -435,7 +432,8 @@ const NewMatch = () => {
                                 key: "chat.match_created_notification",
                                 params: {
                                     matchId: newMatch.id,
-                                    opponent: opponentNames
+                                    team1: t1Names,
+                                    team2: t2Names
                                 }
                             })
                         });
