@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Users, Search, X, Globe, Lock, Calendar, Type } from 'lucide-react';
+import { Users, Search, X, Globe, Lock, Type } from 'lucide-react';
 import { useModal } from '../../context/ModalContext';
 import { generateAmericanoRound, generateMexicanoRound, type TournamentParticipant } from '../../lib/tournament-logic';
 
