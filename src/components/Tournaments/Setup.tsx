@@ -283,9 +283,10 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
 
                 <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <label className="text-xs text-slate-400 font-bold uppercase">{t('tournaments.name', { defaultValue: 'Tournament Name' })}</label>
+                        <label htmlFor='name' className="text-xs text-slate-400 font-bold uppercase">{t('tournaments.name', { defaultValue: 'Tournament Name' })}</label>
                         <div className="relative">
                             <input
+                                id='name'
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
@@ -297,16 +298,16 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs text-slate-400 font-bold uppercase">{t('tournaments.start_date', { defaultValue: 'Date & Time' })}</label>
+                        <label htmlFor='start_date' className="text-xs text-slate-400 font-bold uppercase">{t('tournaments.start_date', { defaultValue: 'Date & Time' })}</label>
                         <div className="relative">
                             <input
+                                id='start_date'
                                 type="datetime-local"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
                                 onBlur={handleDateBlur}
-                                className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-green-500 outline-none transition-colors"
+                                className="w-3/4 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-3 text-white focus:border-green-500 outline-none transition-colors"
                             />
-                            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
                         </div>
                     </div>
                 </div>
