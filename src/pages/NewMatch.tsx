@@ -419,11 +419,11 @@ const NewMatch = () => {
                     : [selectedPlayers.t1p1, selectedPlayers.t1p2];
 
                 // Determine the "opponent" names from the perspective of the receiver (i.e., the creator's team)
-               /*  const myTeam = isCreatorInT1
+                const myTeam = isCreatorInT1
                     ? [selectedPlayers.t1p1, selectedPlayers.t1p2]
-                    : [selectedPlayers.t2p1, selectedPlayers.t2p2]; */
+                    : [selectedPlayers.t2p1, selectedPlayers.t2p2];
 
-                const opponentNames = opponentTeam.map(p => p?.username).filter(Boolean).join(' & ');
+                const opponentNames = myTeam.map(p => p?.username).filter(Boolean).join(' & ');
 
                 // Send to each opponent (fire and forget to not block UI, or await if critical)
                 // We await to ensure it goes through before navigation

@@ -39,3 +39,4 @@ supabase/.branches
 supabase/functions
 supabase/sql
 supabase/migrations
+supabase/migrations_archive

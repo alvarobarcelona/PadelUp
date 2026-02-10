@@ -271,7 +271,7 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
             let newMatches = [];
 
             if (tournament.mode === 'americano') {
-                newMatches = generateAmericanoRound(nextRoundNum, updatedParticipants as TournamentParticipant[], tournament.id);
+                newMatches = generateAmericanoRound(nextRoundNum, updatedParticipants as TournamentParticipant[], tournament.id, allMatches || []);
             } else {
                 // Pass match history to Mexicano for smart partner rotation
                 newMatches = generateMexicanoRound(nextRoundNum, updatedParticipants as TournamentParticipant[], tournament.id, allMatches || []);
@@ -582,8 +582,8 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
                     </>
                 )}
 
-                {/* Delete Tournament - Only for creator in friends tournaments */}
-                {isCreator && tournament.visibility === 'friends' && tournament.status === 'playing' && (
+                {/* Delete Tournament - Only for creator in friends and public tournaments */}
+                {isCreator && tournament.status === 'playing' && (tournament.visibility === 'friends' || tournament.visibility === 'public') && (
                     <button
                         onClick={handleDeleteTournament}
                         disabled={deleteTournamentMutation.isPending}

@@ -514,12 +514,44 @@ const Admin = () => {
                 if (!match.completed) return;
 
                 // Find participants in this match
-                const team1Players = participants.filter(p =>
-                    p.player_id === match.team1_p1_id || p.player_id === match.team1_p2_id
-                );
-                const team2Players = participants.filter(p =>
-                    p.player_id === match.team2_p1_id || p.player_id === match.team2_p2_id
-                );
+                // FIX: Handle Guest players (null player_id) by matching display_name/text
+                const team1Players = participants.filter(p => {
+                    // Check P1 slot
+                    if (match.team1_p1_id) {
+                        if (p.player_id === match.team1_p1_id) return true;
+                    } else {
+                        // Guest P1: Match by name if participant is also guest
+                        if (!p.player_id && p.display_name === match.team1_p1_text) return true;
+                    }
+
+                    // Check P2 slot
+                    if (match.team1_p2_id) {
+                        if (p.player_id === match.team1_p2_id) return true;
+                    } else {
+                        // Guest P2: Match by name if participant is also guest
+                        if (!p.player_id && p.display_name === match.team1_p2_text) return true;
+                    }
+                    return false;
+                });
+
+                const team2Players = participants.filter(p => {
+                    // Check P1 slot
+                    if (match.team2_p1_id) {
+                        if (p.player_id === match.team2_p1_id) return true;
+                    } else {
+                        // Guest P1: Match by name
+                        if (!p.player_id && p.display_name === match.team2_p1_text) return true;
+                    }
+
+                    // Check P2 slot
+                    if (match.team2_p2_id) {
+                        if (p.player_id === match.team2_p2_id) return true;
+                    } else {
+                        // Guest P2: Match by name
+                        if (!p.player_id && p.display_name === match.team2_p2_text) return true;
+                    }
+                    return false;
+                });
 
                 // Add scores (both Americano and Mexicano use same scoring: points = score achieved)
                 team1Players.forEach(p => {
