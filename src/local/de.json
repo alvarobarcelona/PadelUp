@@ -752,5 +752,18 @@
       "section6_title": "6. Haftung",
       "section6_text": "Wir haften nicht für Schäden, die aus der Nutzung der App entstehen, soweit nicht Vorsatz oder grobe Fahrlässigkeit vorliegt."
     }
+  },
+  "ai_assistant": {
+    "title": "PadelUp Assistent",
+    "welcome": "Hallo! Ich bin dein PadelUp Assistent. Frag mich zu deinen Statistiken, Leistung oder Turnieren.",
+    "thinking": "Analysiere...",
+    "error": "Konnte deine Frage nicht verarbeiten. Bitte versuche es erneut.",
+    "placeholder": "Frag mich etwas...",
+    "suggestions": {
+      "performance": "Meine Leistung diesen Monat",
+      "best_partner": "Bester Partner",
+      "current_streak": "Aktuelle Serie",
+      "win_rate": "Meine Siegquote"
+    }
   }
 }

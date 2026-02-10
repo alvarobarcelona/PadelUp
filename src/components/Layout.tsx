@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
 import ChatButton from './Chat/ChatButton';
 import ChatDrawer from './Chat/ChatDrawer';
+import AiChatButton from './AiChat/AiChatButton';
+import AiChatDrawer from './AiChat/AiChatDrawer';
 import { useChat } from '../context/ChatContext';
 import { useTranslation } from 'react-i18next';
 import { InstallPrompt } from './InstallPrompt';
@@ -25,6 +27,7 @@ const Layout = () => {
     const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
     const [initialChatMessage, setInitialChatMessage] = useState<string | undefined>(undefined);
     const [showTermsModal, setShowTermsModal] = useState(false);
+    const [isAiChatOpen, setIsAiChatOpen] = useState(false);
 
     useEffect(() => {
         const handleOpenChat = (e: CustomEvent<string | { userId: string, initialMessage?: string }>) => {
@@ -122,6 +125,13 @@ const Layout = () => {
             <main className="min-h-[calc(100vh-80px)] p-4 pb-24">
                 <Outlet />
             </main>
+
+            {/* AI Chat Components */}
+            <AiChatButton onClick={() => setIsAiChatOpen(true)} />
+            <AiChatDrawer
+                isOpen={isAiChatOpen}
+                onClose={() => setIsAiChatOpen(false)}
+            />
 
             {/* Chat Components */}
             <ChatButton onClick={() => setIsChatOpen(true)} unreadCount={unreadCount} />
