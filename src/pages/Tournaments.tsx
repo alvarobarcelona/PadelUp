@@ -229,7 +229,7 @@ export default function Tournaments() {
                             </div>
 
                             <form onSubmit={submitCreate} className="space-y-4">
-                                <input
+                                <input id="tournament-name-input"
                                     type="text"
                                     placeholder={t('tournaments.placeholder_name', { defaultValue: 'e.g. Saturday Padel Cup' })}
                                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 transition-colors"
@@ -238,10 +238,11 @@ export default function Tournaments() {
                                     autoFocus
                                 />
                                 <div className="space-y-1">
-                                    <label className="text-xs text-slate-400 ml-1">{t('tournaments.start_date', { defaultValue: 'Date & Time' })}</label>
+                                    <label htmlFor="tournament-start-date" className="text-xs text-slate-400 ml-1">{t('tournaments.start_date', { defaultValue: 'Date & Time' })}</label>
                                     <input
+                                        id="tournament-start-date"
                                         type="datetime-local"
-                                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 transition-colors"
+                                        className="w-3/4 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 transition-colors"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                     />
