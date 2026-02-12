@@ -137,7 +137,7 @@ const Layout = () => {
             />
 
             {/* Bottom Navigation */}
-            <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm px-2 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-50 transition-all duration-300 transform-gpu">
+            <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm px-2 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-40 transition-all duration-300 transform-gpu">
                 <ul className="flex items-center justify-around">
                     <li>
                         <NavLink to="/" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
