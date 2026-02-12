@@ -648,7 +648,10 @@
       "verify_request": "🏆 Tournament \"{{name}}\" needs verification by an admin. You will be notified via chat when verified.",
       "verified_approved": "✅ Your tournament \"{{name}}\" has been verified and approved!",
       "verified_rejected": "❌ Your tournament \"{{name}}\" was rejected. Reason: {{reason}}"
-    }
+    },
+    "administrator": "Administrator",
+    "contact_admins": "Contact Admins",
+    "admins_subtitle": "Write to an admin for any query"
   },
   "welcome_modal": {
     "title": "Welcome to PadelUp",

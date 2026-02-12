@@ -659,7 +659,10 @@
       "verify_request": "🏆 Turnier \"{{name}}\" muss von einem Administrator überprüft werden. Du wirst per Chat benachrichtigt, sobald es verifiziert ist.",
       "verified_approved": "✅ Dein Turnier \"{{name}}\" wurde überprüft und genehmigt!",
       "verified_rejected": "❌ Dein Turnier \"{{name}}\" wurde abgelehnt. Grund: {{reason}}"
-    }
+    },
+    "administrator": "Administrator",
+    "contact_admins": "Admins kontaktieren",
+    "admins_subtitle": "Schreiben Sie einem Admin bei Fragen"
   },
   "welcome_modal": {
     "title": "Willkommen bei PadelUp",

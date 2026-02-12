@@ -61,6 +61,9 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
     const [adminSearchQuery, setAdminSearchQuery] = useState('');
     const [isBroadcastMode, setIsBroadcastMode] = useState(false);
 
+    // Initial State for Admins (To contact them)
+    const [admins, setAdmins] = useState<ConversationUser[]>([]);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
@@ -209,9 +212,28 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
         if (clubsData) setClubs(clubsData);
     };
 
+    const fetchAdmins = async () => {
+        const { data } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .eq('is_admin', true);
 
-    const fetchMessages = async (otherUserId: string, targetProfile?: ConversationUser) => {
-        setLoading(true);
+        if (data) {
+            // Filter out self if I am admin
+            const otherAdmins = data.filter(a => a.id !== currentUser?.id);
+            setAdmins(otherAdmins as any);
+        }
+    };
+
+    useEffect(() => {
+        if (isOpen && view === 'list') {
+            fetchAdmins();
+        }
+    }, [isOpen, view, currentUser]);
+
+
+    const fetchMessages = async (otherUserId: string, targetProfile?: ConversationUser, silent: boolean = false) => {
+        if (!silent) setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
@@ -238,7 +260,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
         } else {
             console.error('Error fetching messages:', error);
         }
-        setLoading(false);
+        if (!silent) setLoading(false);
     };
 
     // Realtime Subscription (unchanged)
@@ -338,7 +360,10 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
 
             if (error) throw error;
             setNewMessage('');
-            // Optimistic update handled by realtime or we can add manually here if realtime is slow
+
+            // Force refresh messages silently to ensure it appears even if realtime/optimistic update fails
+            await fetchMessages(activeChatUser.id, activeChatUser, true);
+
         } catch (error) {
             console.error('Error sending message:', error);
         } finally {
@@ -595,6 +620,41 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
                 {/* View: Conversation List */}
                 {view === 'list' && !showAdminSearch && (
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
+
+                        {/* Admin Contact Section */}
+                        {admins.length > 0 && !isAdmin && (
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-2 px-1">
+                                    <h3 className="text-xs font-bold text-blue-400 uppercase tracking-wider">{t('chat.contact_admins')}</h3>
+                                    <span className="text-[10px] text-slate-500">{t('chat.admins_subtitle')}</span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {admins.map(admin => (
+                                        <div
+                                            key={admin.id}
+                                            onClick={() => loadUserForChat(admin.id)}
+                                            className="flex items-center gap-3 p-3 rounded-xl bg-blue-900/10 border border-blue-500/20 hover:bg-blue-900/20 hover:border-blue-500/40 cursor-pointer transition-all group"
+                                        >
+                                            <div className="relative">
+                                                <Avatar src={admin.avatar_url} fallback={admin.username} />
+                                                <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-0.5 border-2 border-slate-900">
+                                                    <ShieldCheck size={10} className="text-white" />
+                                                </div>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="text-sm font-semibold text-blue-100 group-hover:text-white transition-colors">
+                                                    {admin.username}
+                                                </h4>
+                                                <p className="text-[10px] text-blue-300/60">{t('chat.administrator')}</p>
+                                            </div>
+                                            <MessageSquarePlus size={16} className="text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="h-px bg-slate-800 my-4" />
+                            </div>
+                        )}
+
                         {loadingConversations ? (
                             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-slate-500" /></div>
                         ) : conversations.length === 0 ? (
