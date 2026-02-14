@@ -16,16 +16,16 @@ export const getKFactor = (matchesPlayed: number) => {
 };
 
 export const LEVELS = [
-  {level: 1, min: 0, max: 800, label: "Beginner", key: "beginner"},
-  {level: 2, min: 800, max: 900, label: "Basic", key: "basic"},
-  {level: 2.5, min: 900, max: 1050, label: "Basic +", key: "basic_plus"},
-  {level: 3, min: 1050, max: 1200, label: "Lower Intermediate", key: "lower_intermediate"},
-  {level: 3.5, min: 1200, max: 1350, label: "Intermediate", key: "intermediate"},
-  {level: 4, min: 1350, max: 1500, label: "Upper Intermediate", key: "upper_intermediate"},
-  {level: 4.5, min: 1500, max: 1700, label: "Advanced", key: "advanced"},
-  {level: 5, min: 1700, max: 1900, label: "Advanced +", key: "advanced_plus"},
-  {level: 6, min: 1900, max: 2100, label: "Pro / Competition", key: "pro"},
-  {level: 7, min: 2100, max: 2300, label: "World Padel Tour", key: "wpt"},
+  { level: 1, min: 0, max: 800, key: "beginner" },
+  { level: 2, min: 800, max: 900, key: "basic" },
+  { level: 2.5, min: 900, max: 1050, key: "basic_plus" },
+  { level: 3, min: 1050, max: 1200, key: "lower_intermediate" },
+  { level: 3.5, min: 1200, max: 1350, key: "intermediate" },
+  { level: 4, min: 1350, max: 1500, key: "upper_intermediate" },
+  { level: 4.5, min: 1500, max: 1700, key: "advanced" },
+  { level: 5, min: 1700, max: 1900, key: "advanced_plus" },
+  { level: 6, min: 1900, max: 2100, key: "pro" },
+  { level: 7, min: 2100, max: 2300, key: "wpt" },
 ];
 
 export const getLevelFromElo = (elo: number) => {
@@ -40,7 +40,7 @@ export const calculateNewRating = (
   currentRating: number,
   actualScore: number,
   expectedScore: number,
-  kFactor: number = K_FACTOR
+  kFactor: number = K_FACTOR,
 ) => {
   return Math.round(currentRating + kFactor * (actualScore - expectedScore));
 };
@@ -56,7 +56,7 @@ export const calculateMatchPoints = (
   p2Elo: number,
   p3Elo: number,
   p4Elo: number,
-  winnerTeam: number
+  winnerTeam: number,
 ) => {
   const t1Avg = calculateTeamAverage(p1Elo, p2Elo);
   const t2Avg = calculateTeamAverage(p3Elo, p4Elo);
@@ -76,14 +76,14 @@ export const calculateMatchPoints = (
 export const getMatchPointsFromHistory = (
   allMatches: any[],
   targetMatchId: number,
-  initialElo = DEFAULT_ELO
+  initialElo = DEFAULT_ELO,
 ) => {
   // 1. Sort matches chronologically (Oldest first)
   const chronological = [...allMatches]
     .filter((m) => m.status === "confirmed") // Only replay confirmed matches
     .sort(
       (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     );
 
   // 2. Track player ELOs and Match Counts (for K-Factor)
