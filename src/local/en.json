@@ -52,6 +52,7 @@
   },
   "auth": {
     "welcome_back": "Welcome back, Champion",
+    "welcome_back_description": "Track matches, performance your graphic, many statistics, maintain your competitive ranking, and foster community through social features and gamification. Manage your tournaments too with freedom.",
     "join_club": "Join the Club",
     "reset_password_title": "Reset Password",
     "username": "Username / Player Name",

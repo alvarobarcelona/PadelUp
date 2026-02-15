@@ -49,6 +49,7 @@
   },
   "auth": {
     "welcome_back": "Willkommen zurück, Champion",
+    "welcome_back_description": "Verfolge deine Spiele, schau dir deine Leistungsgrafik und Statistiken an, pflege deine Wettbewerbsranglisten und fördere die Gemeinschaft durch soziale Funktionen und Gamification. Verwalte deine Turniere  auch mit Freiheit.",
     "join_club": "Tritt dem Club bei",
     "reset_password_title": "Passwort zurücksetzen",
     "username": "Benutzername / Spielername",

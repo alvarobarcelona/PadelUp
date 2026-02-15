@@ -52,6 +52,7 @@
   },
   "auth": {
     "welcome_back": "Bienvenido de nuevo, Campeón",
+    "welcome_back_description": "Registra partidos, opten tu grafico de rendimiento, estadísticas varias, manten rankings competitivos y fomenta la comunidad a través de las características sociales y la gamificación. Gestiona tus torneos tambien con libertad.",
     "join_club": "Únete al Club",
     "reset_password_title": "Restablecer Contraseña",
     "username": "Nombre de usuario / Jugador",

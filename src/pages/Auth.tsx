@@ -434,15 +434,20 @@ const Auth = () => {
                     </div>
 
                     {!isStandalone && (
-                        <div className="pt-6 border-t border-slate-700/50">
-                            <button
-                                type="button"
-                                onClick={() => navigate('/install')}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all text-sm font-medium"
-                            >
-                                <span>📲</span>
-                                {t('auth.install_app', 'Install App')}
-                            </button>
+                        <div>
+                            <p className="mt-2 mb-2 text-green-400 text-xs font-medium text-justify">
+                                {t('auth.welcome_back_description')}
+                            </p>
+                            <div className="pt-6 border-t border-slate-700/50">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/install')}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all text-sm font-medium"
+                                >
+                                    <span>📲</span>
+                                    {t('auth.install_app', 'Install App')}
+                                </button>
+                            </div>
                         </div>
                     )}
                 </form>
