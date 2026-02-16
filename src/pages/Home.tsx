@@ -19,6 +19,7 @@ interface Profile {
     username: string;
     elo: number;
     avatar_url: string | null;
+    main_club_id?: number | null;
     subscription_end_date?: string;
     is_admin?: boolean;
 }
@@ -54,6 +55,7 @@ const Home = () => {
     const [showWelcome, setShowWelcome] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [selectedClubId, setSelectedClubId] = useState<string | number>('all');
 
     // --- QUERIES ---
 
@@ -63,6 +65,16 @@ const Home = () => {
         queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser();
             return user;
+        },
+        staleTime: Infinity
+    });
+
+    // 1.1 Clubs
+    const { data: clubs = [] } = useQuery({
+        queryKey: ['clubs'],
+        queryFn: async () => {
+            const { data } = await supabase.from('clubs').select('id, name').order('name');
+            return data || [];
         },
         staleTime: Infinity
     });
@@ -155,16 +167,22 @@ const Home = () => {
         }
     });
 
+    useEffect(() => {
+        if (profile?.main_club_id) {
+            setSelectedClubId(profile.main_club_id);
+        }
+    }, [profile]);
+
     // 4. Suggestions
     const { data: suggestions = [] } = useQuery({
-        queryKey: ['suggestions', user?.id, profile?.elo],
+        queryKey: ['suggestions', user?.id, profile?.elo, selectedClubId],
         enabled: !!user && !!profile,
         staleTime: 1000 * 60 * 5, // 5 minutes
         queryFn: async () => {
             if (!user || !profile) return [];
             const { data: candidates } = await supabase
                 .from('profiles')
-                .select('id, username, elo, avatar_url')
+                .select('id, username, elo, avatar_url, main_club_id')
                 .neq('id', user.id)
                 .eq('approved', true)
                 .eq('is_admin', false);
@@ -173,7 +191,13 @@ const Home = () => {
 
             const minElo = profile.elo - 100;
             const maxElo = profile.elo + 100;
-            const filtered = candidates.filter(p => p.elo >= minElo && p.elo <= maxElo);
+
+            let filtered = candidates.filter(p => p.elo >= minElo && p.elo <= maxElo);
+
+            if (selectedClubId !== 'all') {
+                filtered = filtered.filter(p => p.main_club_id === Number(selectedClubId));
+            }
+
             filtered.sort((a, b) => Math.abs(a.elo - profile.elo) - Math.abs(b.elo - profile.elo));
             return filtered.slice(0, 10);
         }
@@ -690,12 +714,28 @@ const Home = () => {
                 {/* Player Suggestions */}
                 {suggestions.length > 0 && (
                     <div>
-                        <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                            <User size={18} className="text-blue-400" />
-                            {t('home.suggestions')}
-                            <span className="text-xs text-center font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
-                        </h2>
-                        <span className="text-xs font-normal text-slate-500 mb-3 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.suggestions_limit', { defaultValue: 'Max 10 suggestions' })}</span>
+                        <div className="flex items-center justify-between mb-3">
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                <User size={18} className="text-blue-400" />
+                                {t('home.suggestions')}
+                            </h2>
+                            <select
+                                value={selectedClubId}
+                                onChange={(e) => setSelectedClubId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                                className="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-2 py-1.5 outline-none focus:border-green-500 max-w-[140px]"
+                            >
+                                <option value="all">{t('clubs.all_clubs')}</option>
+                                {clubs.map((club: any) => (
+                                    <option key={club.id} value={club.id}>{club.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex gap-2 mb-3">
+                            <span className="text-xs text-center font-normal text-slate-500 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
+                            <span className="text-xs font-normal text-slate-500 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.suggestions_limit', { defaultValue: 'Max 10 suggestions' })}</span>
+                        </div>
+
                         <div className="flex flex-col gap-3 mt-3">
                             {suggestions.slice(0, 10).map((s: any) => {
                                 const diff = s.elo - (profile?.elo || 0);

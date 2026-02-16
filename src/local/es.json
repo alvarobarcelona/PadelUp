@@ -204,6 +204,7 @@
   },
   "clubs": {
     "all_clubs": "Todos los clubs",
+    "filter_by_club": "Filtrar por Club",
     "search_club": "Buscar Club",
     "select_club": "Seleccionar Club donde jugaste el partido",
     "select_club_if_you_wish": "Seleccionar Club (Opcional)",

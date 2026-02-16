@@ -647,7 +647,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initial
                                                 </h4>
                                                 <p className="text-[10px] text-blue-300/60">{t('chat.administrator')}</p>
                                             </div>
-                                            <MessageSquarePlus size={16} className="text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <MessageSquarePlus size={16} className="text-blue-400" />
                                         </div>
                                     ))}
                                 </div>

@@ -94,6 +94,7 @@
   },
   "clubs": {
     "all_clubs": "All Clubs",
+    "filter_by_club": "Filter by Club",
     "search_club": "Search Club",
     "select_club": "Select Club where you played the match",
     "select_club_if_you_wish": "Select Club (Optional)",

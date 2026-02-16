@@ -199,6 +199,7 @@
   },
   "clubs": {
     "all_clubs": "Alle Clubs",
+    "filter_by_club": "Nach Club filtern",
     "search_club": "Suche Club",
     "select_club": "Wo hast du das Spiel gespielt?",
     "no_club": "Kein Club",
