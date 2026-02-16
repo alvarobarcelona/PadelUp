@@ -746,5 +746,18 @@
       "section6_title": "6. Liability",
       "section6_text": "We are not liable for damages resulting from the use of the app, unless there is intent or gross negligence."
     }
+  },
+  "ai_assistant": {
+    "title": "PadelUp Assistant",
+    "welcome": "Hi! I'm your PadelUp assistant. Ask me about your stats, performance, or tournaments.",
+    "thinking": "Analyzing...",
+    "error": "Couldn't process your question. Please try again.",
+    "placeholder": "Ask me anything...",
+    "suggestions": {
+      "performance": "My performance this month",
+      "best_partner": "Best partner",
+      "current_streak": "Current streak",
+      "win_rate": "My win rate"
+    }
   }
 }

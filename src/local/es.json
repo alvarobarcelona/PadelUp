@@ -745,5 +745,18 @@
       "section6_title": "6. Responsabilidad",
       "section6_text": "No somos responsables de los daños resultantes del uso de la aplicación, a menos que haya dolo o negligencia grave."
     }
+  },
+  "ai_assistant": {
+    "title": "Asistente PadelUp",
+    "welcome": "¡Hola! Soy tu asistente PadelUp. Pregúntame sobre tus estadísticas, rendimiento o torneos.",
+    "thinking": "Analizando...",
+    "error": "No pude procesar tu pregunta. Inténtalo de nuevo.",
+    "placeholder": "Pregúntame algo...",
+    "suggestions": {
+      "performance": "Mi rendimiento este mes",
+      "best_partner": "Mejor pareja",
+      "current_streak": "Racha actual",
+      "win_rate": "Mi win rate"
+    }
   }
 }
