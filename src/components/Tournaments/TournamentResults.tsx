@@ -525,7 +525,7 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                     </div>
                 </div>
 
-                <div className="w-full max-w-md space-y-3 mt-8">
+                <div className="w-full space-y-3 mt-8">
                     {participants.map((p: any, i: number) => {
                         const stats = playerStats[p.display_name] || { mp: 0, w: 0, d: 0, l: 0 };
 
@@ -579,7 +579,7 @@ export default function TournamentResults({ tournament }: ResultsProps) {
 
                 {/* Rounds History */}
                 {Object.keys(rounds).length > 0 && (
-                    <div className="w-full max-w-md space-y-6 mt-8 pt-8 border-t border-slate-800">
+                    <div className="w-full space-y-6 mt-8 pt-8 border-t border-slate-800">
                         <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest mb-4">{t('tournaments.results.round_history', { defaultValue: 'Round History' })}</h3>
                         {Object.entries(rounds).map(([roundNum, roundMatches]: [string, any]) => (
                             <div key={roundNum} className="space-y-2">
