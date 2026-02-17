@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
 import { Camera, Settings, LogOut, BarChart3, Medal, Trophy, Loader2, ShieldCheck, Flame, Swords, X, ShieldHalf, Moon, Bird, Pickaxe, Crown, Rocket, LandPlot, Castle, Crosshair, HandFist, Drum } from 'lucide-react';
+import { countries } from '../lib/countries';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { checkAchievements } from '../lib/achievements';
@@ -55,6 +56,8 @@ const Profile = () => {
         elo: number;
         avatar_url: string | null;
         is_admin?: boolean;
+        nationality?: string | null;
+        racket?: string | null;
     } | null>(null);
 
     const [allMatches, setAllMatches] = useState<any[]>([]);
@@ -92,7 +95,9 @@ const Profile = () => {
                 last_name: profileData.last_name,
                 elo: profileData.elo,
                 avatar_url: profileData.avatar_url,
-                is_admin: profileData.is_admin
+                is_admin: profileData.is_admin,
+                nationality: profileData.nationality,
+                racket: profileData.racket
             });
 
             // 2. Achievements
@@ -186,7 +191,7 @@ const Profile = () => {
                 }
                 // Fallback to absolute value (Legacy) - ONLY if diffs not present
                 else if (myKey && m.elo_snapshot[myKey]) {
-                
+
                     newElo = m.elo_snapshot[myKey];
                     delta = newElo - simulatedElo;
                 } else {
@@ -459,6 +464,28 @@ const Profile = () => {
                         </p>
                     )}
                     <p className="text-sm font-medium text-slate-400">{profile.email}</p>
+
+                    <div className="flex items-center justify-center gap-4 mt-2">
+                        {profile.nationality && (
+                            <div className="flex items-center gap-2 bg-slate-700/30 px-3 py-1 rounded-full border border-slate-700/50">
+                                <img
+                                    src={`https://flagcdn.com/w40/${profile.nationality.toLowerCase()}.png`}
+                                    srcSet={`https://flagcdn.com/w80/${profile.nationality.toLowerCase()}.png 2x`}
+                                    width="20"
+                                    alt={profile.nationality}
+                                    className="rounded-sm"
+                                />
+                                <span className="text-xs text-slate-300">{countries.find(c => c.code === profile.nationality)?.name}</span>
+                            </div>
+                        )}
+                        {profile.racket && (
+                            <div className="flex items-center gap-1 bg-slate-700/30 px-2 py-1 rounded-full border border-slate-700/50">
+                                <img src="/pala-padel-profile.png" alt=" Pala Padel" width="20" height="20" />
+
+                                <span className="text-xs text-slate-300">{profile.racket}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <div className="rounded-full bg-slate-700/50 px-4 py-1.5 text-sm font-bold border border-green-500/20 text-white flex items-center gap-2">
                     <span className="text-green-400">{t('profile.level')} {getLevelFromElo(profile.elo).level}</span>

@@ -45,6 +45,10 @@
     "elo_stable": "Veteran (+30) Spielen: K=24 (Höhere Stabilität).",
     "elo_note": "Hinweis: Punkte werden **individuell** vergeben. In einem Spiel kann ein neuer Spieler +40 Punkte sammeln, während sein Veteranen-Partner +20 erhält.",
     "no_changes": "Keine Änderungen vorgenommen.",
+    "nationality": "Nationalität",
+    "select_country": "Land auswählen",
+    "racket": "Schlägermodell",
+    "enter_racket": "z.B. NOX AT10 Luxury Genius",
     "no_changes_desc": "dieser name ist bereits vergeben."
   },
   "auth": {

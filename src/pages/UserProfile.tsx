@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { User, Trophy, Flame, Shield, Swords, Award, TrendingUp, TrendingDown, ArrowLeft, Users } from 'lucide-react';
+import { countries } from '../lib/countries';
 import { useTranslation } from 'react-i18next';
 import { getLevelFromElo } from '../lib/elo';
 import { cn } from '../components/ui/Button';
@@ -21,6 +22,8 @@ interface Profile {
     };
     level: number;
     created_at: string;
+    nationality?: string | null;
+    racket?: string | null;
 }
 
 interface Match {
@@ -302,6 +305,26 @@ export default function UserProfile() {
                         {profile.first_name} {profile.last_name}
                     </p>
                 )}
+                <div className="flex items-center justify-center gap-4 mt-2 mb-2">
+                    {profile.nationality && (
+                        <div className="flex items-center gap-2 bg-slate-700/30 px-3 py-1 rounded-full border border-slate-700/50">
+                            <img
+                                src={`https://flagcdn.com/w40/${profile.nationality.toLowerCase()}.png`}
+                                srcSet={`https://flagcdn.com/w80/${profile.nationality.toLowerCase()}.png 2x`}
+                                width="20"
+                                alt={profile.nationality}
+                                className="rounded-sm"
+                            />
+                            <span className="text-xs text-slate-300">{countries.find(c => c.code === profile.nationality)?.name}</span>
+                        </div>
+                    )}
+                    {profile.racket && (
+                        <div className="flex items-center gap-1 bg-slate-700/30 px-2 py-1 rounded-full border border-slate-700/50">
+                            <img src="/pala-padel-profile.png" alt=" Pala Padel" width="20" height="20" />
+                            <span className="text-xs text-slate-300">{profile.racket}</span>
+                        </div>
+                    )}
+                </div>
                 <p className="text-slate-400 text-sm mt-1">{t('profile.level')} {getLevelFromElo(profile.elo).level}</p>
                 <p className="text-slate-400 text-sm mt-1">{t('profile.joined', { date: new Date(profile.created_at).toLocaleDateString() })}</p>
                 {subscriptionExpired && (

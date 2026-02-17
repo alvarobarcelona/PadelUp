@@ -17,7 +17,9 @@ import {
     MapPin,
     Bell,
     FileText,
+    Flag,
 } from 'lucide-react';
+import { countries } from '../lib/countries';
 import { logActivity } from '../lib/logger';
 import { APP_FULL_VERSION } from '../lib/constants';
 import { useTranslation } from 'react-i18next';
@@ -75,7 +77,7 @@ const Settings = () => {
 
         checkPushStatus();
     }, [pushLoading]);
-    const [profile, setProfile] = useState<{ username: string, first_name: string, last_name: string, email: string, subscription_end_date: string | null, main_club_id: number | null } | null>(null);
+    const [profile, setProfile] = useState<{ username: string, first_name: string, last_name: string, email: string, subscription_end_date: string | null, main_club_id: number | null, nationality: string | null, racket: string | null } | null>(null);
     const [clubs, setClubs] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -87,6 +89,8 @@ const Settings = () => {
     const [newFirstName, setNewFirstName] = useState('');
     const [newLastName, setNewLastName] = useState('');
     const [newDescClub, setNewDescClub] = useState<number | string>('');
+    const [newNationality, setNewNationality] = useState('');
+    const [newRacket, setNewRacket] = useState('');
 
     // Password Change State
     const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -141,7 +145,7 @@ const Settings = () => {
         if (user) {
             const { data } = await supabase
                 .from('profiles')
-                .select('username, first_name, last_name, notifications_enabled, subscription_end_date, main_club_id')
+                .select('username, first_name, last_name, notifications_enabled, subscription_end_date, main_club_id, nationality, racket')
                 .eq('id', user.id)
                 .single();
 
@@ -151,12 +155,16 @@ const Settings = () => {
                 last_name: data?.last_name || '',
                 email: user.email || '',
                 subscription_end_date: data?.subscription_end_date || null,
-                main_club_id: data?.main_club_id || null
+                main_club_id: data?.main_club_id || null,
+                nationality: data?.nationality || null,
+                racket: data?.racket || null
             });
             setNewDescClub(data?.main_club_id || '');
             setNewUsername(data?.username || '');
             setNewFirstName(data?.first_name || '');
             setNewLastName(data?.last_name || '');
+            setNewNationality(data?.nationality || '');
+            setNewRacket(data?.racket || '');
 
             /*   setNewUsername(data?.username || '');
               if (data?.notifications_enabled !== undefined) {
@@ -195,6 +203,8 @@ const Settings = () => {
         if (normalizeUsername(newUsername) === normalizeUsername(profile.username) &&
             newFirstName === profile.first_name &&
             newLastName === profile.last_name &&
+            newNationality === (profile.nationality || '') &&
+            newRacket === (profile.racket || '') &&
             (newDescClub ? Number(newDescClub) : null) === profile.main_club_id) {
 
             await alert({
@@ -235,7 +245,9 @@ const Settings = () => {
                     username: newUsername,
                     first_name: newFirstName,
                     last_name: newLastName,
-                    main_club_id: newDescClub ? Number(newDescClub) : null
+                    main_club_id: newDescClub ? Number(newDescClub) : null,
+                    nationality: newNationality || null,
+                    racket: newRacket || null
                 })
                 .eq('id', user.id);
 
@@ -246,7 +258,9 @@ const Settings = () => {
                 username: newUsername,
                 first_name: newFirstName,
                 last_name: newLastName,
-                main_club_id: newDescClub ? Number(newDescClub) : null
+                main_club_id: newDescClub ? Number(newDescClub) : null,
+                nationality: newNationality || null,
+                racket: newRacket || null
             });
             setIsEditing(false);
 
@@ -453,6 +467,8 @@ const Settings = () => {
                                                 setNewUsername(profile?.username || '');
                                                 setNewFirstName(profile?.first_name || '');
                                                 setNewLastName(profile?.last_name || '');
+                                                setNewNationality(profile?.nationality || '');
+                                                setNewRacket(profile?.racket || '');
                                                 setNewDescClub(profile?.main_club_id || '');
                                             }}
                                             className="p-2 text-red-400 hover:bg-red-500/10 rounded-full transition-colors"
@@ -519,6 +535,80 @@ const Settings = () => {
                                         <>
                                             <p className="font-medium text-white">{profile?.last_name || '-'}</p>
                                             <p className="text-xs text-slate-400">{t('auth.last_name')}</p>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Nationality Edit Row */}
+                        <div className="w-full flex items-center justify-between p-4 border-b border-slate-700/50">
+                            <div className="flex items-center gap-3 flex-1">
+                                <div className="p-2 rounded-full bg-blue-500/10 text-blue-400">
+                                    <Flag size={20} />
+                                </div>
+                                <div className="text-left flex-1">
+                                    {isEditing ? (
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase text-slate-500 font-bold">{t('settings.nationality')}</label>
+                                            <select
+                                                value={newNationality}
+                                                onChange={(e) => setNewNationality(e.target.value)}
+                                                className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                            >
+                                                <option value="">{t('settings.select_country')}</option>
+                                                {countries.map((c) => (
+                                                    <option key={c.code} value={c.code}>
+                                                        {c.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="font-medium text-white flex items-center gap-2">
+                                                {profile?.nationality ? (
+                                                    <>
+                                                        <img
+                                                            src={`https://flagcdn.com/w40/${profile.nationality.toLowerCase()}.png`}
+                                                            srcSet={`https://flagcdn.com/w80/${profile.nationality.toLowerCase()}.png 2x`}
+                                                            width="24"
+                                                            alt={countries.find(c => c.code === profile.nationality)?.name}
+                                                            className="rounded-sm"
+                                                        />
+                                                        <span>{countries.find(c => c.code === profile.nationality)?.name}</span>
+                                                    </>
+                                                ) : '-'}
+                                            </p>
+                                            <p className="text-xs text-slate-400">{t('settings.nationality')}</p>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Racket Edit Row */}
+                        <div className="w-full flex items-center justify-between p-4 border-b border-slate-700/50">
+                            <div className="flex items-center gap-3 flex-1">
+                                <div className="p-2 rounded-full bg-blue-500/10 text-blue-400">
+                                    <img src="/pala-padel-profile.png" alt=" Pala Padel" width="20" height="20" />
+                                </div>
+                                <div className="text-left flex-1">
+                                    {isEditing ? (
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase text-slate-500 font-bold">{t('settings.racket')}</label>
+                                            <input
+                                                type="text"
+                                                value={newRacket}
+                                                onChange={(e) => setNewRacket(e.target.value)}
+                                                placeholder={t('settings.enter_racket') || 'e.g. NOX AT10 Luxury Genius'}
+                                                className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="font-medium text-white">{profile?.racket || '-'}</p>
+                                            <p className="text-xs text-slate-400">{t('settings.racket')}</p>
                                         </>
                                     )}
                                 </div>

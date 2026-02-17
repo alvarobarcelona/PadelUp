@@ -19,6 +19,7 @@ interface Player {
     elo: number;
     avatar_url: string | null;
     main_club_id: number | null;
+    nationality: string | null;
 }
 
 const Players = () => {
@@ -344,6 +345,17 @@ const Players = () => {
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <span className="font-semibold text-slate-200 block">{player.username}</span>
+                                                 {player.nationality && (
+                                                                        <div className="flex items-center gap-2 bg-slate-700/30 px-3 py-1 rounded-full border border-slate-700/50">
+                                                                            <img
+                                                                                src={`https://flagcdn.com/w40/${player.nationality.toLowerCase()}.png`}
+                                                                                srcSet={`https://flagcdn.com/w80/${player.nationality.toLowerCase()}.png 2x`}
+                                                                                width="20"
+                                                                                alt={player.nationality}
+                                                                                className="rounded-sm"
+                                                                            />                                          
+                                                                        </div>
+                                                                    )}
                                                 {BadgeIcon && (
                                                     <BadgeIcon size={16} className={badgeColor} title={badgeLabel} />
                                                 )}
