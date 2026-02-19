@@ -1,4 +1,4 @@
-# PadelUp - Social Padel Tracker
+# PadelUp - Your best app for tracking your results and building community
 
 ## Important for recruiters:
 
