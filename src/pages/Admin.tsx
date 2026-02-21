@@ -25,7 +25,7 @@ const Admin = () => {
     const [clubs, setClubs] = useState<any[]>([]);
     const [logs, setLogs] = useState<any[]>([]);
     const [tournaments, setTournaments] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity' | 'maintenance' | 'tournaments'>('pending');
+    const [activeTab, setActiveTab] = useState<'pending' | 'expired' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity' | 'maintenance' | 'tournaments'>('pending');
     const [pushSubscriptions, setPushSubscriptions] = useState<any[]>([]);
 
     // Pagination State
@@ -784,14 +784,13 @@ const Admin = () => {
                 }
             });
 
-            await alert({ title: 'Success', message: 'Player updated successfully!', type: 'success' });
-            await alert({ title: 'Success', message: 'Player updated successfully!', type: 'success' });
+            await alert({ title: t('common.success'), message: t('admin.player_updated_success'), type: 'success' });
             setEditingPlayer(null);
             setNewPassword('');
             fetchData();
         } catch (error: any) {
             console.error(error);
-            await alert({ title: 'Error', message: 'Error updating player: ' + error.message, type: 'danger' });
+            await alert({ title: t('common.error'), message: t('admin.player_updated_error') + error.message, type: 'danger' });
         } finally {
             setLoading(false);
         }
@@ -1007,6 +1006,15 @@ const Admin = () => {
                                 value={memberSearch}
                                 onChange={(e) => setMemberSearch(e.target.value)}
                             />
+                        </div>
+                        {/*Info about active players and inactive players*/}
+                        <div className="flex gap-2">
+                            <div className="flex-1 sm:flex-none bg-green-600 hover:bg-green-500 p-1">
+                                {t('admin.active_players')}: {players.filter(p => p.subscription_end_date && new Date(p.subscription_end_date) >= new Date() && !p.banned).length}
+                            </div>
+                            <div className="flex-1 sm:flex-none bg-red-600 hover:bg-red-500 p-1">
+                                {t('admin.inactive_players')}: {players.filter(p => !p.subscription_end_date || new Date(p.subscription_end_date) < new Date() || p.banned).length}
+                            </div>
                         </div>
 
                         <div className="space-y-2">
