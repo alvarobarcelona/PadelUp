@@ -265,7 +265,7 @@ const Rankings = () => {
                                         Lvl {getLevelFromElo(player.elo).level}
                                     </div>
                                     <div className="text-xs text-slate-500 font-medium">
-                                        {player.elo} elo
+                                        {player.elo} pts
                                     </div>
                                     {/* Visual flair for top player */}
                                     {index === 0 && <TrendingUp size={12} className="ml-auto text-green-500 mt-1" />}
