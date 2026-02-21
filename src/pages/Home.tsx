@@ -477,7 +477,7 @@ const Home = () => {
                                 </div>
 
                                 <div className="text-right">
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Elo</p>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">PTS</p>
                                     <p className="text-lg font-bold text-green-400">{profile.elo}</p>
                                 </div>
 
@@ -732,7 +732,7 @@ const Home = () => {
                         </div>
 
                         <div className="flex gap-2 mb-3">
-                            <span className="text-xs text-center font-normal text-slate-500 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
+                            <span className="text-xs text-center font-normal text-slate-500 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'PTS +/- 100' })}</span>
                             <span className="text-xs font-normal text-slate-500 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.suggestions_limit', { defaultValue: 'Max 10 suggestions' })}</span>
                         </div>
 
@@ -750,7 +750,7 @@ const Home = () => {
                                             <div>
                                                 {s.username}
                                                 <div className="flex items-center gap-2 text-xs">
-                                                    <span className="text-slate-400 font-bold">{s.elo} ELO</span>
+                                                    <span className="text-slate-400 font-bold">{s.elo} PTS</span>
                                                     <span className={cn("font-medium", diffColor)}>{t('home.diff_of', { diff: diffText, defaultValue: `diff of (${diffText})` })}</span>
                                                 </div>
                                             </div>

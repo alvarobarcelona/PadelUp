@@ -586,7 +586,7 @@
   },
   "levels": {
     "title": "ELO Levels",
-    "subtitle_2": "If a user wants to adjust their level to a lower one, they can request it to an admin via chat or in the support email. Always with sense.\n\n For example: at the start of using the app, they don't want to start with 1150 ELO (level 3).",
+    "subtitle_2": "If a user wants to adjust their level to a lower one, they can request it to an admin via chat or in the support email. Always with sense.\n\n For example: at the start of using the app, they don't want to start with 1150 ELO/PTS (level 3.3).",
     "names": {
       "beginner": "Beginner",
       "basic": "Basic",

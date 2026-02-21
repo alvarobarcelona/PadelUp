@@ -597,7 +597,7 @@
   },
   "levels": {
     "title": "ELO-Stufen",
-    "subtitle_2": "Wenn ein Benutzer sein Level auf einen niedrigeren anpassen möchte, kann er dies an einen Admin via Chat oder per E-Mail an den Support anfragen. Dabei muss es Sinn haben.\n\n Beispiel: Wenn ein Benutzer mit der App anfängt, möchte er nicht mit 1150 ELO (Level 3) beginnen.",
+    "subtitle_2": "Wenn ein Benutzer sein Level auf einen niedrigeren anpassen möchte, kann er dies an einen Admin via Chat oder per E-Mail an den Support anfragen. Dabei muss es Sinn haben.\n\n Beispiel: Wenn ein Benutzer mit der App anfängt, möchte er nicht mit 1150 ELO/PTS (Level 3.3) beginnen.",
     "names": {
       "beginner": "Anfänger",
       "basic": "Basis",

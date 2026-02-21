@@ -361,7 +361,7 @@ const Players = () => {
                                                 )}
                                             </div>
                                             <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block mt-0.5">
-                                                ELO {player.elo} • Lvl {getLevelFromElo(player.elo).level}
+                                                PTS {player.elo} • Lvl {getLevelFromElo(player.elo).level}
                                             </span>
                                         </div>
                                     </Link>

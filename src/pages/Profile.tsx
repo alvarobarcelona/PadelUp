@@ -493,7 +493,7 @@ const Profile = () => {
                     <span className="text-slate-300">{t(`levels.names.${getLevelFromElo(profile.elo).key}`)}</span>
                 </div>
                 <div className="text-[10px] text-slate-500 font-medium">
-                    ELO: {profile.elo}
+                    PTS/ELO: {profile.elo}
                 </div>
             </div>
 
