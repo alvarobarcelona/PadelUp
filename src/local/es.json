@@ -64,6 +64,11 @@
     "email": "Correo electrónico",
     "first_name": "Nombre",
     "last_name": "Apellidos",
+    "starting_level": "Nivel Inicial Estimado",
+    "starting_level_help": "Ayúdame a elegir",
+    "starting_level_desc": "Selecciona el nivel que mejor se adapte a tus habilidades. Esto proporciona un punto de partida justo para el sistema ELO. Puedes elegir hasta el Nivel 3.3. Si tu nivel real es superior, lo alcanzarás rápidamente jugando partidos.",
+    "levels_above_3_3_must_be_earned_by_playing_and_winning_matches": "Los niveles superiores al 3.3 deben ganarse jugando y ganando partidos.",
+    
     "password": "Contraseña",
     "forgot_password": "¿Lo olvidaste?",
     "send_reset_link": "Enviar Enlace",
@@ -92,8 +97,10 @@
     },
     "success": {
       "reset_sent": "¡Enlace enviado! Revisa tu correo.",
-      "signup_confirm": "¡Éxito! Revisa tu correo para el enlace de confirmación. A veces puede tardar unos minutos.",
-      "resend_confirmation": "Reenviar email de confirmación"
+      "signup_confirm_title": "¡Éxito en el registro!",
+      "signup_confirm_message": "Revisa tu correo para el enlace de confirmación. A veces puede tardar unos minutos.",
+      "resend_confirmation_title": "Reenviar email de confirmación",
+      "resend_confirmation_message": "Email de confirmación reenviado con éxito."
     }
   },
 
@@ -228,6 +235,7 @@
     "error": "Error",
     "success": "Éxito",
     "back": "Volver",
+    "close": "Cerrar",
     "save": "Guardar",
     "confirm_title": "Confirmar Acción",
     "confirm_prompt": "¿Estás seguro de que deseas continuar?",
@@ -584,7 +592,7 @@
     "filter_my_matches": "Mis Partidos"
   },
   "levels": {
-    "title": "Niveles ELO",
+    "title": "Niveles ELO/PTS",
     "subtitle_2": "Si un usuario quiere ajustar su nivel por uno inferior, puede solicitarlo a un admin via chat o en el email de soporte. Siempre y cuando tenga sentido.\n\nPor ejemplo: al inicio del uso de la app no quiere empezar con 1150 de ELO/PTS (nivel 3.3).",
     "names": {
       "beginner": "Principiante",
@@ -665,7 +673,7 @@
   "welcome_modal": {
     "title": "Bienvenido a PadelUp",
     "subtitle": "Más que una comunidad de pádel.",
-    "value_1_title": "Juega Limpio, Puntúa Real",
+    "value_1_title": "Juega Limpio, Puntúa Correctamente",
     "value_1_desc": "La puntuación honesta es el corazón de nuestro sistema de ranking. Resultados precisos aseguran estadísticas verdaderas y emparejamientos justos.",
     "value_2_title": "Crecer Juntos",
     "value_2_desc": "Usa datos reales para mejorar tu juego. Desafíate, desbloquea logros y sube en la clasificación.",
@@ -697,7 +705,7 @@
   },
   "legal": {
     "privacy_policy": "Política de Privacidad",
-    "impressum": "Impressum (Aviso Legal)",
+    "impressum": "Aviso Legal",
     "terms": "Términos de Servicio",
     "cookie_banner": {
       "text": "Utilizamos cookies para mejorar su experiencia. Al continuar visitando este sitio, acepta nuestro uso de cookies.",

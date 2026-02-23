@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save, Filter, Trophy, ClipboardEdit, CheckCircle, XCircle, AlertTriangle, MessageSquare, Calendar, User, Mail, Key, Globe, Activity, CreditCard, FileText, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getMatchPointsFromHistory } from '../lib/elo';
+import { getMatchPointsFromHistory, LEVELS, getLevelFromElo } from '../lib/elo';
 import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
 import { logActivity, ACTIVITY_ACTIONS, type ActivityAction } from '../lib/logger';
 import { normalizeForSearch } from '../lib/utils';
@@ -1735,13 +1735,31 @@ const Admin = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-slate-400 block mb-1">ELO Rating</label>
-                                    <input
-                                        type="number"
-                                        className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
-                                        value={editingPlayer.elo}
-                                        onChange={(e) => setEditingPlayer({ ...editingPlayer, elo: e.target.value })}
-                                    />
+                                    <label className="text-xs text-slate-400 block mb-1">ELO Rating & Level</label>
+                                    <div className="flex gap-2">
+                                        <select
+                                            className="w-1/2 bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                            value={getLevelFromElo(editingPlayer.elo).level}
+                                            onChange={(e) => {
+                                                const selectedLevel = LEVELS.find(l => l.level === parseFloat(e.target.value));
+                                                if (selectedLevel) {
+                                                    setEditingPlayer({ ...editingPlayer, elo: selectedLevel.min });
+                                                }
+                                            }}
+                                        >
+                                            {LEVELS.map(l => (
+                                                <option key={l.level} value={l.level}>
+                                                    Level {l.level.toFixed(1)} ({t(`levels.names.${l.key}`)})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <input
+                                            type="number"
+                                            className="w-1/2 bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                            value={editingPlayer.elo}
+                                            onChange={(e) => setEditingPlayer({ ...editingPlayer, elo: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="text-xs text-slate-400 block mb-1">{t('admin.subscription_end')}</label>

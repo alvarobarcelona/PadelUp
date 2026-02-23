@@ -745,26 +745,29 @@ const Home = () => {
 
                                 return (
                                     <div key={s.id} className="relative flex justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 hover:bg-slate-800 transition-colors">
-                                        <div className="flex items-center gap-3">
+                                        <Link to={`/user/${s.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                                             <Avatar src={s.avatar_url} fallback={s.username} size="md" />
-                                            <div>
-                                                {s.username}
+                                            <div className="truncate">
+                                                <div className="truncate text-white font-medium">{s.username}</div>
                                                 <div className="flex items-center gap-2 text-xs">
                                                     <span className="text-slate-400 font-bold">{s.elo} PTS</span>
                                                     <span className={cn("font-medium", diffColor)}>{t('home.diff_of', { diff: diffText, defaultValue: `diff of (${diffText})` })}</span>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </Link>
 
                                         {/* Message Button */}
                                         <button
-                                            onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: s.id }))}
-                                            className="ml-2 text-xs font-bold text-slate-400 p-1.5 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                window.dispatchEvent(new CustomEvent('openChat', { detail: s.id }));
+                                            }}
+                                            className="ml-2 text-xs font-bold text-slate-400 p-1.5 hover:text-white hover:bg-slate-700 rounded-lg transition-colors shrink-0"
                                             title="Send Message"
                                         >
                                             <MessageCircle size={18} />
                                         </button>
-
                                     </div>
                                 )
                             })}

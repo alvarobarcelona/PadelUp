@@ -60,6 +60,10 @@
     "email": "E-Mail",
     "first_name": "Vorname",
     "last_name": "Nachname",
+    "starting_level": "Geschätztes Startlevel",
+    "starting_level_help": "Hilf mir bei der Auswahl",
+    "starting_level_desc": "Wählen Sie das Level, das am besten zu Ihren Fähigkeiten passt. Dies bietet einen fairen Ausgangspunkt für das ELO-System. Sie können bis zu Level 3.3 wählen. Wenn Ihr tatsächliches Level höher ist, werden Sie es durch Spielen schnell erreichen.",
+    "levels_above_3_3_must_be_earned_by_playing_and_winning_matches": "Niveau über 3.3 müssen durch Spielen und Gewinnen von Spielen verdient werden.",
     "support_email": "Support E-Mail",
     "password": "Passwort",
     "forgot_password": "Vergessen?",
@@ -89,8 +93,10 @@
     },
     "success": {
       "reset_sent": "Link gesendet! Überprüfen Sie Ihre E-Mail.",
-      "signup_confirm": "Erfolg! Überprüfen Sie Ihre E-Mail auf den Bestätigungslink.",
-      "resend_confirmation": "Bestätigungs-E-Mail erneut senden"
+      "signup_confirm_title": "Erfolg!",
+      "signup_confirm_message": "Überprüfen Sie Ihre E-Mail auf den Bestätigungslink. Manchmal kann es einige Minuten dauern, bis er ankommt.",
+      "resend_confirmation_title": "Bestätigungs-E-Mail erneut senden",
+      "resend_confirmation_message": "Bestätigungs-E-Mail erfolgreich erneut gesendet."
     }
   },
   "badges": {
@@ -226,6 +232,7 @@
     "success": "Erfolg",
     "back": "Zurück",
     "save": "Speichern",
+    "close": "Schließen",
     "confirm_title": "Aktion bestätigen",
     "confirm_prompt": "Sind Sie sicher, dass Sie fortfahren möchten?",
     "confirm": "Bestätigen",
@@ -596,7 +603,7 @@
     "filter_my_matches": "Meine Spiele"
   },
   "levels": {
-    "title": "ELO-Stufen",
+    "title": "ELO/PTS-Stufen",
     "subtitle_2": "Wenn ein Benutzer sein Level auf einen niedrigeren anpassen möchte, kann er dies an einen Admin via Chat oder per E-Mail an den Support anfragen. Dabei muss es Sinn haben.\n\n Beispiel: Wenn ein Benutzer mit der App anfängt, möchte er nicht mit 1150 ELO/PTS (Level 3.3) beginnen.",
     "names": {
       "beginner": "Anfänger",

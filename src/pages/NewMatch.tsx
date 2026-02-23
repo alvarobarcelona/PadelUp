@@ -510,7 +510,7 @@ const NewMatch = () => {
                             <Avatar fallback={player.username ?? ''} src={player.avatar_url ?? ''} />
                             <span className="text-sm font-medium text-slate-200">{player.username}</span>
                             <span className="text-[10px] text-slate-500">{player.first_name} {player.last_name}</span>
-                            <span className="text-[10px] text-slate-500">ELO {player.elo}</span>
+                            <span className="text-[10px] text-slate-500">PTS {player.elo}</span>
                             <span className="text-[10px] text-slate-500">{t('profile.level')} {getLevelFromElo(player.elo).level}</span>
                         </div>
                     ))}
@@ -728,7 +728,7 @@ const PlayerSelector = ({ label, player, onClick }: { label: string, player: Pla
                 <>
                     <Avatar fallback={player.username ?? ''} src={player.avatar_url ?? ''} className="bg-green-500/20 text-green-400" />
                     <p className="text-sm font-bold text-white truncate w-full text-center mt-1">{player.username}</p>
-                    <span className="text-[10px] text-slate-400">ELO {player.elo}</span>
+                    <span className="text-[10px] text-slate-400">PTS {player.elo}</span>
                     <span className="text-[10px] text-slate-400">{t('profile.level')} {getLevelFromElo(player.elo).level}</span>
                 </>
             ) : (

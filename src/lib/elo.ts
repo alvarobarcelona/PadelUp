@@ -16,8 +16,21 @@ export const getKFactor = (matchesPlayed: number) => {
 };
 
 export const LEVELS = [
-  { level: 1, min: 0, max: 800, key: "beginner" },
-  { level: 2, min: 800, max: 900, key: "basic" },
+  { level: 1.0, min: 0, max: 80, key: "beginner" },
+  { level: 1.1, min: 80, max: 160, key: "beginner" },
+  { level: 1.2, min: 160, max: 240, key: "beginner" },
+  { level: 1.3, min: 240, max: 320, key: "beginner" },
+  { level: 1.4, min: 320, max: 400, key: "beginner" },
+  { level: 1.5, min: 400, max: 480, key: "beginner" },
+  { level: 1.6, min: 480, max: 560, key: "beginner" },
+  { level: 1.7, min: 560, max: 640, key: "beginner" },
+  { level: 1.8, min: 640, max: 720, key: "beginner" },
+  { level: 1.9, min: 720, max: 800, key: "beginner" },
+  { level: 2.0, min: 800, max: 820, key: "basic" },
+  { level: 2.1, min: 820, max: 840, key: "basic" },
+  { level: 2.2, min: 840, max: 860, key: "basic" },
+  { level: 2.3, min: 860, max: 880, key: "basic" },
+  { level: 2.4, min: 880, max: 900, key: "basic" },
   { level: 2.5, min: 900, max: 930, key: "basic_plus" },
   { level: 2.6, min: 930, max: 960, key: "basic_plus" },
   { level: 2.7, min: 960, max: 990, key: "basic_plus" },

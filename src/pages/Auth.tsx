@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Info, X } from 'lucide-react';
 import { logActivity } from '../lib/logger';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
 import { padelUpSupportMail } from '../lib/constants';
+import { LEVELS } from '../lib/elo';
 
 const Auth = () => {
     const navigate = useNavigate();
@@ -26,6 +27,8 @@ const Auth = () => {
     const [selectedClubId, setSelectedClubId] = useState<number | string>(''); // Default empty or first club
     const [showResend, setShowResend] = useState(false);
     const [consent, setConsent] = useState(false);
+    const [startingElo, setStartingElo] = useState<number>(1150);
+    const [showLevelsModal, setShowLevelsModal] = useState(false);
 
     const [isStandalone, setIsStandalone] = useState(false);
 
@@ -69,8 +72,8 @@ const Auth = () => {
             });
             if (error) throw error;
             await alert({
-                title: 'Success',
-                message: t('auth.success.signup_confirm'),
+                title: t('auth.success.resend_confirmation_title'),
+                message: t('auth.success.resend_confirmation_message'),
                 type: 'success'
             });
             setShowResend(false);
@@ -206,7 +209,7 @@ const Auth = () => {
                         first_name: firstName,
                         last_name: lastName,
                         main_club_id: selectedClubId || null,
-                        elo: 1150,
+                        elo: startingElo,
                         terms_accepted_at: new Date().toISOString(),
                         language: i18n.resolvedLanguage || 'en'
                     });
@@ -236,8 +239,8 @@ const Auth = () => {
                 }
 
                 await alert({
-                    title: 'Success',
-                    message: t('auth.success.signup_confirm'),
+                    title: t('auth.success.signup_confirm_title'),
+                    message: t('auth.success.signup_confirm_message'),
                     type: 'success'
                 });
                 setIsLogin(true);
@@ -330,6 +333,42 @@ const Auth = () => {
                                     </option>
                                 ))}
                             </select>
+                        </div>
+                    )}
+
+                    {/* Estimated Starting Level */}
+                    {!isLogin && !isForgotPassword && (
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="block text-sm font-medium text-slate-400">
+                                    {t('auth.starting_level')}
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowLevelsModal(true)}
+                                    className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1"
+                                >
+                                    <Info size={14} />
+                                    {t('auth.starting_level_help')}
+                                </button>
+                            </div>
+                            <select
+                                className="block w-full rounded-lg bg-slate-800 border-transparent focus:border-green-500 focus:bg-slate-700 focus:ring-0 text-white p-3 transition-colors"
+                                value={startingElo}
+                                onChange={(e) => setStartingElo(Number(e.target.value))}
+                            >
+                                {LEVELS.filter(l => l.level <= 3.3).map(level => {
+                                    // Use set unique representation, to prevent duplicate display of same levels
+                                    return (
+                                        <option key={level.level} value={level.min}>
+                                            Level {level.level.toFixed(1)} ({t(`levels.names.${level.key}`)})
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                            <p className="mt-1 flex items-center gap-2 text-[10px] text-slate-500 text-justify">
+                                {t('auth.starting_level_desc')}
+                            </p>
                         </div>
                     )}
 
@@ -452,6 +491,52 @@ const Auth = () => {
                     )}
                 </form>
             </div>
+
+            {/* Levels Info Modal */}
+            {showLevelsModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Info className="text-green-400" />
+                                {t('auth.starting_level')}
+                            </h2>
+                            <button
+                                onClick={() => setShowLevelsModal(false)}
+                                className="text-slate-400 hover:text-white transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="p-4 overflow-y-auto space-y-3">
+                            <p className="text-sm text-slate-300 mb-4 text-justify">
+                                {t('auth.starting_level_desc')}
+                            </p>
+                            {LEVELS.filter(l => l.level <= 3.3).map(level => (
+                                <div key={level.level} className="p-3 rounded-xl bg-slate-900/50 border border-slate-700/50">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="font-bold text-white">Level {level.level.toFixed(1)}</span>
+                                        <span className="text-xs font-bold text-green-400">{level.min} pts</span>
+                                    </div>
+                                    <p className="text-xs text-slate-400">
+                                        {t(`levels.names.${level.key}`)}
+                                    </p>
+                                </div>
+                            ))}
+                            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                                <p className="text-xs text-blue-400 text-center font-medium">
+                                    {t('auth.levels_above_3_3_must_be_earned_by_playing_and_winning_matches')}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-700">
+                            <Button className="w-full" onClick={() => setShowLevelsModal(false)}>
+                                {t('common.close', { defaultValue: 'Close' })}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
