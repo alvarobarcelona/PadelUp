@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
-import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save, Filter } from 'lucide-react';
+import { Trash2, ShieldAlert, Loader2, Pencil, X, Search, Save, Filter, Trophy, ClipboardEdit, CheckCircle, XCircle, AlertTriangle, MessageSquare, Calendar, User, Mail, Key, Globe, Activity, CreditCard, FileText, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getMatchPointsFromHistory } from '../lib/elo';
+import { getMatchPointsFromHistory, LEVELS, getLevelFromElo } from '../lib/elo';
 import { MatchFormAdmin as MatchForm } from '../components/Admin/MatchFormAdmin';
 import { logActivity, ACTIVITY_ACTIONS, type ActivityAction } from '../lib/logger';
 import { normalizeForSearch } from '../lib/utils';
@@ -16,7 +15,7 @@ import { useModal } from '../context/ModalContext';
 // const K_FACTOR = 32;
 
 const Admin = () => {
-    const { alert, confirm } = useModal();
+    const { alert, confirm, prompt } = useModal();
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState(false);
@@ -25,18 +24,22 @@ const Admin = () => {
     const [matches, setMatches] = useState<any[]>([]);
     const [clubs, setClubs] = useState<any[]>([]);
     const [logs, setLogs] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'pending' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity' | 'maintenance'>('pending');
+    const [tournaments, setTournaments] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'pending' | 'expired' | 'players' | 'matches' | 'clubs' | 'direct_match' | 'activity' | 'maintenance' | 'tournaments'>('pending');
+    const [pushSubscriptions, setPushSubscriptions] = useState<any[]>([]);
 
     // Pagination State
     const [playersPage, setPlayersPage] = useState(1);
     const [matchesPage, setMatchesPage] = useState(1);
     const [logsPage, setLogsPage] = useState(1);
+    const [tournamentsPage, setTournamentsPage] = useState(1);
     const [itemsPerPage] = useState(15);
 
     // Search State
     const [memberSearch, setMemberSearch] = useState('');
     const [matchSearch, setMatchSearch] = useState('');
     const [logSearch, setLogSearch] = useState('');
+    const [tournamentSearch, setTournamentSearch] = useState('');
 
     // Edit State
     const [editingPlayer, setEditingPlayer] = useState<any | null>(null);
@@ -47,6 +50,12 @@ const Admin = () => {
     const [newClubLocation, setNewClubLocation] = useState('');
     const [editingClub, setEditingClub] = useState<any | null>(null);
     const [editingMatch, setEditingMatch] = useState<any | null>(null);
+    const [verificationFilter, setVerificationFilter] = useState<'all' | 'pending' | 'rejected'>('all');
+    const [expandedTournamentId, setExpandedTournamentId] = useState<number | null>(null);
+    const [editingTournamentResults, setEditingTournamentResults] = useState<any | null>(null);
+    const [tournamentMatches, setTournamentMatches] = useState<any[]>([]);
+    const [loadingMatches, setLoadingMatches] = useState(false);
+    const [editingTournament, setEditingTournament] = useState<any | null>(null);
 
     // Activity Filter State
     const [selectedActions, setSelectedActions] = useState<ActivityAction[]>([...ACTIVITY_ACTIONS]);
@@ -71,12 +80,52 @@ const Admin = () => {
         }
     };
 
+
+    const fetchPushSubscriptions = async () => {
+        const { data, error } = await supabase.from('push_subscriptions').select('user_id');
+
+        if (!error && data) {
+            setPushSubscriptions(data);
+        } else {
+            setPushSubscriptions([]);
+        }
+    };
+
     const fetchData = async () => {
         setLoading(true);
         // Fetch all profiles
-        const { data: p } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        const { data: p } = await supabase
+            .from('profiles')
+            .select('*, main_club:clubs(name)')
+            .order('created_at', { ascending: false });
         const { data: m } = await supabase.from('matches').select('*').order('created_at', { ascending: false });
         const { data: c } = await supabase.from('clubs').select('*').order('id', { ascending: true });
+
+        // Fetch Tournaments (simplified - we'll get creator info from profiles)
+        const { data: t, error: tournamentsError } = await supabase
+            .from('tournaments')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (tournamentsError) {
+            console.error('Error fetching tournaments:', tournamentsError);
+        }
+
+        // Enrich tournaments with creator info and participant counts
+        if (t && p) {
+            for (const tournament of t) {
+                // Find creator from profiles
+                const creator = p.find(profile => profile.id === tournament.created_by);
+                tournament.creator = creator ? { username: creator.username, avatar_url: creator.avatar_url } : null;
+
+                // Get participant count
+                const { count } = await supabase
+                    .from('tournament_participants')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('tournament_id', tournament.id);
+                tournament.participant_count = count || 0;
+            }
+        }
 
         // Fetch Logs (last 500)
         const { data: l } = await supabase
@@ -96,7 +145,12 @@ const Admin = () => {
         if (p) setPlayers(p);
         if (m) setMatches(m);
         if (c) setClubs(c);
+        if (t) setTournaments(t);
         if (l) setLogs(l);
+
+        // Also fetch push subscriptions
+        await fetchPushSubscriptions();
+
         setLoading(false);
     };
 
@@ -269,6 +323,273 @@ const Admin = () => {
         }
     };
 
+    const handleDeleteTournament = async (id: number) => {
+        const confirmed = await confirm({
+            title: t('admin.delete_tournament_title') || 'Delete Tournament',
+            message: t('admin.confirm_delete_tournament') || 'This will delete the tournament and all its data permanently. Are you sure?',
+            type: 'danger',
+            confirmText: 'Delete'
+        });
+        if (!confirmed) return;
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.from('tournaments').delete().eq('id', id);
+            if (error) throw error;
+
+            // LOG ADMIN DELETE TOURNAMENT
+            await logActivity('ADMIN_DELETE_TOURNAMENT', id.toString(), { tournament_id: id });
+
+            await alert({ title: 'Success', message: 'Tournament deleted', type: 'success' });
+            fetchData();
+        } catch (error: any) {
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyTournament = async (tournamentId: number, approved: boolean) => {
+        let adminNotes = null;
+        if (!approved) {
+            const reason = await prompt({
+                title: t('admin.reject_title', { defaultValue: 'Reject Tournament' }),
+                message: t('admin.reject_message', { defaultValue: 'Please provide a reason for rejection:' }),
+                placeholder: "Reason..."
+            });
+            if (reason === null) return; // Cancelled
+            adminNotes = reason;
+        } else {
+            const confirmApprove = await confirm({
+                title: t('admin.approve_title', { defaultValue: 'Approve Tournament' }),
+                message: t('admin.approve_message', { defaultValue: 'Are you sure you want to approve this tournament?' }),
+                confirmText: t('admin.approve', { defaultValue: 'Approve' }),
+            });
+            if (!confirmApprove) return;
+        }
+
+        try {
+            const { error } = await supabase.rpc('verify_tournament', {
+                tournament_id_param: tournamentId,
+                admin_id_param: (await supabase.auth.getUser()).data.user?.id,
+                approved: approved,
+                admin_notes: adminNotes
+            });
+
+            if (error) throw error;
+
+            // Refresh data
+            fetchData();
+            alert({
+                title: t('common.success'),
+                message: approved ? t('admin.tournament_approved', { defaultValue: 'Tournament Approved' }) : t('admin.tournament_rejected', { defaultValue: 'Tournament Rejected' }),
+                type: 'success'
+            });
+
+        } catch (error: any) {
+            console.error('Error verifying tournament:', error);
+            alert({ title: t('common.error'), message: error.message, type: 'danger' });
+        }
+    };
+
+    const handleUpdateTournament = async () => {
+        if (!editingTournament || !editingTournament.name.trim()) return;
+        setLoading(true);
+        try {
+            const { error } = await supabase
+                .from('tournaments')
+                .update({
+                    name: editingTournament.name,
+                    mode: editingTournament.mode,
+                    status: editingTournament.status,
+                    visibility: editingTournament.visibility
+                })
+                .eq('id', editingTournament.id);
+
+            if (error) throw error;
+
+            // LOG ADMIN EDIT TOURNAMENT
+            await logActivity('ADMIN_EDIT_TOURNAMENT', editingTournament.id.toString(), {
+                changes: {
+                    name: editingTournament.name,
+                    mode: editingTournament.mode,
+                    status: editingTournament.status,
+                    visibility: editingTournament.visibility
+                }
+            });
+
+            await alert({ title: 'Success', message: t('admin.tournament_updated') || 'Tournament updated successfully!', type: 'success' });
+            setEditingTournament(null);
+            fetchData();
+        } catch (error: any) {
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchTournamentMatches = async (tournamentId: number) => {
+        setLoadingMatches(true);
+        try {
+            const { data, error } = await supabase
+                .from('tournament_matches')
+                .select('*')
+                .eq('tournament_id', tournamentId)
+                .order('round_number', { ascending: true })
+                .order('court_number', { ascending: true });
+
+            if (error) throw error;
+            setTournamentMatches(data || []);
+        } catch (error: any) {
+            console.error('Error fetching tournament matches:', error);
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoadingMatches(false);
+        }
+    };
+
+    const handleUpdateMatchResult = async (matchId: number, scoreTeam1: number, scoreTeam2: number, completed: boolean) => {
+        setLoading(true);
+        try {
+            // Update match scores
+            const { error: matchError } = await supabase
+                .from('tournament_matches')
+                .update({
+                    score_team1: scoreTeam1,
+                    score_team2: scoreTeam2,
+                    completed: completed
+                })
+                .eq('id', matchId);
+
+            if (matchError) throw matchError;
+
+            // Recalculate participant scores
+            if (editingTournamentResults) {
+                await recalculateTournamentScores(editingTournamentResults.id);
+            }
+
+            // Log admin action
+            await logActivity('ADMIN_EDIT_TOURNAMENT', editingTournamentResults?.id.toString(), {
+                action: 'edit_match_result',
+                match_id: matchId,
+                new_scores: { team1: scoreTeam1, team2: scoreTeam2, completed }
+            });
+
+            await alert({ title: 'Success', message: t('admin.match_updated') || 'Match result updated successfully!', type: 'success' });
+
+            // Refresh matches
+            await fetchTournamentMatches(editingTournamentResults.id);
+            await fetchData();
+        } catch (error: any) {
+            await alert({ title: 'Error', message: error.message, type: 'danger' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const recalculateTournamentScores = async (tournamentId: number) => {
+        try {
+            // Fetch all matches for this tournament
+            const { data: matches } = await supabase
+                .from('tournament_matches')
+                .select('*')
+                .eq('tournament_id', tournamentId);
+
+            // Fetch all participants
+            const { data: participants } = await supabase
+                .from('tournament_participants')
+                .select('*')
+                .eq('tournament_id', tournamentId);
+
+            if (!matches || !participants) return;
+
+            // Reset all scores
+            const scoreMap = new Map<number, { score: number, matchesPlayed: number }>();
+            participants.forEach(p => {
+                scoreMap.set(p.id, { score: 0, matchesPlayed: 0 });
+            });
+
+            // Calculate scores from all completed matches
+            matches.forEach(match => {
+                if (!match.completed) return;
+
+                // Find participants in this match
+                // FIX: Handle Guest players (null player_id) by matching display_name/text
+                const team1Players = participants.filter(p => {
+                    // Check P1 slot
+                    if (match.team1_p1_id) {
+                        if (p.player_id === match.team1_p1_id) return true;
+                    } else {
+                        // Guest P1: Match by name if participant is also guest
+                        if (!p.player_id && p.display_name === match.team1_p1_text) return true;
+                    }
+
+                    // Check P2 slot
+                    if (match.team1_p2_id) {
+                        if (p.player_id === match.team1_p2_id) return true;
+                    } else {
+                        // Guest P2: Match by name if participant is also guest
+                        if (!p.player_id && p.display_name === match.team1_p2_text) return true;
+                    }
+                    return false;
+                });
+
+                const team2Players = participants.filter(p => {
+                    // Check P1 slot
+                    if (match.team2_p1_id) {
+                        if (p.player_id === match.team2_p1_id) return true;
+                    } else {
+                        // Guest P1: Match by name
+                        if (!p.player_id && p.display_name === match.team2_p1_text) return true;
+                    }
+
+                    // Check P2 slot
+                    if (match.team2_p2_id) {
+                        if (p.player_id === match.team2_p2_id) return true;
+                    } else {
+                        // Guest P2: Match by name
+                        if (!p.player_id && p.display_name === match.team2_p2_text) return true;
+                    }
+                    return false;
+                });
+
+                // Add scores (both Americano and Mexicano use same scoring: points = score achieved)
+                team1Players.forEach(p => {
+                    const current = scoreMap.get(p.id);
+                    if (current) {
+                        scoreMap.set(p.id, {
+                            score: current.score + match.score_team1,
+                            matchesPlayed: current.matchesPlayed + 1
+                        });
+                    }
+                });
+
+                team2Players.forEach(p => {
+                    const current = scoreMap.get(p.id);
+                    if (current) {
+                        scoreMap.set(p.id, {
+                            score: current.score + match.score_team2,
+                            matchesPlayed: current.matchesPlayed + 1
+                        });
+                    }
+                });
+            });
+
+            // Update all participants
+            for (const [participantId, stats] of scoreMap.entries()) {
+                await supabase
+                    .from('tournament_participants')
+                    .update({
+                        score: stats.score,
+                        matches_played: stats.matchesPlayed
+                    })
+                    .eq('id', participantId);
+            }
+        } catch (error) {
+            console.error('Error recalculating scores:', error);
+        }
+    };
+
     const revertEloForMatch = async (match: any) => {
         // Use History Replay to find exact points exchanged
         const replayData = getMatchPointsFromHistory(matches, match.id);
@@ -349,6 +670,13 @@ const Admin = () => {
         return m.id.toString().includes(matchSearch);
     });
 
+    // Filter Tournaments
+    const filteredTournaments = tournaments.filter(t => {
+        if (!tournamentSearch) return true;
+        const search = normalizeForSearch(tournamentSearch);
+        return normalizeForSearch(t.name).includes(search) || t.id.toString().includes(search);
+    });
+
 
 
     const handleCleanupMessages = async (days: number) => {
@@ -414,6 +742,9 @@ const Admin = () => {
                 .from('profiles')
                 .update({
                     username: editingPlayer.username,
+                    first_name: editingPlayer.first_name,
+                    last_name: editingPlayer.last_name,
+                    main_club_id: editingPlayer.main_club_id || null,
                     elo: parseInt(editingPlayer.elo), // Ensure ELO is a number
                     is_admin: editingPlayer.is_admin,
                     subscription_end_date: editingPlayer.subscription_end_date || null,
@@ -442,6 +773,9 @@ const Admin = () => {
             await logActivity('ADMIN_EDIT_USER', editingPlayer.id, {
                 changes: {
                     username: editingPlayer.username,
+                    first_name: editingPlayer.first_name,
+                    last_name: editingPlayer.last_name,
+                    main_club_id: editingPlayer.main_club_id,
                     elo: editingPlayer.elo,
                     subscription_end_date: editingPlayer.subscription_end_date,
                     is_admin: editingPlayer.is_admin,
@@ -450,14 +784,13 @@ const Admin = () => {
                 }
             });
 
-            await alert({ title: 'Success', message: 'Player updated successfully!', type: 'success' });
-            await alert({ title: 'Success', message: 'Player updated successfully!', type: 'success' });
+            await alert({ title: t('common.success'), message: t('admin.player_updated_success'), type: 'success' });
             setEditingPlayer(null);
             setNewPassword('');
             fetchData();
         } catch (error: any) {
             console.error(error);
-            await alert({ title: 'Error', message: 'Error updating player: ' + error.message, type: 'danger' });
+            await alert({ title: t('common.error'), message: t('admin.player_updated_error') + error.message, type: 'danger' });
         } finally {
             setLoading(false);
         }
@@ -472,6 +805,10 @@ const Admin = () => {
         if (!editingMatch) return;
         setLoading(true);
         try {
+            // Resolve club name from the selected club_id
+            const selectedClub = clubs.find(c => c.id === editingMatch.club_id);
+            const clubName = selectedClub ? selectedClub.name : null;
+
             const { error } = await supabase
                 .from('matches')
                 .update({
@@ -485,9 +822,9 @@ const Admin = () => {
 
             await logActivity('ADMIN_EDIT_MATCH', editingMatch.id, {
                 changes: {
-                    club_id: editingMatch.club_id,
+                    club_name: clubName,
                     created_at: editingMatch.created_at,
-                    commentary: editingMatch.commentary
+                    commentary: editingMatch.commentary,
                 }
             });
 
@@ -572,6 +909,12 @@ const Admin = () => {
                         className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'matches' ? 'text-white border-b-2 border-green-500' : 'text-slate-500'}`}
                     >
                         {t('admin.tab_matches')} ({filteredMatches.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('tournaments')}
+                        className={`px-4 py-2 font-bold whitespace-nowrap ${activeTab === 'tournaments' ? 'text-white border-b-2 border-purple-500' : 'text-slate-500'}`}
+                    >
+                        {t('admin.tab_tournaments')} ({filteredTournaments.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('direct_match')}
@@ -664,6 +1007,15 @@ const Admin = () => {
                                 onChange={(e) => setMemberSearch(e.target.value)}
                             />
                         </div>
+                        {/*Info about active players and inactive players*/}
+                        <div className="flex gap-2">
+                            <div className="flex-1 sm:flex-none bg-green-600 hover:bg-green-500 p-1">
+                                {t('admin.active_players')}: {players.filter(p => p.subscription_end_date && new Date(p.subscription_end_date) >= new Date() && !p.banned).length}
+                            </div>
+                            <div className="flex-1 sm:flex-none bg-red-600 hover:bg-red-500 p-1">
+                                {t('admin.inactive_players')}: {players.filter(p => !p.subscription_end_date || new Date(p.subscription_end_date) < new Date() || p.banned).length}
+                            </div>
+                        </div>
 
                         <div className="space-y-2">
                             {paginate(activeUsers, playersPage).map(p => {
@@ -671,34 +1023,82 @@ const Admin = () => {
                                 const daysLeft = p.subscription_end_date ? Math.ceil((new Date(p.subscription_end_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)) : 0;
 
                                 return (
-                                    <div key={p.id} className="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700">
-                                        <div className='flex-1 pr-2'>
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-bold text-white">{p.username}</p>
-                                                {p.is_admin && <ShieldAlert size={14} className="text-red-400" />}
-                                                {p.is_admin && <span className='text-[10px] text-red-400 uppercase'>Admin</span>}
-                                                {(p.banned) && <span className='text-[10px] bg-red-500 text-white px-1 rounded uppercase font-bold'>BANNED</span>}
-                                                {(p.banned_until) && <span className='text-[10px] bg-red-500 text-white px-1 rounded uppercase font-bold'>BANNED UNTIL {p.banned_until ? (new Date(p.banned_until).toLocaleString()) : 'No Date'}</span>}
+                                    <div key={p.id} className="bg-slate-800 p-3 sm:p-4 rounded-lg border border-slate-700 flex flex-col sm:flex-row gap-2 sm:gap-4 relative group">
+                                        {/* Left Side: Info Grid */}
+                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                                            {/* Header: Identity & Status */}
+                                            <div className="col-span-1 md:col-span-2 flex flex-wrap items-center gap-2 mb-1 border-b border-slate-700 pb-2 pr-16 sm:pr-0">
+                                                <span className="font-bold text-white text-lg">{p.username}</span>
+                                                <span className="px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300 font-mono">Member.ID: {p.member_id}</span>
+                                                <div className="flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-500/20">
+                                                    <Trophy size={10} />
+                                                    ELO: {p.elo}
+                                                </div>
+                                                {p.is_admin && <span className="px-2 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400 font-bold border border-red-500/20 uppercase">Admin</span>}
+                                                {p.banned && <span className="px-2 py-0.5 rounded text-[10px] bg-red-600 text-white font-bold uppercase">BANNED</span>}
+                                                {p.banned_until && (
+                                                    <span className="px-2 py-0.5 rounded text-[10px] bg-red-600 text-white font-bold uppercase">
+                                                        Until {new Date(p.banned_until).toLocaleDateString()}
+                                                    </span>
+                                                )}
                                             </div>
-                                            <div className="flex flex-col gap-1 mt-1">
-                                                <p className="text-xs text-slate-500">ELO: {p.elo} | AuthId: {p.id}</p>
-                                                <p className='text-xs text-slate-500'>Member-Id: {p.member_id}</p>
-                                                <p className="text-xs text-slate-400">{p.email}</p>
-                                                <p className={`text-xs font-mono flex items-center gap-1 ${isExpired ? 'text-red-400 font-bold' : 'text-green-400'}`}>
-                                                    {isExpired ? '⚠️ Expired' : '✅ Active'}
-                                                    {p.subscription_end_date ? ` (${new Date(p.subscription_end_date).toLocaleDateString()})` : ' (No Date)'}
-                                                    {!isExpired && <span className="text-slate-500 font-normal">[{daysLeft}d left]</span>}
-                                                </p>
-                                                <p className="text-[10px] text-slate-500 mt-1">
-                                                    Terms: {p.terms_accepted_at ? <span className="text-green-500" title={new Date(p.terms_accepted_at).toLocaleString()}>Accepted ✅</span> : <span className="text-red-500">Not Accepted ❌</span>}
-                                                </p>
+
+                                            {/* Column 1: Account Details */}
+                                            <div className="space-y-1 text-xs text-slate-400">
+                                                <div className="flex items-center gap-2" title="Email">
+                                                    <Mail size={12} className="text-slate-500" />
+                                                    {p.email}
+                                                </div>
+                                                <div className="flex items-center gap-2 font-mono text-[10px]" title="Auth ID">
+                                                    <Key size={12} className="text-slate-500" />
+                                                    <span className="text-slate-500">Auth:</span> {p.id}
+                                                </div>
+                                                <div className="flex items-center gap-2" title="App Language">
+                                                    <Globe size={12} className="text-slate-500" />
+                                                    <span className="text-slate-500 text-[10px]">Language:</span> {p.language || 'en'}
+                                                    <span className="text-slate-500 text-[10px] ml-4">Club:</span> {p.main_club?.name || 'No Club'}
+                                                </div>
+                                            </div>
+
+                                            {/* Column 2: Stats & Membership */}
+                                            <div className="space-y-1 text-xs text-slate-400">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 flex-wrap">
+                                                    <span className="flex items-center gap-1.5" title="Matches Validated">
+                                                        <Activity size={12} className="text-green-500" />
+                                                        <span className="text-slate-300">M.Validated:</span> {p.matches_validated}
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5" title="Matches Rejected">
+                                                        <Activity size={12} className="text-red-500" />
+                                                        <span className="text-slate-300">M.Rejected:</span> {p.matches_rejected}
+                                                    </span>
+                                                </div>
+
+                                                <div className={`flex items-center gap-2 font-mono ${isExpired ? 'text-red-400' : 'text-green-400'}`}>
+                                                    <CreditCard size={12} />
+                                                    <span className="font-bold">{isExpired ? 'EXPIRED' : 'ACTIVE'}</span>
+                                                    <span className="text-[10px] opacity-80">
+                                                        {p.subscription_end_date ? new Date(p.subscription_end_date).toLocaleDateString() : 'No Date'}
+                                                        {!isExpired && ` (${daysLeft}d left)`}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 text-[10px]">
+                                                    <span className={`flex items-center gap-1 ${p.terms_accepted_at ? 'text-green-500' : 'text-red-500'}`} title={p.terms_accepted_at ? `Accepted: ${new Date(p.terms_accepted_at).toLocaleDateString()}` : 'Terms not accepted'}>
+                                                        <FileText size={10} /> Terms
+                                                    </span>
+                                                    <span className={`flex items-center gap-1 ${pushSubscriptions.some(sub => sub.user_id === p.id) ? 'text-green-500' : 'text-slate-600'}`}>
+                                                        <Bell size={10} /> Push
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <Button size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10" onClick={() => setEditingPlayer(p)}>
+
+                                        {/* Right Side: Actions (Absolute on Mobile, Flex on Desktop) */}
+                                        <div className="absolute top-3 right-3 flex sm:static sm:flex-col gap-2 shrink-0 sm:border-l border-slate-700 sm:pl-3 justify-end sm:justify-start">
+                                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-md" onClick={() => setEditingPlayer(p)}>
                                                 <Pencil size={16} />
                                             </Button>
-                                            <Button size="sm" variant="danger" onClick={() => handleDeletePlayer(p.id)}>
+                                            <Button size="sm" variant="danger" className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md" onClick={() => handleDeletePlayer(p.id)}>
                                                 <Trash2 size={16} />
                                             </Button>
                                         </div>
@@ -790,78 +1190,111 @@ const Admin = () => {
 
                         <div className="space-y-2">
                             {paginate(filteredMatches, matchesPage).map(m => {
-                                const p1 = players.find(p => p.id === m.team1_p1)?.username || t('common.deleted_user');
-                                const p2 = players.find(p => p.id === m.team1_p2)?.username || t('common.deleted_user');
-                                const p3 = players.find(p => p.id === m.team2_p1)?.username || t('common.deleted_user');
-                                const p4 = players.find(p => p.id === m.team2_p2)?.username || t('common.deleted_user');
+                                const p1 = players.find(p => p.id === m.team1_p1)?.username || t('common.inactive');
+                                const p2 = players.find(p => p.id === m.team1_p2)?.username || t('common.inactive');
+                                const p3 = players.find(p => p.id === m.team2_p1)?.username || t('common.inactive');
+                                const p4 = players.find(p => p.id === m.team2_p2)?.username || t('common.inactive');
 
                                 const scoreList = Array.isArray(m.score) ? m.score : [];
 
                                 return (
                                     <div key={m.id} className="relative bg-slate-800 p-3 rounded-lg border border-slate-700 overflow-hidden group">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <p className="font-bold text-white flex items-center gap-2 text-sm">
-                                                    Match #{m.id}
-                                                    <span className="text-[10px] font-normal text-slate-500 bg-slate-900/50 px-2 py-0.5 rounded-full">
+                                        {/* Status Strip */}
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.winner_team === 1 ? 'bg-green-500' : 'bg-blue-500'}`} />
+
+                                        {/* Header Grid: Compact & Aligned */}
+                                        <div className="grid grid-cols-[1fr_auto] gap-2 mb-3 pl-2 items-start">
+                                            {/* Left: Metadata */}
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-white text-sm">Match #{m.id}</span>
+                                                    <div className={`px-1.5 py-0.5 rounded font-bold uppercase text-[9px] tracking-wider border ${m.status === 'confirmed' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                        m.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                                            m.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                                                'bg-slate-700 text-slate-400 border-slate-600'
+                                                        }`}>
+                                                        {m.status}
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                                                    <span className="flex items-center gap-1">
+                                                        <Calendar size={10} />
                                                         {new Date(m.created_at).toLocaleString()}
                                                     </span>
-                                                </p>
-                                                {/* Extra Info: Club & Commentary */}
-                                                <div className="flex flex-col gap-1 mt-1">
                                                     {m.club_id && (
-                                                        <p className="text-xs text-indigo-400 flex items-center gap-1">
-                                                            📍 {clubs.find(c => c.id === m.club_id)?.name || 'Unknown Club'}
-                                                        </p>
+                                                        <span className="flex items-center gap-1 text-indigo-400">
+                                                            <span>📍</span>
+                                                            {clubs.find(c => c.id === m.club_id)?.name}
+                                                        </span>
                                                     )}
-                                                    {m.commentary && (
-                                                        <p className="text-xs text-slate-400 italic flex items-center gap-1">
-                                                            💬 "{m.commentary}"
-                                                        </p>
-                                                    )}
+                                                    <span className="flex items-center gap-1" title={`Created by ${players.find(p => p.id === m.created_by)?.username}`}>
+                                                        <User size={10} />
+                                                        {players.find(p => p.id === m.created_by)?.username || 'Unknown'}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <Button size="sm" variant="ghost" className="h-6 w-6 px-0 text-blue-400 hover:bg-blue-500/10" onClick={() => setEditingMatch(m)}>
+
+                                            {/* Right: Actions */}
+                                            <div className="flex gap-3 bg-slate-900/50 rounded-lg p-0.5 border border-slate-700/50 shrink-0">
+                                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-md" onClick={() => setEditingMatch(m)}>
                                                     <Pencil size={14} />
                                                 </Button>
-                                                <Button size="sm" variant="danger" className='h-6 w-6 px-0' onClick={() => handleDeleteMatch(m.id)}>
+                                                <Button size="sm" variant="danger" className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md" onClick={() => handleDeleteMatch(m.id)}>
                                                     <Trash2 size={14} />
                                                 </Button>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center justify-between gap-2 mt-1 text-xs bg-slate-900/40 p-2 rounded-lg">
+                                        {/* Commentary (if exists) */}
+                                        {m.commentary && (
+                                            <div className="mb-2 pl-2 text-xs">
+                                                <div className="flex items-start gap-2 bg-slate-900/30 p-2 rounded border border-slate-800 italic text-slate-400">
+                                                    <MessageSquare size={12} className="mt-0.5 shrink-0 opacity-50" />
+                                                    <span>"{m.commentary}"</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Score Board - Full Width & Centered */}
+                                        {/* Fixed typo in margin-left */}
+                                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-slate-900/60 p-2 rounded-lg border border-slate-800/50 ml-1">
                                             {/* Team 1 */}
-                                            <div className={`flex-1 min-w-0 ${m.winner_team === 1 ? 'font-bold text-green-400' : 'text-slate-400'}`}>
-                                                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Team 1 {m.winner_team === 1 && '👑'}</p>
-                                                <p className="truncate">{p1}</p>
-                                                <p className="truncate">{p2}</p>
+                                            <div className={`min-w-0 ${m.winner_team === 1 ? 'font-bold text-green-400' : 'text-slate-400'}`}>
+                                                <div className="flex items-center gap-1 mb-1 opacity-70 text-[10px] uppercase tracking-wider">
+                                                    {m.winner_team === 1 && <span>👑</span>} Team 1
+                                                </div>
+                                                <div className="text-xs space-y-0.5">
+                                                    <p className="truncate">{p1}</p>
+                                                    <p className="truncate">{p2}</p>
+                                                </div>
                                             </div>
 
-                                            {/* Score */}
-                                            <div className="flex flex-col items-center justify-center px-2 py-1 font-mono font-bold text-white text-sm bg-slate-800/50 rounded min-w-[60px] shrink-0 mx-1">
+                                            {/* Scores */}
+                                            <div className="flex flex-col gap-1 px-2">
                                                 {scoreList.length > 0 ? (
                                                     scoreList.map((s: any, i: number) => (
-                                                        <div key={i} className="whitespace-nowrap">
-                                                            {s.t1}-{s.t2}
+                                                        <div key={i} className="flex items-center justify-center bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-sm font-mono font-bold">
+                                                            <span className={m.winner_team === 1 ? 'text-green-400' : 'text-slate-500'}>{s.t1}</span>
+                                                            <span className="text-slate-600 mx-1">-</span>
+                                                            <span className={m.winner_team === 2 ? 'text-blue-400' : 'text-slate-500'}>{s.t2}</span>
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    <span className="text-slate-600">-</span>
+                                                    <span className="text-slate-600 font-mono">-</span>
                                                 )}
                                             </div>
 
                                             {/* Team 2 */}
-                                            <div className={`flex-1 min-w-0 text-right ${m.winner_team === 2 ? 'font-bold text-blue-400' : 'text-slate-400'}`}>
-                                                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Team 2 {m.winner_team === 2 && '👑'}</p>
-                                                <p className="truncate">{p3}</p>
-                                                <p className="truncate">{p4}</p>
+                                            <div className={`min-w-0 text-right ${m.winner_team === 2 ? 'font-bold text-blue-400' : 'text-slate-400'}`}>
+                                                <div className="flex items-center justify-end gap-1 mb-1 opacity-70 text-[10px] uppercase tracking-wider">
+                                                    Team 2 {m.winner_team === 2 && <span>👑</span>}
+                                                </div>
+                                                <div className="text-xs space-y-0.5">
+                                                    <p className="truncate">{p3}</p>
+                                                    <p className="truncate">{p4}</p>
+                                                </div>
                                             </div>
                                         </div>
-
-                                        {/* Winner Strip */}
-                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.winner_team === 1 ? 'bg-green-500' : 'bg-blue-500'}`} />
                                     </div>
                                 );
                             })}
@@ -974,7 +1407,7 @@ const Admin = () => {
                                                     </div>
                                                     {log.actor && (
                                                         <span className="text-xs text-slate-500 font-mono">
-                                                            By: {log.actor?.username || t('common.deleted_user')}
+                                                            By: {log.actor?.username || t('common.inactive')}
                                                         </span>
                                                     )}
                                                 </div>
@@ -1047,6 +1480,195 @@ const Admin = () => {
                     )
                 }
 
+                {/* TOURNAMENTS TAB */}
+                {activeTab === 'tournaments' && (
+                    <div className="space-y-4">
+                        {/* Filters and Search */}
+                        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                            {/* Verification Filter */}
+                            <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700 self-start">
+                                <button
+                                    onClick={() => setVerificationFilter('all')}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${verificationFilter === 'all' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                                >
+                                    All
+                                </button>
+                                <button
+                                    onClick={() => setVerificationFilter('pending')}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${verificationFilter === 'pending' ? 'bg-yellow-500/20 text-yellow-500' : 'text-slate-400 hover:text-white'}`}
+                                >
+                                    Pending
+                                </button>
+                                <button
+                                    onClick={() => setVerificationFilter('rejected')}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${verificationFilter === 'rejected' ? 'bg-red-500/20 text-red-500' : 'text-slate-400 hover:text-white'}`}
+                                >
+                                    Rejected
+                                </button>
+                            </div>
+
+                            {/* Search Bar */}
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-3 text-slate-500" size={18} />
+                                <input
+                                    type="text"
+                                    placeholder={t('admin.search_tournament_placeholder') || 'Search tournament by name or ID...'}
+                                    className="w-full bg-slate-800 text-white rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500 border border-slate-700"
+                                    value={tournamentSearch}
+                                    onChange={(e) => setTournamentSearch(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            {paginate(
+                                tournaments.filter(t => {
+                                    // Status Filter
+                                    if (verificationFilter === 'pending' && t.status !== 'pending_verification') return false;
+                                    if (verificationFilter === 'rejected' && t.status !== 'rejected') return false;
+
+                                    if (!tournamentSearch) return true;
+                                    const search = tournamentSearch.toLowerCase();
+                                    return t.name.toLowerCase().includes(search) || t.id.toString().includes(search);
+                                }),
+                                tournamentsPage
+                            ).map(tournament => {
+                                const creatorName = tournament.creator?.username || t('common.inactive');
+                                const participantCount = tournament.participant_count || 0;
+                                const isPending = tournament.status === 'pending_verification';
+                                const hasIssues = tournament.reported_issues && tournament.reported_issues.length > 0;
+
+                                return (
+                                    <div key={tournament.id} className={`bg-slate-800 p-4 rounded-lg border ${isPending ? 'border-yellow-500/50' : 'border-slate-700'}`}>
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="font-bold text-white text-lg">{tournament.name}</p>
+
+                                                    {hasIssues && (
+                                                        <span className="flex items-center gap-1 text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold animate-pulse">
+                                                            <AlertTriangle size={12} />
+                                                            {tournament.reported_issues.length} Issues
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                                                    <span className="flex items-center gap-1">
+                                                        <Trophy size={14} />
+                                                        <span className="capitalize">{tournament.mode}</span>
+                                                    </span>
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${tournament.status === 'completed' ? 'bg-slate-700 text-slate-400' :
+                                                        tournament.status === 'playing' ? 'bg-green-500/20 text-green-400' :
+                                                            tournament.status === 'pending_verification' ? 'bg-yellow-500/20 text-yellow-500' :
+                                                                tournament.status === 'rejected' ? 'bg-red-500/20 text-red-500' :
+                                                                    'bg-slate-700 text-slate-400'
+                                                        }`}>
+                                                        {tournament.status === 'pending_verification' ? 'Pending Admin' : tournament.status}
+                                                    </span>
+                                                    <span className="px-2 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-400">
+                                                        {tournament.visibility || 'public'}
+                                                    </span>
+                                                    <span>👥 {participantCount} players</span>
+                                                    <span>📍 Round {tournament.current_round_number}</span>
+                                                </div>
+
+                                                {hasIssues && (
+                                                    <div className="mt-2 text-xs p-2 bg-red-500/10 rounded border border-red-500/20">
+                                                        <button
+                                                            onClick={() => setExpandedTournamentId(expandedTournamentId === tournament.id ? null : tournament.id)}
+                                                            className="flex items-center gap-1 font-bold text-red-400 hover:text-red-300 mb-1"
+                                                        >
+                                                            <AlertTriangle size={12} />
+                                                            {tournament.reported_issues.length} Issues Reported
+                                                            <span className="underline ml-1">{expandedTournamentId === tournament.id ? '(Hide)' : '(Show)'}</span>
+                                                        </button>
+
+                                                        {expandedTournamentId === tournament.id && (
+                                                            <div className="mt-2 space-y-2 pl-2 border-l-2 border-red-500/30">
+                                                                {tournament.reported_issues.map((issue: any, idx: number) => (
+                                                                    <div key={idx} className="bg-slate-900/50 p-2 rounded">
+                                                                        <div className="flex justify-between mb-1 opacity-70 text-[10px]">
+                                                                            <span>User: {issue.reporter_id?.slice(0, 8)}</span>
+                                                                            <span>{new Date(issue.reported_at).toLocaleString()}</span>
+                                                                        </div>
+                                                                        <p className="text-slate-200">{issue.issue_text}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                <div className="mt-2 text-xs text-slate-500 flex flex-wrap gap-2">
+                                                    <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">ID: {tournament.id}</span>
+                                                    <p>Created by: <span className="text-slate-400">{creatorName}</span></p>
+                                                    <p>Date: {new Date(tournament.created_at).toLocaleString()}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col gap-2">
+                                                {/* Verification Buttons */}
+                                                {isPending && (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="primary"
+                                                            className="bg-green-600 hover:bg-green-700 text-white border-none"
+                                                            onClick={() => handleVerifyTournament(tournament.id, true)}
+                                                            title="Approve"
+                                                        >
+                                                            <CheckCircle size={16} />
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="danger"
+                                                            onClick={() => handleVerifyTournament(tournament.id, false)}
+                                                            title="Reject"
+                                                        >
+                                                            <XCircle size={16} />
+                                                        </Button>
+                                                    </>
+                                                )}
+
+                                                <Button size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10" onClick={() => setEditingTournament(tournament)}>
+                                                    <Pencil size={16} />
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="text-purple-400 hover:bg-purple-500/10"
+                                                    onClick={() => {
+                                                        setEditingTournamentResults(tournament);
+                                                        fetchTournamentMatches(tournament.id);
+                                                    }}
+                                                >
+                                                    <ClipboardEdit size={16} />
+                                                </Button>
+                                                <Button size="sm" variant="danger" onClick={() => handleDeleteTournament(tournament.id)}>
+                                                    <Trash2 size={16} />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+
+                            <PaginationControls
+                                currentPage={tournamentsPage}
+                                totalItems={tournaments.filter(t => {
+                                    if (verificationFilter === 'pending' && t.status !== 'pending_verification') return false;
+                                    if (verificationFilter === 'rejected' && t.status !== 'rejected') return false;
+
+                                    if (!tournamentSearch) return true;
+                                    const search = tournamentSearch.toLowerCase();
+                                    return t.name.toLowerCase().includes(search) || t.id.toString().includes(search);
+                                }).length}
+                                onPageChange={setTournamentsPage}
+                            />
+                        </div>
+                    </div>
+                )}
+
 
             </div>
 
@@ -1054,7 +1676,7 @@ const Admin = () => {
             {
                 editingPlayer && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-                        <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative">
+                        <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
                             <button onClick={() => { setEditingPlayer(null); setNewPassword(''); }} className="absolute top-4 right-4 text-slate-500 hover:text-white">
                                 <X size={24} />
                             </button>
@@ -1069,6 +1691,39 @@ const Admin = () => {
                                         onChange={(e) => setEditingPlayer({ ...editingPlayer, username: e.target.value })}
                                     />
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs text-slate-400 block mb-1">First Name</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                            value={editingPlayer.first_name || ''}
+                                            onChange={(e) => setEditingPlayer({ ...editingPlayer, first_name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-slate-400 block mb-1">Last Name</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                            value={editingPlayer.last_name || ''}
+                                            onChange={(e) => setEditingPlayer({ ...editingPlayer, last_name: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1">Club</label>
+                                    <select
+                                        className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                        value={editingPlayer.main_club_id || ''}
+                                        onChange={(e) => setEditingPlayer({ ...editingPlayer, main_club_id: e.target.value || null })}
+                                    >
+                                        <option value="">No Club</option>
+                                        {clubs.map((c: any) => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <div>
                                     <label className="text-xs text-slate-400 block mb-1">New Password (Optional)</label>
                                     <input
@@ -1080,13 +1735,31 @@ const Admin = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-slate-400 block mb-1">ELO Rating</label>
-                                    <input
-                                        type="number"
-                                        className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
-                                        value={editingPlayer.elo}
-                                        onChange={(e) => setEditingPlayer({ ...editingPlayer, elo: e.target.value })}
-                                    />
+                                    <label className="text-xs text-slate-400 block mb-1">ELO Rating & Level</label>
+                                    <div className="flex gap-2">
+                                        <select
+                                            className="w-1/2 bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                            value={getLevelFromElo(editingPlayer.elo).level}
+                                            onChange={(e) => {
+                                                const selectedLevel = LEVELS.find(l => l.level === parseFloat(e.target.value));
+                                                if (selectedLevel) {
+                                                    setEditingPlayer({ ...editingPlayer, elo: selectedLevel.min });
+                                                }
+                                            }}
+                                        >
+                                            {LEVELS.map(l => (
+                                                <option key={l.level} value={l.level}>
+                                                    Level {l.level.toFixed(1)} ({t(`levels.names.${l.key}`)})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <input
+                                            type="number"
+                                            className="w-1/2 bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                            value={editingPlayer.elo}
+                                            onChange={(e) => setEditingPlayer({ ...editingPlayer, elo: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="text-xs text-slate-400 block mb-1">{t('admin.subscription_end')}</label>
@@ -1266,6 +1939,187 @@ const Admin = () => {
                                     Save Changes
                                 </Button>
                             </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* EDIT TOURNAMENT MODAL */}
+            {
+                editingTournament && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                        <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative">
+                            <button onClick={() => setEditingTournament(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
+                                <X size={24} />
+                            </button>
+                            <h2 className="text-xl font-bold text-white mb-6">{t('admin.edit_tournament') || 'Edit Tournament'}</h2>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1">{t('admin.tournament_name') || 'Tournament Name'}</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                        value={editingTournament.name}
+                                        onChange={(e) => setEditingTournament({ ...editingTournament, name: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1">{t('admin.tournament_status') || 'Status'}</label>
+                                    <select
+                                        className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                        value={editingTournament.status}
+                                        onChange={(e) => setEditingTournament({ ...editingTournament, status: e.target.value })}
+                                    >
+                                        <option value="setup">Setup</option>
+                                        <option value="playing">Playing</option>
+                                        <option value="pending_verification">Pending Verification</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="rejected">Rejected</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1">{t('admin.tournament_visibility') || 'Visibility'}</label>
+                                    <select
+                                        className="w-full bg-slate-800 border-slate-700 rounded p-2 text-white"
+                                        value={editingTournament.visibility || 'public'}
+                                        onChange={(e) => setEditingTournament({ ...editingTournament, visibility: e.target.value })}
+                                    >
+                                        <option value="public">Public</option>
+                                        <option value="friends">Friends</option>
+                                        <option value="private">Private</option>
+                                    </select>
+                                </div>
+                                <Button onClick={handleUpdateTournament} className="w-full mt-4 flex items-center justify-center gap-2">
+                                    <Save size={18} />
+                                    {t('admin.save_changes')}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* EDIT TOURNAMENT RESULTS MODAL */}
+            {
+                editingTournamentResults && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto scroll-hide">
+                        <div className="w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl relative my-8 scroll-hide">
+                            <button onClick={() => {
+                                setEditingTournamentResults(null);
+                                setTournamentMatches([]);
+                            }} className="absolute top-4 right-4 text-slate-500 hover:text-white z-10">
+                                <X size={24} />
+                            </button>
+
+                            <h2 className="text-xl font-bold text-white mb-2">
+                                {t('admin.edit_tournament_results') || 'Edit Tournament Results'}
+                            </h2>
+                            <p className="text-sm text-slate-400 mb-6">
+                                {editingTournamentResults.name} • <span className="capitalize">{editingTournamentResults.mode}</span>
+                            </p>
+
+                            {loadingMatches ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="animate-spin text-purple-500" size={32} />
+                                    <span className="ml-3 text-slate-400">{t('admin.loading_matches') || 'Loading matches...'}</span>
+                                </div>
+                            ) : tournamentMatches.length === 0 ? (
+                                <p className="text-center text-slate-500 py-12">{t('admin.no_matches_tournament') || 'No matches found for this tournament.'}</p>
+                            ) : (
+                                <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                                    {/* Group matches by round */}
+                                    {Array.from(new Set(tournamentMatches.map(m => m.round_number))).sort((a, b) => a - b).map(roundNum => {
+                                        const roundMatches = tournamentMatches.filter(m => m.round_number === roundNum);
+
+                                        return (
+                                            <div key={roundNum} className="space-y-3">
+                                                <h3 className="text-lg font-bold text-purple-400 sticky top-0 bg-slate-900 py-2 z-10">
+                                                    Round {roundNum}
+                                                </h3>
+
+                                                {roundMatches.map(match => (
+                                                    <div
+                                                        key={match.id}
+                                                        className={`bg-slate-800 p-4 rounded-lg border-2 ${match.completed ? 'border-green-500/30' : 'border-yellow-500/30'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">
+                                                                Court {match.court_number}
+                                                            </span>
+                                                            <span className={`text-xs px-2 py-1 rounded ${match.completed ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                                                                }`}>
+                                                                {match.completed ? '✓ Completed' : 'Incomplete'}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                            {/* Team 1 */}
+                                                            <div className="space-y-2">
+                                                                <p className="text-xs text-slate-500 font-bold">Team 1</p>
+                                                                <p className="text-sm text-white">
+                                                                    {match.team1_p1_text} & {match.team1_p2_text}
+                                                                </p>
+                                                                <div className="text-center text-2xl font-bold text-white bg-slate-700 rounded p-3">
+                                                                    {match.score_team1}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Team 2 */}
+                                                            <div className="space-y-2">
+                                                                <p className="text-xs text-slate-500 font-bold">Team 2</p>
+                                                                <p className="text-sm text-white">
+                                                                    {match.team2_p1_text} & {match.team2_p2_text}
+                                                                </p>
+                                                                <div className="text-center text-2xl font-bold text-white bg-slate-700 rounded p-3">
+                                                                    {match.score_team2}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <Button
+                                                            onClick={async () => {
+                                                                const newScore1 = await prompt({
+                                                                    title: t('admin.team_1_score_title'),
+                                                                    message: t('admin.enter_score_team_1', { players: `${match.team1_p1_text} & ${match.team1_p2_text}` }),
+                                                                    defaultValue: match.score_team1.toString(),
+                                                                    confirmText: t('admin.next'),
+                                                                    cancelText: t('common.cancel')
+                                                                });
+                                                                if (newScore1 === null) return;
+
+                                                                const newScore2 = await prompt({
+                                                                    title: t('admin.team_2_score_title'),
+                                                                    message: t('admin.enter_score_team_2', { players: `${match.team2_p1_text} & ${match.team2_p2_text}` }),
+                                                                    defaultValue: match.score_team2.toString(),
+                                                                    confirmText: t('admin.next'),
+                                                                    cancelText: t('common.cancel')
+                                                                });
+                                                                if (newScore2 === null) return;
+
+                                                                const completed = await confirm({
+                                                                    title: t('admin.mark_completed_title'),
+                                                                    message: t('admin.mark_completed_message'),
+                                                                    confirmText: t('admin.yes_complete'),
+                                                                    cancelText: t('admin.no')
+                                                                });
+
+                                                                await handleUpdateMatchResult(match.id, parseInt(newScore1) || 0, parseInt(newScore2) || 0, completed);
+                                                            }}
+                                                            className="w-full flex items-center justify-center gap-2"
+                                                            size="sm"
+                                                            variant="ghost"
+                                                        >
+                                                            <Pencil size={16} />
+                                                            Edit Scores
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )

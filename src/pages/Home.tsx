@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy, Info, MessageCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Plus, History as HistoryIcon, User, Check, X, Clock, Trophy, Info, MessageCircle, Trash2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getLevelFromElo } from '../lib/elo';
 import { Avatar } from '../components/ui/Avatar';
@@ -19,6 +19,7 @@ interface Profile {
     username: string;
     elo: number;
     avatar_url: string | null;
+    main_club_id?: number | null;
     subscription_end_date?: string;
     is_admin?: boolean;
 }
@@ -41,17 +42,20 @@ interface MatchPreview {
     team1_p2: string;
     team2_p1: string;
     team2_p2: string;
+    club?: { name: string } | null;
 }
 
 const Home = () => {
-    const { alert, confirm } = useModal();
+    const { alert, confirm, prompt } = useModal();
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
 
     // UI State
     const [showWelcome, setShowWelcome] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [selectedClubId, setSelectedClubId] = useState<string | number>('all');
 
     // --- QUERIES ---
 
@@ -61,6 +65,16 @@ const Home = () => {
         queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser();
             return user;
+        },
+        staleTime: Infinity
+    });
+
+    // 1.1 Clubs
+    const { data: clubs = [] } = useQuery({
+        queryKey: ['clubs'],
+        queryFn: async () => {
+            const { data } = await supabase.from('clubs').select('id, name').order('name');
+            return data || [];
         },
         staleTime: Infinity
     });
@@ -140,14 +154,7 @@ const Home = () => {
                         // Only fallback if diffs not present
                         else if (prevElo !== undefined) {
                             points = currentElo - prevElo;
-                            // Sanity check for Legacy Race Conditions (Match 33 fix)
-                            // If we WON but points < 0, it means we compared against a FUTURE/HIGHER elo from an unseen match
-                            // We can't know the real points, but we know it shouldn't be negative.
-                            // We can estimate based on result? Or just clamp to 0. 
                             if (won && points < 0) {
-                                // Attempt to estimate standard points (e.g., +15) or just show +?
-                                // Let's just clamp to 0 for now as 'Unknown Positive' to avoid confusion.
-                                // Or better: If it's a win, and we have negative points, it's definitely an error.
                                 points = 0;
                             }
                             if (!won && points > 0) points = 0;
@@ -160,18 +167,22 @@ const Home = () => {
         }
     });
 
+    useEffect(() => {
+        if (profile?.main_club_id) {
+            setSelectedClubId(profile.main_club_id);
+        }
+    }, [profile]);
+
     // 4. Suggestions
     const { data: suggestions = [] } = useQuery({
-        queryKey: ['suggestions', user?.id, profile?.elo],
+        queryKey: ['suggestions', user?.id, profile?.elo, selectedClubId],
         enabled: !!user && !!profile,
         staleTime: 1000 * 60 * 5, // 5 minutes
         queryFn: async () => {
             if (!user || !profile) return [];
-            // Optimistic approach: fetch all approved, filter locally. 
-            // In a larger app, using RPC or DB function is better.
             const { data: candidates } = await supabase
                 .from('profiles')
-                .select('id, username, elo, avatar_url')
+                .select('id, username, elo, avatar_url, main_club_id')
                 .neq('id', user.id)
                 .eq('approved', true)
                 .eq('is_admin', false);
@@ -180,9 +191,15 @@ const Home = () => {
 
             const minElo = profile.elo - 100;
             const maxElo = profile.elo + 100;
-            const filtered = candidates.filter(p => p.elo >= minElo && p.elo <= maxElo);
+
+            let filtered = candidates.filter(p => p.elo >= minElo && p.elo <= maxElo);
+
+            if (selectedClubId !== 'all') {
+                filtered = filtered.filter(p => p.main_club_id === Number(selectedClubId));
+            }
+
             filtered.sort((a, b) => Math.abs(a.elo - profile.elo) - Math.abs(b.elo - profile.elo));
-            return filtered.slice(0, 5);
+            return filtered.slice(0, 10);
         }
     });
 
@@ -195,12 +212,13 @@ const Home = () => {
             const { data: pending } = await supabase
                 .from('matches')
                 .select(`
-                    id, created_at, winner_team, commentary, status, score, created_by,
+                    id, created_at, winner_team, commentary, status, score, created_by, club_id,
                     team1_p1, team1_p2, team2_p1, team2_p2,
                     t1p1:team1_p1(username, elo),
                     t1p2:team1_p2(username, elo),
                     t2p1:team2_p1(username, elo),
-                    t2p2:team2_p2(username, elo)
+                    t2p2:team2_p2(username, elo),
+                    club:clubs(name)
                 `)
                 .eq('status', 'pending')
                 .or(`team1_p1.eq.${profile.id},team1_p2.eq.${profile.id},team2_p1.eq.${profile.id},team2_p2.eq.${profile.id}`)
@@ -218,7 +236,7 @@ const Home = () => {
 
             return pending.map((m: any) => ({
                 ...m,
-                creator: m.created_by ? { username: creatorsMap[m.created_by] || t('common.deleted_user') } : null
+                creator: m.created_by ? { username: creatorsMap[m.created_by] || t('common.inactive') } : null
             })) as unknown as MatchPreview[];
         }
     });
@@ -289,9 +307,7 @@ const Home = () => {
             return matchId;
         },
         onSuccess: () => {
-            // Find match for logging before invalidating - tricky since we invalidated but maybe we can find it in cache
-            // Actually logActivity is side effect, let's do it here
-            // We need match details.
+
 
             // Invalidate to refresh UI
             queryClient.invalidateQueries({ queryKey: ['pendingMatches'] });
@@ -299,7 +315,6 @@ const Home = () => {
             queryClient.invalidateQueries({ queryKey: ['matchForm'] }); // User form updates
             queryClient.invalidateQueries({ queryKey: ['profile'] }); // Elo updates
 
-            // Re-fetch rankings too if we want, but fine to let it be stale till user visits
         },
         onError: (error: any) => {
             alert({ title: 'Error', message: 'Error rejecting match: ' + error.message, type: 'danger' });
@@ -317,6 +332,20 @@ const Home = () => {
         },
         onError: (error: any) => {
             alert({ title: 'Error', message: 'Error rejecting match: ' + error.message, type: 'danger' });
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (matchId: number) => {
+            const { error } = await supabase.from('matches').delete().eq('id', matchId);
+            if (error) throw error;
+            return matchId;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pendingMatches'] });
+        },
+        onError: (error: any) => {
+            alert({ title: 'Error', message: 'Error deleting match: ' + error.message, type: 'danger' });
         }
     });
 
@@ -346,8 +375,16 @@ const Home = () => {
     };
 
     const handleReject = async (matchId: number) => {
-        const reason = prompt(t('home.reject_reason_prompt'));
-        if (reason === null) return;
+        // Use custom prompt from useModal
+        const reason = await prompt({
+            title: t('home.reject_title') || 'Reject',
+            message: t('home.reject_reason_prompt'),
+            placeholder: "Reason...",
+            confirmText: t('home.reject'),
+            cancelText: t('common.cancel')
+        });
+
+        if (reason === null) return; // Cancelled
         if (reason.trim() === '') {
             await alert({ title: 'Warning', message: t('home.reject_reason_required'), type: 'warning' });
             return;
@@ -373,6 +410,18 @@ const Home = () => {
                 }
             }
         });
+    };
+
+    const handleDelete = async (matchId: number) => {
+        const confirmed = await confirm({
+            title: t('home.delete_match_title'),
+            message: t('home.delete_match_confirm'),
+            type: 'danger',
+            confirmText: t('home.delete')
+        });
+        if (!confirmed) return;
+
+        deleteMutation.mutate(matchId);
     };
 
 
@@ -428,7 +477,7 @@ const Home = () => {
                                 </div>
 
                                 <div className="text-right">
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Elo</p>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">PTS</p>
                                     <p className="text-lg font-bold text-green-400">{profile.elo}</p>
                                 </div>
 
@@ -458,7 +507,7 @@ const Home = () => {
                         {/* Recent played */}
                         <div
                             onClick={() => setShowHistoryModal(true)}
-                            className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg cursor-pointer hover:border-slate-500 transition-colors group"
+                            className="flex flex-col rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 border border-slate-700/50 shadow-lg cursor-pointer hover:border-slate-500 transition-colors group"
                         >
                             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">{t('home.recent_played')}</p>
                             <div className="flex flex-col gap-2 mt-2">
@@ -484,7 +533,7 @@ const Home = () => {
                                 )}
                             </div>
 
-                            <div className=" flex items-center justify-between mt-2">
+                            <div className="mt-auto pt-4 flex items-center justify-between">
                                 <p className="text-[10px] text-slate-500 font-medium group-hover:text-green-400 transition-colors flex items-center justify-between">
                                     {t('home.last_5')}</p>
                                 <p className="text-[10px] text-slate-500 font-medium group-hover:text-green-400 transition-colors flex items-center justify-between"><Info size={20} /></p>
@@ -516,6 +565,8 @@ const Home = () => {
                                     ? (isUserTeam1 && !isCreatorTeam1) || (!isUserTeam1 && !isCreatorTeam2)
                                     : true;
 
+                                const canDelete = match.created_by === profile?.id;
+
 
                                 const scoreList = Array.isArray(match.score) ? match.score : [];
 
@@ -531,8 +582,14 @@ const Home = () => {
 
                                             <span className="text-[10px] text-slate-500 font-mono">{t('home.match_number', { id: match.id })}</span>
                                         </div>
-                                        <div className="flex justify-end pb-2 border-b border-yellow-500/10">
-
+                                        <div className="flex justify-between pb-2 border-b border-yellow-500/10">
+                                            <span className="text-[10px] text-slate-500 font-medium">
+                                                {match.club?.name && (
+                                                    <span className="mr-2 text-slate-500">
+                                                        {match.club.name}
+                                                    </span>
+                                                )}
+                                            </span>
                                             <p className="text-[10px] text-slate-400 font-medium">
                                                 {match.creator?.username && (
                                                     <span className="mr-2 text-slate-500">
@@ -596,6 +653,15 @@ const Home = () => {
                                                 </p>
                                             </div>
                                         )}
+
+                                        {canDelete && (
+                                            <button
+                                                onClick={() => handleDelete(match.id)}
+                                                className="mt-2 w-full bg-slate-800/50 hover:bg-red-500/20 text-slate-400 hover:text-red-500 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 border border-slate-700/50 hover:border-red-500/30"
+                                            >
+                                                <Trash2 size={14} /> {t('home.delete')}
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -616,13 +682,12 @@ const Home = () => {
                     <span className="text-lg tracking-tight">{t('home.record_match')}</span>
                 </Link>
 
-                {/* Tournaments Link */}
                 <button
                     onClick={() => {
                         const isAdmin = profile?.is_admin;
 
                         if (isAdmin) {
-                            window.open("https://padel-tournaments-sepia.vercel.app", "_blank", "noopener,noreferrer");
+                            navigate('/tournaments');
                             return;
                         }
 
@@ -637,7 +702,7 @@ const Home = () => {
                             return;
                         }
 
-                        window.open("https://padel-tournaments-sepia.vercel.app", "_blank", "noopener,noreferrer");
+                        navigate('/tournaments');
                     }}
                     className="w-full group relative flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 py-4 font-bold text-white shadow-xl shadow-orange-500/20 active:scale-95 transition-all hover:from-amber-400 hover:to-orange-500 overflow-hidden"
                 >
@@ -649,12 +714,28 @@ const Home = () => {
                 {/* Player Suggestions */}
                 {suggestions.length > 0 && (
                     <div>
-                        <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                            <User size={18} className="text-blue-400" />
-                            {t('home.suggestions')}
-                            <span className="text-xs text-center font-normal text-slate-500 ml-auto border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'ELO +/- 100' })}</span>
-                        </h2>
-                        <span className="text-xs font-normal text-slate-500 mb-3 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.suggestions_limit', { defaultValue: 'Max 10 suggestions' })}</span>
+                        <div className="flex items-center justify-between mb-3">
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                <User size={18} className="text-blue-400" />
+                                {t('home.suggestions')}
+                            </h2>
+                            <select
+                                value={selectedClubId}
+                                onChange={(e) => setSelectedClubId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                                className="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-2 py-1.5 outline-none focus:border-green-500 max-w-[140px]"
+                            >
+                                <option value="all">{t('clubs.all_clubs')}</option>
+                                {clubs.map((club: any) => (
+                                    <option key={club.id} value={club.id}>{club.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex gap-2 mb-3">
+                            <span className="text-xs text-center font-normal text-slate-500 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.elo_range', { defaultValue: 'PTS +/- 100' })}</span>
+                            <span className="text-xs font-normal text-slate-500 border border-slate-700 px-2 py-0.5 rounded-full">{t('home.suggestions_limit', { defaultValue: 'Max 10 suggestions' })}</span>
+                        </div>
+
                         <div className="flex flex-col gap-3 mt-3">
                             {suggestions.slice(0, 10).map((s: any) => {
                                 const diff = s.elo - (profile?.elo || 0);
@@ -664,26 +745,29 @@ const Home = () => {
 
                                 return (
                                     <div key={s.id} className="relative flex justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 hover:bg-slate-800 transition-colors">
-                                        <div className="flex items-center gap-3">
+                                        <Link to={`/user/${s.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                                             <Avatar src={s.avatar_url} fallback={s.username} size="md" />
-                                            <div>
-                                                {s.username}
+                                            <div className="truncate">
+                                                <div className="truncate text-white font-medium">{s.username}</div>
                                                 <div className="flex items-center gap-2 text-xs">
-                                                    <span className="text-slate-400 font-bold">{s.elo} ELO</span>
+                                                    <span className="text-slate-400 font-bold">{s.elo} PTS</span>
                                                     <span className={cn("font-medium", diffColor)}>{t('home.diff_of', { diff: diffText, defaultValue: `diff of (${diffText})` })}</span>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </Link>
 
                                         {/* Message Button */}
                                         <button
-                                            onClick={() => window.dispatchEvent(new CustomEvent('openChat', { detail: s.id }))}
-                                            className="ml-2 text-xs font-bold text-slate-400 p-1.5 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                window.dispatchEvent(new CustomEvent('openChat', { detail: s.id }));
+                                            }}
+                                            className="ml-2 text-xs font-bold text-slate-400 p-1.5 hover:text-white hover:bg-slate-700 rounded-lg transition-colors shrink-0"
                                             title="Send Message"
                                         >
                                             <MessageCircle size={18} />
                                         </button>
-
                                     </div>
                                 )
                             })}
@@ -719,11 +803,11 @@ const Home = () => {
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
                                                 <span className={cn(match.winner_team === 1 ? "text-green-400" : "text-slate-400")}>
-                                                    {match.t1p1?.username || t('home.unknown')} & {match.t1p2?.username || t('home.unknown')}
+                                                    {match.t1p1?.username || t('home.inactive')} & {match.t1p2?.username || t('home.inactive')}
                                                 </span>
                                                 <span className="text-slate-600 text-[10px]">VS</span>
                                                 <span className={cn(match.winner_team === 2 ? "text-green-400" : "text-slate-400")}>
-                                                    {match.t2p1?.username || t('home.unknown')} & {match.t2p2?.username || t('home.unknown')}
+                                                    {match.t2p1?.username || t('home.inactive')} & {match.t2p2?.username || t('home.inactive')}
                                                 </span>
 
                                             </div>

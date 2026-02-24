@@ -32,9 +32,12 @@ dist-ssr
 backups
 scripts
 docs
+marketing
 
 # Supabase
 supabase/.temp
 supabase/.branches
 supabase/functions
 supabase/sql
+supabase/migrations
+supabase/migrations_archive

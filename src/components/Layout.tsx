@@ -1,11 +1,13 @@
 
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Home, Trophy, Users, Loader2 } from 'lucide-react';
+import { Home, Trophy, Users, Loader2, Award } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
 import ChatButton from './Chat/ChatButton';
 import ChatDrawer from './Chat/ChatDrawer';
+import AiChatButton from './AiChat/AiChatButton';
+import AiChatDrawer from './AiChat/AiChatDrawer';
 import { useChat } from '../context/ChatContext';
 import { useTranslation } from 'react-i18next';
 import { InstallPrompt } from './InstallPrompt';
@@ -23,11 +25,19 @@ const Layout = () => {
     const [verifying, setVerifying] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
+    const [initialChatMessage, setInitialChatMessage] = useState<string | undefined>(undefined);
     const [showTermsModal, setShowTermsModal] = useState(false);
+    const [isAiChatOpen, setIsAiChatOpen] = useState(false);
 
     useEffect(() => {
-        const handleOpenChat = (e: CustomEvent<string>) => {
-            setChatActiveUser(e.detail);
+        const handleOpenChat = (e: CustomEvent<string | { userId: string, initialMessage?: string }>) => {
+            if (typeof e.detail === 'string') {
+                setChatActiveUser(e.detail);
+                setInitialChatMessage(undefined);
+            } else {
+                setChatActiveUser(e.detail.userId);
+                setInitialChatMessage(e.detail.initialMessage);
+            }
             setIsChatOpen(true);
         };
 
@@ -110,23 +120,34 @@ const Layout = () => {
     }
 
     return (
-        <div className="mx-auto min-h-screen max-w-md bg-slate-900 text-slate-100 shadow-2xl transition-colors duration-300 relative">
+        <div className="mx-auto min-h-screen max-w-2xl bg-slate-900 text-slate-100 shadow-2xl transition-colors duration-300 relative">
             <BetaBanner />
             <main className="min-h-[calc(100vh-80px)] p-4 pb-24">
                 <Outlet />
             </main>
 
+            {/* AI Chat Components */}
+            <AiChatButton onClick={() => setIsAiChatOpen(true)} />
+            <AiChatDrawer
+                isOpen={isAiChatOpen}
+                onClose={() => setIsAiChatOpen(false)}
+            />
+
             {/* Chat Components */}
             <ChatButton onClick={() => setIsChatOpen(true)} unreadCount={unreadCount} />
             <ChatDrawer
                 isOpen={isChatOpen}
-                onClose={() => setIsChatOpen(false)}
+                onClose={() => {
+                    setIsChatOpen(false);
+                    setInitialChatMessage(undefined);
+                }}
                 activeUserId={chatActiveUser}
                 onActiveUserChange={setChatActiveUser}
+                initialMessage={initialChatMessage}
             />
 
             {/* Bottom Navigation */}
-            <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm px-2 py-4 z-40 transition-colors duration-300">
+            <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-2xl border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm px-2 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-40 transition-all duration-300 transform-gpu">
                 <ul className="flex items-center justify-around">
                     <li>
                         <NavLink to="/" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
@@ -144,6 +165,12 @@ const Layout = () => {
                         <NavLink to="/rankings" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
                             <Trophy size={22} />
                             <span className="text-[10px] font-medium">{t('nav.rank')}</span>
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink to="/tournament-rankings" className={({ isActive }) => clsx("flex flex-col items-center gap-1 transition-colors", isActive ? "text-green-400" : "text-slate-500 hover:text-slate-300")}>
+                            <Award size={22} />
+                            <span className="text-[10px] font-medium">{t('nav.tournament_rank') || 'T-Rank'}</span>
                         </NavLink>
                     </li>
                 </ul>

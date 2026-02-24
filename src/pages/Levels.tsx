@@ -37,7 +37,7 @@ const Levels = () => {
                                         {level.level}
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold text-white leading-tight">{level.label}</h3>
+                                        <h3 className="text-lg font-bold text-white leading-tight">{t(`levels.names.${level.key}`)}</h3>
                                         <p className="text-sm font-medium text-slate-400 mt-1">
                                             {level.min} - {level.max >= 9999 ? '∞' : level.max} pts
                                         </p>
