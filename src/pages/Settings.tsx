@@ -9,8 +9,6 @@ import {
     LogOut,
     ChevronRight,
     HelpCircle,
-    Check,
-    X,
     Loader2,
     Globe,
     ShoppingCart,
@@ -267,6 +265,14 @@ const Settings = () => {
             // LOG PROFILE UPDATE
             logActivity('PROFILE_UPDATE', user.id, { username: newUsername });
 
+            await alert({
+                title: t("settings.success") || "Success",
+                message: t("settings.profile_updated") || "Profile updated successfully",
+                type: 'success',
+                autoCloseDuration: 2000,
+                hideButtons: true
+            });
+
         } catch (error: any) {
             console.error('Error updating profile:', error);
 
@@ -422,7 +428,17 @@ const Settings = () => {
             <div className="p-4 space-y-6 max-w-lg mx-auto">
                 {/* Profile Section */}
                 <div className="space-y-2">
-                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">{t('settings.account')}</h2>
+                    <div className="flex items-center justify-between ml-1 pr-1">
+                        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('settings.account')}</h2>
+                        {!isEditing && (
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="text-xs font-medium text-blue-400 hover:text-blue-300 px-3 py-1 bg-blue-500/10 rounded-full hover:bg-blue-500/20 transition-colors flex items-center gap-1"
+                            >
+                                {t('settings.edit')}
+                            </button>
+                        )}
+                    </div>
                     <div className="rounded-xl bg-slate-800 border border-slate-700/50 overflow-hidden shadow-none transition-colors duration-300">
 
                         {/* Username Edit Row */}
@@ -433,13 +449,16 @@ const Settings = () => {
                                 </div>
                                 <div className="text-left flex-1">
                                     {isEditing ? (
-                                        <input
-                                            type="text"
-                                            value={newUsername}
-                                            onChange={(e) => setNewUsername(e.target.value)}
-                                            className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                                            autoFocus
-                                        />
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase text-slate-500 font-bold">{t('settings.username')}</label>
+                                            <input
+                                                type="text"
+                                                value={newUsername}
+                                                onChange={(e) => setNewUsername(e.target.value)}
+                                                className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                                autoFocus
+                                            />
+                                        </div>
                                     ) : (
                                         <>
                                             <p className="font-medium text-white">{profile?.username || t('common.loading')}</p>
@@ -448,42 +467,6 @@ const Settings = () => {
                                         </>
                                     )}
                                 </div>
-                            </div>
-
-                            {/* Edit Actions */}
-                            <div className="flex items-center gap-2">
-                                {isEditing ? (
-                                    <>
-                                        <button
-                                            onClick={handleUpdateProfile}
-                                            disabled={loading}
-                                            className="p-2 text-green-400 hover:bg-green-500/10 rounded-full transition-colors"
-                                        >
-                                            {loading ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setIsEditing(false);
-                                                setNewUsername(profile?.username || '');
-                                                setNewFirstName(profile?.first_name || '');
-                                                setNewLastName(profile?.last_name || '');
-                                                setNewNationality(profile?.nationality || '');
-                                                setNewRacket(profile?.racket || '');
-                                                setNewDescClub(profile?.main_club_id || '');
-                                            }}
-                                            className="p-2 text-red-400 hover:bg-red-500/10 rounded-full transition-colors"
-                                        >
-                                            <X size={18} />
-                                        </button>
-                                    </>
-                                ) : (
-                                    <button
-                                        onClick={() => setIsEditing(true)}
-                                        className="text-xs font-medium text-blue-400 hover:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-500/10 transition-colors"
-                                    >
-                                        {t('settings.edit')}
-                                    </button>
-                                )}
                             </div>
                         </div>
 
@@ -623,16 +606,19 @@ const Settings = () => {
                                 </div>
                                 <div className="text-left flex-1">
                                     {isEditing ? (
-                                        <select
-                                            value={newDescClub}
-                                            onChange={(e) => setNewDescClub(e.target.value)}
-                                            className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-green-500 transition-colors"
-                                        >
-                                            <option value="">{t('clubs.select_club_if_you_wish') || 'Select Club'}</option>
-                                            {clubs.map(c => (
-                                                <option key={c.id} value={c.id}>{c.name}</option>
-                                            ))}
-                                        </select>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase text-slate-500 font-bold">{t('clubs.main_club') || 'Main Club'}</label>
+                                            <select
+                                                value={newDescClub}
+                                                onChange={(e) => setNewDescClub(e.target.value)}
+                                                className="w-full bg-slate-900 text-white border border-slate-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-green-500 transition-colors"
+                                            >
+                                                <option value="">{t('clubs.select_club_if_you_wish') || 'Select Club'}</option>
+                                                {clubs.map(c => (
+                                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     ) : (
                                         <>
                                             <p className="font-medium text-white">
@@ -647,6 +633,36 @@ const Settings = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Edit Actions */}
+                        {isEditing && (
+                            <div className="p-4 border-t border-slate-700/50 bg-slate-800 flex justify-end gap-3 transition-all duration-300">
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                        setIsEditing(false);
+                                        setNewUsername(profile?.username || '');
+                                        setNewFirstName(profile?.first_name || '');
+                                        setNewLastName(profile?.last_name || '');
+                                        setNewNationality(profile?.nationality || '');
+                                        setNewRacket(profile?.racket || '');
+                                        setNewDescClub(profile?.main_club_id || '');
+                                    }}
+                                    className="text-slate-400 hover:text-white"
+                                >
+                                    {t('settings.cancel') || 'Cancel'}
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    onClick={handleUpdateProfile}
+                                    disabled={loading}
+                                    className="bg-blue-500  hover:bg-blue-600 text-white min-w-[100px]"
+                                >
+                                    {loading ? <Loader2 size={16} className="animate-spin" /> : t('settings.save') || t('common.save') || 'Save'}
+                                </Button>
+                            </div>
+                        )}
 
                         {/* Security Section */}
                         <div className="border-t border-slate-700/50">

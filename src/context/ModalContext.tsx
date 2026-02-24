@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { Modal } from '../components/ui/Modal';
+import { useTranslation } from 'react-i18next';
 
 interface ModalOptions {
     title: string;
@@ -30,6 +31,7 @@ export const useModal = () => {
 };
 
 export const ModalProvider = ({ children }: { children: ReactNode }) => {
+    const { t } = useTranslation();
     const [modalState, setModalState] = useState<{
         isOpen: boolean;
         options: ModalOptions;
@@ -62,7 +64,12 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
 
             setModalState({
                 isOpen: true,
-                options: { ...options, type: options.type || 'info', cancelText: 'Close' },
+                options: {
+                    ...options,
+                    type: options.type || 'info',
+                    cancelText: options.cancelText || t('common.close'),
+                    confirmText: options.confirmText || t('common.confirm')
+                },
                 resolve: handleResolve
             });
         });
@@ -72,7 +79,12 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
         return new Promise<boolean>((resolve) => {
             setModalState({
                 isOpen: true,
-                options: { ...options, type: options.type || 'confirm' },
+                options: {
+                    ...options,
+                    type: options.type || 'confirm',
+                    cancelText: options.cancelText || t('common.cancel'),
+                    confirmText: options.confirmText || t('common.confirm')
+                },
                 resolve: (updatedValue) => { // Updated to accept a value
                     close();
                     resolve(updatedValue as boolean); // Cast to boolean
@@ -86,7 +98,12 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
             setInputValue(options.defaultValue || '');
             setModalState({
                 isOpen: true,
-                options: { ...options, type: 'prompt' },
+                options: {
+                    ...options,
+                    type: 'prompt',
+                    cancelText: options.cancelText || t('common.cancel'),
+                    confirmText: options.confirmText || t('common.confirm')
+                },
                 resolve: (value) => {
                     close();
                     resolve(value as string | null);

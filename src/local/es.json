@@ -42,6 +42,8 @@
     "racket": "Modelo de pala",
     "enter_racket": "ej. NOX AT10 Luxury Genius",
     "errorUpdatingProfile": "Error al actualizar el perfil",
+    "profile_updated": "Perfil actualizado correctamente.",
+    "success": "Éxito",
     "how_it_works": "Cómo funciona",
     "dynamic_elo": "Sistema ELO Dinámico",
     "install_app": "Instalar App",

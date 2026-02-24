@@ -34,6 +34,8 @@
     "cancel": "Cancel",
     "edit": "Edit",
     "save": "Save",
+    "profile_updated": "Profile updated successfully.",
+    "success": "Success",
     "username": "Username / Player Name",
     "usernameTakenTitle": "Username Taken",
     "usernameTakenMessage": "That username is already taken. Please choose another one.",

@@ -32,6 +32,8 @@
     "update_password": "Passwort aktualisieren",
     "new_password": "Neues Passwort",
     "confirm_password": "Passwort bestätigen",
+    "profile_updated": "Profil erfolgreich aktualisiert.",
+    "success": "Erfolg",
     "cancel": "Abbrechen",
     "edit": "Bearbeiten",
     "save": "Speichern",
