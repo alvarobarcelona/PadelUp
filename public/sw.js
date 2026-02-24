@@ -84,7 +84,11 @@ self.addEventListener("push", function (event) {
 
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
-  const urlToOpen = event.notification.data;
+  // Ensure the URL is absolute, as relative URLs sometimes fail in client.navigate()
+  const urlToOpen = new URL(
+    event.notification.data || "/",
+    self.location.origin,
+  ).href;
 
   event.waitUntil(
     clients

@@ -47,15 +47,15 @@ const Layout = () => {
 
     // Deep link handling (Push Notifications)
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(location.search);
         const chatUserParam = params.get('chatUser');
         if (chatUserParam) {
             setChatActiveUser(chatUserParam);
             setIsChatOpen(true);
-            // Clean URL
-            window.history.replaceState({}, '', window.location.pathname);
+            // Clean URL using React Router instead of raw history so state isn't reset
+            navigate(location.pathname, { replace: true });
         }
-    }, [location.search]);
+    }, [location.search, navigate]);
 
     useEffect(() => {
         const checkAccess = async () => {
