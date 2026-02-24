@@ -11,7 +11,7 @@ const ChatButton = ({ onClick, unreadCount = 0 }: ChatButtonProps) => {
     return (
         <button
             onClick={onClick}
-            className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-slate-900 shadow-lg transition-transform hover:scale-110 active:scale-95 animate-bounce-in"
+            className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center opacity-40 rounded-full bg-green-500 text-slate-900 shadow-lg transition-transform hover:scale-110 active:scale-95 animate-bounce-in"
             aria-label={t('chat.open_chat')}
         >
             <MessageCircle size={28} />

@@ -1,0 +1,63 @@
+=== SIMULATION: 8-Player Americano (32 Points) ===
+Goal: 7 Rounds (Everyone plays with everyone once)
+
+--- ROUND 1 ---
+  Court 1: Player 6 & Player 2 (16) vs Player 4 & Player 1 (16)
+  Court 2: Player 8 & Player 3 (16) vs Player 5 & Player 7 (16)
+
+--- ROUND 2 ---
+  Court 2: Player 1 & Player 2 (16) vs Player 3 & Player 5 (16)
+  Court 1: Player 4 & Player 6 (16) vs Player 7 & Player 8 (16)
+
+--- ROUND 3 ---
+  Court 1: Player 1 & Player 3 (16) vs Player 4 & Player 8 (16)
+  Court 2: Player 2 & Player 5 (16) vs Player 6 & Player 7 (16)
+
+--- ROUND 4 ---
+  Court 2: Player 1 & Player 5 (16) vs Player 4 & Player 7 (16)
+  Court 1: Player 2 & Player 3 (16) vs Player 6 & Player 8 (16)
+
+--- ROUND 5 ---
+  Court 1: Player 1 & Player 6 (16) vs Player 3 & Player 7 (16)
+  Court 2: Player 2 & Player 4 (16) vs Player 5 & Player 8 (16)
+
+--- ROUND 6 ---
+  Court 2: Player 1 & Player 7 (16) vs Player 2 & Player 8 (16)
+  Court 1: Player 3 & Player 6 (16) vs Player 4 & Player 5 (16)
+
+--- ROUND 7 ---
+  Court 1: Player 1 & Player 8 (16) vs Player 5 & Player 6 (16)
+  Court 2: Player 2 & Player 7 (16) vs Player 3 & Player 4 (16)
+
+=== ANALYSIS ===
+Partnerships (Goal: 7 unique):
+  Player 1: 7 unique partners
+  Player 2: 7 unique partners
+  Player 3: 7 unique partners
+  Player 4: 7 unique partners
+  Player 5: 7 unique partners
+  Player 6: 7 unique partners
+  Player 7: 7 unique partners
+  Player 8: 7 unique partners
+
+Perfect Partnership Rotation? YES ✅
+
+Opponent Encounters (Goal: Even distribution):
+  Player 1: played opponents min 2, max 2 times (Avg 2.0)
+  Player 2: played opponents min 2, max 2 times (Avg 2.0)
+  Player 3: played opponents min 2, max 2 times (Avg 2.0)
+  Player 4: played opponents min 2, max 2 times (Avg 2.0)
+  Player 5: played opponents min 2, max 2 times (Avg 2.0)
+  Player 6: played opponents min 2, max 2 times (Avg 2.0)
+  Player 7: played opponents min 2, max 2 times (Avg 2.0)
+  Player 8: played opponents min 2, max 2 times (Avg 2.0)
+
+Court Usage:
+  Player 1: C1: 4x, C2: 3x
+  Player 2: C1: 2x, C2: 5x
+  Player 3: C1: 4x, C2: 3x
+  Player 4: C1: 4x, C2: 3x
+  Player 5: C1: 2x, C2: 5x
+  Player 6: C1: 6x, C2: 1x
+  Player 7: C1: 2x, C2: 5x
+  Player 8: C1: 4x, C2: 3x

@@ -16,6 +16,8 @@ export const ACTIVITY_ACTIONS = [
   "ADMIN_MATCH_CREATE",
   "ADMIN_EDIT_MATCH",
   "ADMIN_CLEANUP_MESSAGES",
+  "ADMIN_DELETE_TOURNAMENT",
+  "ADMIN_EDIT_TOURNAMENT",
 ] as const;
 
 export type ActivityAction = (typeof ACTIVITY_ACTIONS)[number];

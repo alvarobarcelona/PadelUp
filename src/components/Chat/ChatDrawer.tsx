@@ -20,6 +20,7 @@ interface Message {
     is_read?: boolean;
     deleted_by_sender?: boolean;
     deleted_by_receiver?: boolean;
+    type?: string;
 }
 
 interface ConversationUser {
@@ -36,9 +37,10 @@ interface ChatDrawerProps {
     onClose: () => void;
     activeUserId?: string | null; // If provided, opens chat with this user directly
     onActiveUserChange?: (userId: string | null) => void;
+    initialMessage?: string;
 }
 
-const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatDrawerProps) => {
+const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange, initialMessage }: ChatDrawerProps) => {
     const { t } = useTranslation();
     const { confirm, alert } = useModal();
     const [view, setView] = useState<'list' | 'chat'>('list');
@@ -58,6 +60,9 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
     const [selectedClubFilter, setSelectedClubFilter] = useState<string>('all');
     const [adminSearchQuery, setAdminSearchQuery] = useState('');
     const [isBroadcastMode, setIsBroadcastMode] = useState(false);
+
+    // Initial State for Admins (To contact them)
+    const [admins, setAdmins] = useState<ConversationUser[]>([]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -99,12 +104,32 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
     useEffect(() => {
         if (isOpen && activeUserId) {
             loadUserForChat(activeUserId);
+            if (initialMessage) {
+                setNewMessage(initialMessage);
+            }
         } else if (isOpen && !activeUserId) {
             setView('list');
             setActiveChatUser(null);
             fetchConversations();
         }
-    }, [isOpen, activeUserId]);
+    }, [isOpen, activeUserId, initialMessage]);
+
+    // Auto-resize textarea logic
+    const adjustTextareaHeight = () => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 150) + 'px';
+        }
+    };
+
+    // Trigger resize on content change or view switch
+    useEffect(() => {
+        if (isOpen && view === 'chat') {
+            // Use requestAnimationFrame or setTimeout to ensure the DOM is painted
+            const timer = setTimeout(adjustTextareaHeight, 0);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, view, newMessage]);
 
     const { markAsRead } = useChat();
 
@@ -112,6 +137,12 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         setLoading(true);
         setView('chat');
         setShowAdminSearch(false); // Close admin search if open
+
+        // Clear draft if switching users (unless it's the exact same user)
+        // This prevents dispute messages or drafts from leaking between chats.
+        if (activeChatUser?.id !== userId) {
+            setNewMessage('');
+        }
 
         // Mark as read immediately when opening chat
         markAsRead(userId);
@@ -181,9 +212,28 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         if (clubsData) setClubs(clubsData);
     };
 
+    const fetchAdmins = async () => {
+        const { data } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .eq('is_admin', true);
 
-    const fetchMessages = async (otherUserId: string, targetProfile?: ConversationUser) => {
-        setLoading(true);
+        if (data) {
+            // Filter out self if I am admin
+            const otherAdmins = data.filter(a => a.id !== currentUser?.id);
+            setAdmins(otherAdmins as any);
+        }
+    };
+
+    useEffect(() => {
+        if (isOpen && view === 'list') {
+            fetchAdmins();
+        }
+    }, [isOpen, view, currentUser]);
+
+
+    const fetchMessages = async (otherUserId: string, targetProfile?: ConversationUser, silent: boolean = false) => {
+        if (!silent) setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
@@ -210,7 +260,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         } else {
             console.error('Error fetching messages:', error);
         }
-        setLoading(false);
+        if (!silent) setLoading(false);
     };
 
     // Realtime Subscription (unchanged)
@@ -310,7 +360,10 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
 
             if (error) throw error;
             setNewMessage('');
-            // Optimistic update handled by realtime or we can add manually here if realtime is slow
+
+            // Force refresh messages silently to ensure it appears even if realtime/optimistic update fails
+            await fetchMessages(activeChatUser.id, activeChatUser, true);
+
         } catch (error) {
             console.error('Error sending message:', error);
         } finally {
@@ -351,13 +404,10 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
         setSending(true);
 
         try {
-            const messagesToInsert = recipients.map(u => ({
-                content: messageContent,
-                sender_id: currentUser.id,
-                receiver_id: u.id
-            }));
-
-            const { error } = await supabase.from('messages').insert(messagesToInsert);
+            const { error } = await supabase.rpc('broadcast_secure_message', {
+                recipient_ids: recipients.map(u => u.id),
+                message_content: messageContent
+            });
 
             if (error) throw error;
 
@@ -531,7 +581,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                     className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {sending ? <Loader2 className="animate-spin" size={18} /> : <Megaphone size={18} />}
-                                    Send Broadcast ({filteredAdminUsers.length} Users)
+                                    Send Secure Broadcast ({filteredAdminUsers.length} Users)
                                 </button>
                             </div>
                         ) : (
@@ -570,6 +620,41 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                 {/* View: Conversation List */}
                 {view === 'list' && !showAdminSearch && (
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
+
+                        {/* Admin Contact Section */}
+                        {admins.length > 0 && !isAdmin && (
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-2 px-1">
+                                    <h3 className="text-xs font-bold text-blue-400 uppercase tracking-wider">{t('chat.contact_admins')}</h3>
+                                    <span className="text-[10px] text-slate-500">{t('chat.admins_subtitle')}</span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {admins.map(admin => (
+                                        <div
+                                            key={admin.id}
+                                            onClick={() => loadUserForChat(admin.id)}
+                                            className="flex items-center gap-3 p-3 rounded-xl bg-blue-900/10 border border-blue-500/20 hover:bg-blue-900/20 hover:border-blue-500/40 cursor-pointer transition-all group"
+                                        >
+                                            <div className="relative">
+                                                <Avatar src={admin.avatar_url} fallback={admin.username} />
+                                                <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-0.5 border-2 border-slate-900">
+                                                    <ShieldCheck size={10} className="text-white" />
+                                                </div>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="text-sm font-semibold text-blue-100 group-hover:text-white transition-colors">
+                                                    {admin.username}
+                                                </h4>
+                                                <p className="text-[10px] text-blue-300/60">{t('chat.administrator')}</p>
+                                            </div>
+                                            <MessageSquarePlus size={16} className="text-blue-400" />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="h-px bg-slate-800 my-4" />
+                            </div>
+                        )}
+
                         {loadingConversations ? (
                             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-slate-500" /></div>
                         ) : conversations.length === 0 ? (
@@ -601,7 +686,19 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                                 "text-sm truncate",
                                                 conv.has_unread ? "text-white font-medium" : "text-slate-400"
                                             )}>
-                                                {conv.last_message}
+                                                {(() => {
+                                                    try {
+                                                        if (conv.last_message && conv.last_message.startsWith('{')) {
+                                                            const parsed = JSON.parse(conv.last_message);
+                                                            if (parsed.key) {
+                                                                return t(parsed.key, parsed.params) as string;
+                                                            }
+                                                        }
+                                                    } catch (e) {
+                                                        // Fallback
+                                                    }
+                                                    return conv.last_message;
+                                                })()}
                                             </p>
                                             {conv.has_unread && (
                                                 <span className="bg-green-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-sm flex-shrink-0">
@@ -613,7 +710,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
 
                                     <button
                                         onClick={(e) => deleteConversation(e, conv.id)}
-                                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
                                         title={t('chat.delete_conversation')}
                                     >
                                         <Trash2 size={18} />
@@ -651,6 +748,36 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                             username: activeChatUser?.username,
                                             avatar_url: activeChatUser?.avatar_url
                                         };
+
+                                    // Handle System Messages
+                                    if (msg.type === 'system') {
+                                        let displayContent = msg.content;
+                                        try {
+                                            // Try to parse JSON for dynamic translation
+                                            // Format: { "key": "chat.system_messages.xyz", "params": { "name": "..." } }
+                                            if (msg.content.startsWith('{')) {
+                                                const parsed = JSON.parse(msg.content);
+                                                if (parsed.key) {
+                                                    displayContent = t(parsed.key, parsed.params) as string;
+                                                }
+                                            }
+                                        } catch (e) {
+                                            // Fallback to raw content if not JSON or parsing fails
+                                            // This handles old messages that are plain text
+                                        }
+
+                                        return (
+                                            <div key={msg.id} className="flex justify-center my-4 px-4">
+                                                <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3 text-xs text-slate-400 text-center max-w-[85%]">
+                                                    <ShieldCheck size={16} className="mx-auto mb-1 text-purple-400" />
+                                                    {displayContent}
+                                                    <span className="block mt-1 text-[10px] opacity-60">
+                                                        {new Date(msg.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
 
                                     return (
                                         <div
@@ -708,11 +835,7 @@ const ChatDrawer = ({ isOpen, onClose, activeUserId, onActiveUserChange }: ChatD
                                     value={newMessage}
                                     onChange={(e) => {
                                         setNewMessage(e.target.value);
-                                        // Auto resize
-                                        if (textareaRef.current) {
-                                            textareaRef.current.style.height = 'auto'; // Reset to recalc
-                                            textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 150) + 'px';
-                                        }
+                                        adjustTextareaHeight();
                                     }}
                                     placeholder={t('chat.type_message')}
                                     rows={1}

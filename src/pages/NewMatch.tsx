@@ -409,10 +409,37 @@ const NewMatch = () => {
                     t1: [selectedPlayers.t1p1.username, selectedPlayers.t1p2.username],
                     t2: [selectedPlayers.t2p1.username, selectedPlayers.t2p2.username]
                 });
-            }
 
-            // Note: We do NOT update profiles or achievements here anymore.
-            // This happens on confirmation.
+                // Notify Opponents via Chat (System Message)
+                const isCreatorInT1 = user?.id === selectedPlayers.t1p1.id || user?.id === selectedPlayers.t1p2.id;
+
+                // Determine who to notify (the "other" team)
+                const opponentTeam = isCreatorInT1
+                    ? [selectedPlayers.t2p1, selectedPlayers.t2p2]
+                    : [selectedPlayers.t1p1, selectedPlayers.t1p2];
+
+                // Construct Team Names for the notification
+                const t1Names = [selectedPlayers.t1p1?.username, selectedPlayers.t1p2?.username].filter(Boolean).join(' & ');
+                const t2Names = [selectedPlayers.t2p1?.username, selectedPlayers.t2p2?.username].filter(Boolean).join(' & ');
+
+                // Send to each opponent (fire and forget to not block UI, or await if critical)
+                // We await to ensure it goes through before navigation
+                for (const opponent of opponentTeam) {
+                    if (opponent?.id) {
+                        await supabase.rpc('send_system_message', {
+                            receiver_id: opponent.id,
+                            content: JSON.stringify({
+                                key: "chat.match_created_notification",
+                                params: {
+                                    matchId: newMatch.id,
+                                    team1: t1Names,
+                                    team2: t2Names
+                                }
+                            })
+                        });
+                    }
+                }
+            }
 
             await alert({ title: t('common.success'), message: t('new_match.success_alert'), type: 'success' });
             navigate('/');
@@ -483,7 +510,7 @@ const NewMatch = () => {
                             <Avatar fallback={player.username ?? ''} src={player.avatar_url ?? ''} />
                             <span className="text-sm font-medium text-slate-200">{player.username}</span>
                             <span className="text-[10px] text-slate-500">{player.first_name} {player.last_name}</span>
-                            <span className="text-[10px] text-slate-500">ELO {player.elo}</span>
+                            <span className="text-[10px] text-slate-500">PTS {player.elo}</span>
                             <span className="text-[10px] text-slate-500">{t('profile.level')} {getLevelFromElo(player.elo).level}</span>
                         </div>
                     ))}
@@ -701,7 +728,7 @@ const PlayerSelector = ({ label, player, onClick }: { label: string, player: Pla
                 <>
                     <Avatar fallback={player.username ?? ''} src={player.avatar_url ?? ''} className="bg-green-500/20 text-green-400" />
                     <p className="text-sm font-bold text-white truncate w-full text-center mt-1">{player.username}</p>
-                    <span className="text-[10px] text-slate-400">ELO {player.elo}</span>
+                    <span className="text-[10px] text-slate-400">PTS {player.elo}</span>
                     <span className="text-[10px] text-slate-400">{t('profile.level')} {getLevelFromElo(player.elo).level}</span>
                 </>
             ) : (

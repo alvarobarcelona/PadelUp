@@ -16,16 +16,67 @@ export const getKFactor = (matchesPlayed: number) => {
 };
 
 export const LEVELS = [
-  {level: 1, min: 0, max: 800, label: "Beginner", key: "beginner"},
-  {level: 2, min: 800, max: 900, label: "Basic", key: "basic"},
-  {level: 2.5, min: 900, max: 1050, label: "Basic +", key: "basic_plus"},
-  {level: 3, min: 1050, max: 1200, label: "Lower Intermediate", key: "lower_intermediate"},
-  {level: 3.5, min: 1200, max: 1350, label: "Intermediate", key: "intermediate"},
-  {level: 4, min: 1350, max: 1500, label: "Upper Intermediate", key: "upper_intermediate"},
-  {level: 4.5, min: 1500, max: 1700, label: "Advanced", key: "advanced"},
-  {level: 5, min: 1700, max: 1900, label: "Advanced +", key: "advanced_plus"},
-  {level: 6, min: 1900, max: 2100, label: "Pro / Competition", key: "pro"},
-  {level: 7, min: 2100, max: 2300, label: "World Padel Tour", key: "wpt"},
+  { level: 1.0, min: 0, max: 80, key: "beginner" },
+  { level: 1.1, min: 80, max: 160, key: "beginner" },
+  { level: 1.2, min: 160, max: 240, key: "beginner" },
+  { level: 1.3, min: 240, max: 320, key: "beginner" },
+  { level: 1.4, min: 320, max: 400, key: "beginner" },
+  { level: 1.5, min: 400, max: 480, key: "beginner" },
+  { level: 1.6, min: 480, max: 560, key: "beginner" },
+  { level: 1.7, min: 560, max: 640, key: "beginner" },
+  { level: 1.8, min: 640, max: 720, key: "beginner" },
+  { level: 1.9, min: 720, max: 800, key: "beginner" },
+  { level: 2.0, min: 800, max: 820, key: "basic" },
+  { level: 2.1, min: 820, max: 840, key: "basic" },
+  { level: 2.2, min: 840, max: 860, key: "basic" },
+  { level: 2.3, min: 860, max: 880, key: "basic" },
+  { level: 2.4, min: 880, max: 900, key: "basic" },
+  { level: 2.5, min: 900, max: 930, key: "basic_plus" },
+  { level: 2.6, min: 930, max: 960, key: "basic_plus" },
+  { level: 2.7, min: 960, max: 990, key: "basic_plus" },
+  { level: 2.8, min: 990, max: 1020, key: "basic_plus" },
+  { level: 2.9, min: 1020, max: 1050, key: "basic_plus" },
+  { level: 3.0, min: 1050, max: 1080, key: "lower_intermediate" },
+  { level: 3.1, min: 1080, max: 1110, key: "lower_intermediate" },
+  { level: 3.2, min: 1110, max: 1140, key: "lower_intermediate" },
+  { level: 3.3, min: 1140, max: 1170, key: "lower_intermediate" },
+  { level: 3.4, min: 1170, max: 1200, key: "lower_intermediate" },
+  { level: 3.5, min: 1200, max: 1230, key: "intermediate" },
+  { level: 3.6, min: 1230, max: 1260, key: "intermediate" },
+  { level: 3.7, min: 1260, max: 1290, key: "intermediate" },
+  { level: 3.8, min: 1290, max: 1320, key: "intermediate" },
+  { level: 3.9, min: 1320, max: 1350, key: "intermediate" },
+  { level: 4.0, min: 1350, max: 1380, key: "upper_intermediate" },
+  { level: 4.1, min: 1380, max: 1410, key: "upper_intermediate" },
+  { level: 4.2, min: 1410, max: 1440, key: "upper_intermediate" },
+  { level: 4.3, min: 1440, max: 1470, key: "upper_intermediate" },
+  { level: 4.4, min: 1470, max: 1500, key: "upper_intermediate" },
+  { level: 4.5, min: 1500, max: 1540, key: "advanced" },
+  { level: 4.6, min: 1540, max: 1580, key: "advanced" },
+  { level: 4.7, min: 1580, max: 1620, key: "advanced" },
+  { level: 4.8, min: 1620, max: 1660, key: "advanced" },
+  { level: 4.9, min: 1660, max: 1700, key: "advanced" },
+  { level: 5.0, min: 1700, max: 1740, key: "advanced_plus" },
+  { level: 5.1, min: 1740, max: 1780, key: "advanced_plus" },
+  { level: 5.2, min: 1780, max: 1820, key: "advanced_plus" },
+  { level: 5.3, min: 1820, max: 1860, key: "advanced_plus" },
+  { level: 5.4, min: 1860, max: 1900, key: "advanced_plus" },
+  { level: 5.5, min: 1900, max: 1940, key: "pro" },
+  { level: 5.6, min: 1940, max: 1980, key: "pro" },
+  { level: 5.7, min: 1980, max: 2020, key: "pro" },
+  { level: 5.8, min: 2020, max: 2060, key: "pro" },
+  { level: 5.9, min: 2060, max: 2100, key: "pro" },
+  { level: 6.0, min: 2100, max: 2140, key: "wpt" },
+  { level: 6.1, min: 2140, max: 2180, key: "wpt" },
+  { level: 6.2, min: 2180, max: 2220, key: "wpt" },
+  { level: 6.3, min: 2220, max: 2260, key: "wpt" },
+  { level: 6.4, min: 2260, max: 2300, key: "wpt" },
+  { level: 6.5, min: 2300, max: 2340, key: "wpt" },
+  { level: 6.6, min: 2340, max: 2380, key: "wpt" },
+  { level: 6.7, min: 2380, max: 2420, key: "wpt" },
+  { level: 6.8, min: 2420, max: 2460, key: "wpt" },
+  { level: 6.9, min: 2460, max: 2500, key: "wpt" },
+  { level: 7.0, min: 2500, max: 3000, key: "wpt" },
 ];
 
 export const getLevelFromElo = (elo: number) => {
@@ -40,7 +91,7 @@ export const calculateNewRating = (
   currentRating: number,
   actualScore: number,
   expectedScore: number,
-  kFactor: number = K_FACTOR
+  kFactor: number = K_FACTOR,
 ) => {
   return Math.round(currentRating + kFactor * (actualScore - expectedScore));
 };
@@ -56,7 +107,7 @@ export const calculateMatchPoints = (
   p2Elo: number,
   p3Elo: number,
   p4Elo: number,
-  winnerTeam: number
+  winnerTeam: number,
 ) => {
   const t1Avg = calculateTeamAverage(p1Elo, p2Elo);
   const t2Avg = calculateTeamAverage(p3Elo, p4Elo);
@@ -76,14 +127,14 @@ export const calculateMatchPoints = (
 export const getMatchPointsFromHistory = (
   allMatches: any[],
   targetMatchId: number,
-  initialElo = DEFAULT_ELO
+  initialElo = DEFAULT_ELO,
 ) => {
   // 1. Sort matches chronologically (Oldest first)
   const chronological = [...allMatches]
     .filter((m) => m.status === "confirmed") // Only replay confirmed matches
     .sort(
       (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     );
 
   // 2. Track player ELOs and Match Counts (for K-Factor)
