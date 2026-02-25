@@ -786,6 +786,7 @@
       "best_partner": "Bester Partner",
       "current_streak": "Aktuelle Serie",
       "win_rate": "Meine Siegquote"
-    }
+    },
+    "rate_limit_error": "Du hast dein tägliches Limit von 10 KI-Fragen für heute erreicht."
   }
 }

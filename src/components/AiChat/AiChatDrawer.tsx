@@ -74,10 +74,18 @@ const AiChatDrawer = ({ isOpen, onClose }: AiChatDrawerProps) => {
             };
             setMessages(prev => [...prev, assistantMessage]);
         } catch (err: any) {
+            let errorText = t('ai_assistant.error', { defaultValue: 'I was unable to process your question. Please try again.' });
+
+            if (err?.message === 'RATE_LIMIT_EXCEEDED') {
+                errorText = t('ai_assistant.rate_limit_error', { defaultValue: 'You have reached the daily limit of 10 questions to the AI.' });
+            } else if (err?.message) {
+                errorText = err.message;
+            }
+
             const errorMessage: AiMessage = {
                 id: `error-${Date.now()}`,
                 role: 'assistant',
-                content: t('ai_assistant.error', { defaultValue: 'No pude procesar tu pregunta. Inténtalo de nuevo.' }),
+                content: errorText,
                 timestamp: new Date(),
             };
             setMessages(prev => [...prev, errorMessage]);

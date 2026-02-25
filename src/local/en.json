@@ -775,6 +775,7 @@
       "best_partner": "Best partner",
       "current_streak": "Current streak",
       "win_rate": "My win rate"
-    }
+    },
+    "rate_limit_error": "You have reached your daily limit of 10 AI questions for today."
   }
 }

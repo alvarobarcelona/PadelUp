@@ -70,7 +70,7 @@
     "starting_level_help": "Ayúdame a elegir",
     "starting_level_desc": "Selecciona el nivel que mejor se adapte a tus habilidades. Esto proporciona un punto de partida justo para el sistema ELO. Puedes elegir hasta el Nivel 3.3. Si tu nivel real es superior, lo alcanzarás rápidamente jugando partidos.",
     "levels_above_3_3_must_be_earned_by_playing_and_winning_matches": "Los niveles superiores al 3.3 deben ganarse jugando y ganando partidos.",
-    
+
     "password": "Contraseña",
     "forgot_password": "¿Lo olvidaste?",
     "send_reset_link": "Enviar Enlace",
@@ -775,6 +775,7 @@
       "best_partner": "Mejor pareja",
       "current_streak": "Racha actual",
       "win_rate": "Mi win rate"
-    }
+    },
+    "rate_limit_error": "Has alcanzado el límite diario de 10 preguntas a la IA."
   }
 }
