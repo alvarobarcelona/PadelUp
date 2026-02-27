@@ -182,17 +182,19 @@ const Home = () => {
             if (!user || !profile) return [];
             const { data: candidates } = await supabase
                 .from('profiles')
-                .select('id, username, elo, avatar_url, main_club_id')
+                .select('id, username, elo, avatar_url, main_club_id, subscription_end_date')
                 .neq('id', user.id)
                 .eq('approved', true)
-                .eq('is_admin', false);
-
+                .eq('is_admin', false)
+                .eq('banned', false)
             if (!candidates) return [];
+
+            const validPlayers = candidates.filter(p => p.subscription_end_date !== null && new Date(p.subscription_end_date) > new Date());
 
             const minElo = profile.elo - 100;
             const maxElo = profile.elo + 100;
 
-            let filtered = candidates.filter(p => p.elo >= minElo && p.elo <= maxElo);
+            let filtered = validPlayers.filter(p => p.elo >= minElo && p.elo <= maxElo);
 
             if (selectedClubId !== 'all') {
                 filtered = filtered.filter(p => p.main_club_id === Number(selectedClubId));
