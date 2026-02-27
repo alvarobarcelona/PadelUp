@@ -431,12 +431,13 @@
     },
     "title": "Torneos",
     "subtitle": "Gestiona tus eventos Americano y Mexicano",
-    "subtitle_2": "Torneos en modo Setup o Play serán eliminados SI no se FINALIZAN dentro de UNA SEMANA despues de ser creados.",
+    "subtitle_2": "Torneos en modo CONFIGURACIÓN o JUGANDO serán eliminados si no se FINALIZAN en el plazo de UNA SEMANA después de ser creados.",
     "new_tournament": "Nuevo Torneo",
     "no_friends": "No hay torneos de amigos",
     "enter_name": "Introduce un nombre para tu evento",
     "placeholder_name": "ej. Copa de Pádel del Sábado",
     "create": "Crear",
+    "name": "Nombre del Torneo",
     "start_date": "Fecha y Hora del Torneo",
     "creating": "Creando...",
     "cancel": "Cancelar",
@@ -468,10 +469,10 @@
       "public": "Público",
       "friends": "Amigos",
       "private": "Privado",
-      "private_desc": "Solo tú puedes verlo",
+      "private_desc": "Solo tú puedes verlo, opción para invitados",
       "public_desc": "Cuenta para el ranking",
       "public_note": "IMPORTANTE: Solo los torneos públicos contarán para el ranking. Al finalizar quedaran pendientes de confirmación por parte de un administrador.",
-      "friends_desc": "Solo amigos pueden verlo"
+      "friends_desc": "Solo tus amigos pueden verlo"
     },
     "modes": {
       "americano": "Americano",
@@ -507,7 +508,9 @@
       "need_4_players": "Se necesitan al menos 4 jugadores",
       "invalid_player_count": "No se pudieron generar partidos. Asegúrate de que el número de jugadores sea válido (múltiplo de 4 para Americano).",
       "add_guest": "Añadir Jugador Invitado",
-      "guest_name_placeholder": "Nombre del Invitado"
+      "guest_name_placeholder": "Nombre del Invitado",
+      "details": "Detalles Generales",
+      "visibility": "Visibilidad"
     },
     "play": {
       "loading_matches": "Cargando partidos...",

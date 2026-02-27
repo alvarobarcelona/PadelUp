@@ -275,7 +275,7 @@ export default function Tournaments() {
                             {t('tournaments.subtitle', { defaultValue: 'Manage your Americano & Mexicano events' })}
                         </p>
                     </div>
-                    <p className="text-green-400 text-xs font-medium leading-relaxed">
+                    <p className="text-yellow-400 text-xs font-medium leading-relaxed">
                         {t('tournaments.subtitle_2', { defaultValue: '#Tournaments in setup or play mode will be removed if they are not completed within one week.' })}
                     </p>
 

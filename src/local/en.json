@@ -416,11 +416,12 @@
   "tournaments": {
     "title": "Tournaments",
     "subtitle": "Manage your Americano & Mexicano events",
-    "subtitle_2": "Tournaments in setup or play mode will be removed IF they are not COMPLETED within ONE WEEK after being created.",
+    "subtitle_2": "Tournaments in SETUP or PLAYING mode will be removed IF they are not COMPLETED within ONE WEEK after being created.",
     "new_tournament": "New Tournament",
     "enter_name": "Enter a name for your event",
     "placeholder_name": "e.g. Saturday Padel Cup",
     "create": "Create",
+    "name": "Tournament Name",
     "start_date": "Tournament Date & Time",
     "creating": "Creating...",
     "no_friends": "No tournaments from friends",
@@ -453,10 +454,10 @@
       "public": "Public",
       "friends": "Friends",
       "private": "Private",
-      "private_desc": "Only you can see it",
+      "private_desc": "Only you can see it, option for guests",
       "public_desc": "Counts for ranking",
       "public_note": "IMPORTANT: Only public tournaments will count towards the ranking. At the end, they will remain pending confirmation by an administrator.",
-      "friends_desc": "Only friends can see it"
+      "friends_desc": "Only your friends can see it"
     },
     "modes": {
       "americano": "Americano",
@@ -492,7 +493,9 @@
       "need_4_players": "Need at least 4 players",
       "invalid_player_count": "Could not generate matches. Ensure player count is valid (multiple of 4 for Americano).",
       "add_guest": "Add Guest Player",
-      "guest_name_placeholder": "Guest Name"
+      "guest_name_placeholder": "Guest Name",
+      "details": "General Details",
+      "visibility": "Visibility"
     },
     "play": {
       "loading_matches": "Loading matches...",

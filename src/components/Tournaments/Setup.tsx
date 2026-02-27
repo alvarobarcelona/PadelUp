@@ -283,7 +283,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
 
                 <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <label htmlFor='name' className="text-xs text-slate-400 font-bold uppercase">{t('tournaments.name', { defaultValue: 'Tournament Name' })}</label>
+                        <label htmlFor='name' className="text-xs text-slate-400 font-bold">{t('tournaments.name', { defaultValue: 'Tournament Name' })}</label>
                         <div className="relative">
                             <input
                                 id='name'
@@ -298,7 +298,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                     </div>
 
                     <div className="space-y-2">
-                        <label htmlFor='start_date' className="text-xs text-slate-400 font-bold uppercase">{t('tournaments.start_date', { defaultValue: 'Date & Time' })}</label>
+                        <label htmlFor='start_date' className="text-xs text-slate-400 font-bold ">{t('tournaments.start_date', { defaultValue: 'Date & Time' })}</label>
                         <div className="relative">
                             <input
                                 id='start_date'
@@ -446,7 +446,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
 
                 {/* Visibility */}
                 <div className="space-y-3 pb-4 border-b border-slate-700">
-                    <label className="text-sm font-medium text-slate-300 block mb-2">{t('tournaments.setup.settings', { defaultValue: 'Visibility' })}</label>
+                    <label className="text-sm font-medium text-slate-300 block mb-2">{t('tournaments.setup.visibility', { defaultValue: 'Visibility' })}</label>
                     <div className="grid grid-cols-3 gap-2">
                         <button
                             onClick={() => handleVisibilityChange('public')}

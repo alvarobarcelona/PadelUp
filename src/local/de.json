@@ -411,11 +411,12 @@
   "tournaments": {
     "title": "Turniere",
     "subtitle": "Verwalte deine Americano & Mexicano Events",
-    "subtitle_2": "Turniere in einstelungen oder im spiel Modus werden automatisch gelöscht, wenn sie NICHT innerhalb EINER WOCHE nach ihrer Erstellung ABGESCHLOSSEN werden.  ",
+    "subtitle_2": "Turniere in EINSTELLUNGEN oder im SPIEL Modus werden automatisch gelöscht, wenn sie NICHT innerhalb EINER WOCHE nach ihrer Erstellung ABGESCHLOSSEN werden.",
     "new_tournament": "Neues Turnier",
     "enter_name": "Gib einen Namen für dein Event ein",
     "placeholder_name": "z.B. Samstag Padel Cup",
     "create": "Erstellen",
+    "name": "Turniername",
     "start_date": "Datum und Uhrzeit des Turniers",
     "creating": "Erstelle...",
     "no_friends": "Keine Turniere von Freunden",
@@ -447,10 +448,10 @@
       "public": "Öffentlich",
       "friends": "Freunde",
       "private": "Privat",
-      "private_desc": "Nur du kannst es sehen",
+      "private_desc": "Nur du kannst es sehen, Option für Gäste",
       "public_desc": "Zählt für Rangliste",
       "public_note": "WICHTIG: Nur öffentliche Turniere zählen für die Rangliste. Am Ende bleiben sie zur Bestätigung durch einen Administrator ausstehend.",
-      "friends_desc": "Nur Freunde können es sehen"
+      "friends_desc": "Nur deine Freunde können es sehen"
     },
     "results_validation": {
       "winner": "Turniersieger",
@@ -495,7 +496,9 @@
       "need_4_players": "Mindestens 4 Spieler erforderlich",
       "invalid_player_count": "Spiele konnten nicht generiert werden. Stelle sicher, dass die Spieleranzahl gültig ist (Vielfaches von 4 für Americano).",
       "add_guest": "Gastspieler Hinzufügen",
-      "guest_name_placeholder": "Gastname"
+      "guest_name_placeholder": "Gastname",
+      "details": "Allgemeine Details",
+      "visibility": "Sichtbarkeit"
     },
     "play": {
       "loading_matches": "Lade Spiele...",
