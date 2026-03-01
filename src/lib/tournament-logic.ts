@@ -33,221 +33,82 @@ export interface RoundHistory {
   matches: TournamentMatch[];
 }
 
-// Utility: Shuffle
-export const shuffle = <T>(array: T[]): T[] => {
+import { getTemplateForSize } from "./americano-templates";
+
+/**
+ * Seeded shuffle using the tournamentId as seed.
+ */
+const seededShuffle = <T>(array: T[], seed: number): T[] => {
   const arr = [...array];
-  let currentIndex = arr.length,
-    randomIndex;
-  while (currentIndex !== 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [arr[currentIndex], arr[randomIndex]] = [
-      arr[randomIndex],
-      arr[currentIndex],
-    ];
+  let s = seed | 0;
+  for (let i = arr.length - 1; i > 0; i--) {
+    s = (Math.imul(s, 1664525) + 1013904223) | 0;
+    const j = Math.abs(s) % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 };
 
 // --- AMERICANO LOGIC (BALANCED OPPONENTS) ---
-// Guarantees unique partners AND evenly distributed opponents
 
 export const generateAmericanoRound = (
   roundNum: number,
   participants: TournamentParticipant[],
   tournamentId: number,
-  matchHistory: TournamentMatch[] = [],
 ): TournamentMatch[] => {
   /* ---------------------------------------------------
-     0. Pre-process: Shuffle for Round 1
+     Check Static Templates (Strict)
   --------------------------------------------------- */
-  // Create a local copy of participants to work with
-  // If it's the first round, shuffle them to avoid deterministic start based on input order
-  let currentParticipants = [...participants];
-  if (roundNum === 1 && (!matchHistory || matchHistory.length === 0)) {
-    currentParticipants = shuffle(currentParticipants);
-  }
-
-  /* ---------------------------------------------------
-     1. Build History Matrices (Partners & Opponents)
-  --------------------------------------------------- */
-  const partnerHistory: Record<string, Set<string>> = {};
-  const opponentHistory: Record<string, Record<string, number>> = {};
-
-  const pNames = currentParticipants.map((p) => p.display_name);
-  pNames.forEach((n) => {
-    partnerHistory[n] = new Set();
-    opponentHistory[n] = {};
-  });
-
-  matchHistory.forEach((m) => {
-    const t1 = [m.team1_p1_text, m.team1_p2_text];
-    const t2 = [m.team2_p1_text, m.team2_p2_text];
-
-    // Partnerships
-    partnerHistory[t1[0]].add(t1[1]);
-    partnerHistory[t1[1]].add(t1[0]);
-    partnerHistory[t2[0]].add(t2[1]);
-    partnerHistory[t2[1]].add(t2[0]);
-
-    // Opponents
-    t1.forEach((p1) =>
-      t2.forEach((p2) => {
-        opponentHistory[p1][p2] = (opponentHistory[p1][p2] || 0) + 1;
-        opponentHistory[p2][p1] = (opponentHistory[p2][p1] || 0) + 1;
-      }),
+  const template = getTemplateForSize(participants.length);
+  if (!template) {
+    throw new Error(
+      `The Americano tournament size ${participants.length} is not supported by static templates. Supported sizes: 8, 12, 16, 20.`,
     );
-  });
-
-  /* ---------------------------------------------------
-     2. Identify Valid Partnerships (Unused so far)
-  --------------------------------------------------- */
-  const allPossiblePairs: [TournamentParticipant, TournamentParticipant][] = [];
-  for (let i = 0; i < currentParticipants.length; i++) {
-    for (let j = i + 1; j < currentParticipants.length; j++) {
-      const p1 = currentParticipants[i];
-      const p2 = currentParticipants[j];
-      if (!partnerHistory[p1.display_name].has(p2.display_name)) {
-        allPossiblePairs.push([p1, p2]);
-      }
-    }
   }
 
-  /* ---------------------------------------------------
-     3. Search for Round Configuration
-        (4 unique pairs covering all 8 players)
-  --------------------------------------------------- */
-  const findRoundConfigs = (
-    remainingPairs: [TournamentParticipant, TournamentParticipant][],
-    usedPlayers: Set<string>,
-    currentPairs: [TournamentParticipant, TournamentParticipant][],
-  ): [TournamentParticipant, TournamentParticipant][][] => {
-    if (currentPairs.length === currentParticipants.length / 2)
-      return [currentPairs];
+  // Re-shuffle deterministically using tournamentId
+  const sorted = [...participants].sort((a, b) =>
+    String(a.player_id || a.display_name).localeCompare(
+      String(b.player_id || b.display_name),
+    ),
+  );
+  const templateParticipants = seededShuffle(sorted, tournamentId);
 
-    let results: [TournamentParticipant, TournamentParticipant][][] = [];
-    for (let i = 0; i < remainingPairs.length; i++) {
-      const pair = remainingPairs[i];
-      if (
-        !usedPlayers.has(pair[0].display_name) &&
-        !usedPlayers.has(pair[1].display_name)
-      ) {
-        const nextUsed = new Set(usedPlayers);
-        nextUsed.add(pair[0].display_name);
-        nextUsed.add(pair[1].display_name);
+  const templateIdx = (roundNum - 1) % template.length;
+  const roundTemplate = template[templateIdx];
+  const matches: TournamentMatch[] = roundTemplate.map(
+    (courtMatches, courtIdx) => {
+      const t1p1 = templateParticipants[courtMatches[0][0]];
+      const t1p2 = templateParticipants[courtMatches[0][1]];
+      const t2p1 = templateParticipants[courtMatches[1][0]];
+      const t2p2 = templateParticipants[courtMatches[1][1]];
 
-        results = results.concat(
-          findRoundConfigs(remainingPairs.slice(i + 1), nextUsed, [
-            ...currentPairs,
-            pair,
-          ]),
-        );
+      // Balanceamos las pistas de forma nativa deslizando la asignación
+      // en función de la ronda actual. Esto evita que los jugadores
+      // echen raíces en la misma pista en las plantillas cíclicas.
+      const totalCourts = roundTemplate.length;
+      const assignedCourt = ((courtIdx + (roundNum - 1)) % totalCourts) + 1;
 
-        if (results.length > 50) break;
-      }
-    }
-    return results;
-  };
+      return {
+        tournament_id: tournamentId,
+        round_number: roundNum,
+        court_number: assignedCourt, // Let templates dictate court assignments natively
+        team1_p1_text: t1p1.display_name,
+        team1_p1_id: t1p1.player_id,
+        team1_p2_text: t1p2.display_name,
+        team1_p2_id: t1p2.player_id,
+        team2_p1_text: t2p1.display_name,
+        team2_p1_id: t2p1.player_id,
+        team2_p2_text: t2p2.display_name,
+        team2_p2_id: t2p2.player_id,
+        score_team1: 0,
+        score_team2: 0,
+        completed: false,
+      };
+    },
+  );
 
-  const possibleRoundPairs = findRoundConfigs(allPossiblePairs, new Set(), []);
-
-  /* ---------------------------------------------------
-     4. Find Best Matchups within each configuration
-  --------------------------------------------------- */
-  let bestRound: TournamentMatch[] = [];
-  let minGlobalPenalty = Infinity;
-
-  // Helper: Generate all ways to pair up the pairs (e.g. 0vs1, 2vs3 OR 0vs2, 1vs3)
-  const generateMatchupCombinations = (
-    indices: number[],
-  ): [number, number][][] => {
-    if (indices.length === 0) return [[]];
-    if (indices.length === 2) return [[[indices[0], indices[1]]]];
-
-    const first = indices[0];
-    const rest = indices.slice(1);
-    const results: [number, number][][] = [];
-
-    // Try pairing 'first' with each other index
-    for (let i = 0; i < rest.length; i++) {
-      const partner = rest[i];
-      const remaining = rest.filter((_, idx) => idx !== i);
-
-      // Recurse for the remaining pairs
-      const subCombinations = generateMatchupCombinations(remaining);
-
-      for (const sub of subCombinations) {
-        results.push([[first, partner], ...sub]);
-      }
-    }
-    return results;
-  };
-
-  // Generate indices based on number of pairs
-  const pairIndices =
-    possibleRoundPairs.length > 0
-      ? Array.from({ length: possibleRoundPairs[0].length }, (_, i) => i)
-      : [];
-  const matchupOptions = generateMatchupCombinations(pairIndices);
-
-  // For each way to pick matches, find the best configuration
-  for (const config of possibleRoundPairs) {
-    for (const option of matchupOptions) {
-      const currentPenalty = option.reduce((acc, [idxA, idxB]) => {
-        const p1 = config[idxA];
-        const p2 = config[idxB];
-        const t1 = [p1[0].display_name, p1[1].display_name];
-        const t2 = [p2[0].display_name, p2[1].display_name];
-
-        let matchPenalty = 0;
-        t1.forEach((n1) =>
-          t2.forEach((n2) => {
-            const count = opponentHistory[n1][n2] || 0;
-            if (count >= 2) matchPenalty += 1000000; // STRICT LIMIT 2
-            if (count === 0) matchPenalty -= 50; // FAVOR NEW OPPONENTS
-            matchPenalty += count * 10;
-          }),
-        );
-        return acc + matchPenalty;
-      }, 0);
-
-      if (currentPenalty < minGlobalPenalty) {
-        minGlobalPenalty = currentPenalty;
-        bestRound = option.map(([idxA, idxB], courtIdx) => {
-          const p1 = config[idxA];
-          const p2 = config[idxB];
-          return {
-            tournament_id: tournamentId,
-            round_number: roundNum,
-            court_number: courtIdx + 1,
-            team1_p1_text: p1[0].display_name,
-            team1_p1_id: p1[0].player_id,
-            team1_p2_text: p1[1].display_name,
-            team1_p2_id: p1[1].player_id,
-            team2_p1_text: p2[0].display_name,
-            team2_p1_id: p2[0].player_id,
-            team2_p2_text: p2[1].display_name,
-            team2_p2_id: p2[1].player_id,
-            score_team1: 0,
-            score_team2: 0,
-            completed: false,
-          };
-        });
-      }
-    }
-  }
-
-  // 5. Court Rotation Logic
-  // Sort matches by first player name to ensure canonical order
-  bestRound.sort((a, b) => a.team1_p1_text.localeCompare(b.team1_p1_text));
-
-  // Assign courts with rotation offset based on round number
-  // This ensures players shift courts every round instead of staying on the same one
-  bestRound.forEach((match, index) => {
-    match.court_number = ((index + roundNum - 1) % bestRound.length) + 1;
-  });
-
-  return bestRound;
+  return matches;
 };
 
 // Generate Mexicano Round

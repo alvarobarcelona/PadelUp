@@ -475,6 +475,8 @@
       "no_users": "No users found",
       "already_added": "Already added",
       "adding": "Adding...",
+      "max_players": "Max 20 players",
+      "max_players_reached": "Max players reached",
       "add_players": "Add players to start",
       "settings": "Settings",
       "tournament_mode": "Tournament Mode",

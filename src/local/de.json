@@ -478,6 +478,8 @@
       "no_users": "Keine Benutzer gefunden",
       "already_added": "Bereits hinzugefügt",
       "adding": "Wird hinzugefügt...",
+      "max_players": "Max 20 Spieler",
+      "max_players_reached": "Max Spieler erreicht",
       "add_players": "Füge Spieler hinzu, um zu starten",
       "settings": "Einstellungen",
       "tournament_mode": "Turniermodus",

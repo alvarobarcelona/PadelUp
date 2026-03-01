@@ -319,6 +319,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                         <Users size={16} /> {t('tournaments.setup.players', { defaultValue: 'Players' })} ({participants.length})
                     </h3>
+                    <span className="text-xs text-slate-500 font-medium bg-slate-900/50 px-2 py-1 rounded border border-slate-700">{t('tournaments.setup.max_players', { defaultValue: 'Max 20 players' })}</span>
                 </div>
 
                 {/* Search Input */}
@@ -326,17 +327,18 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                     <input
                         type="text"
-                        placeholder={t('tournaments.setup.search_users')}
-                        className="w-full bg-slate-900/50 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                        placeholder={participants.length >= 20 ? t('tournaments.setup.max_players_reached', { defaultValue: 'Max players reached' }) : t('tournaments.setup.search_users')}
+                        className="w-full bg-slate-900/50 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-50"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        disabled={participants.length >= 20}
                     />
                     {searchQuery && (
                         <div className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-20 overflow-hidden">
                             {friends.length > 0 ? (
                                 friends.map((f: any) => {
                                     const isAdded = participants.some((p: any) => p.player_id === f.id);
-                                    const isDisabled = isAdded || addParticipantMutation.isPending;
+                                    const isDisabled = isAdded || addParticipantMutation.isPending || participants.length >= 20;
                                     return (
                                         <button
                                             key={f.id}
@@ -373,14 +375,14 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                                 <input
                                     type="text"
                                     placeholder={t('tournaments.setup.guest_name_placeholder', { defaultValue: 'Guest Name' })}
-                                    className="flex-1 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="flex-1 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-50"
                                     value={guestName}
                                     onChange={(e) => setGuestName(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && guestName.trim() && !addParticipantMutation.isPending && addParticipantMutation.mutate({ firstName: guestName })}
-                                    disabled={addParticipantMutation.isPending}
+                                    onKeyDown={(e) => e.key === 'Enter' && guestName.trim() && !addParticipantMutation.isPending && participants.length < 20 && addParticipantMutation.mutate({ firstName: guestName })}
+                                    disabled={addParticipantMutation.isPending || participants.length >= 20}
                                 />
                                 <button
-                                    disabled={!guestName.trim() || addParticipantMutation.isPending}
+                                    disabled={!guestName.trim() || addParticipantMutation.isPending || participants.length >= 20}
                                     onClick={() => addParticipantMutation.mutate({ firstName: guestName })}
                                     className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition-colors"
                                 >
@@ -486,8 +488,8 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                     <div className="relative">
                         <input
                             type="range"
-                            min="16"
-                            max="48"
+                            min="8"
+                            max="40"
                             step="4"
                             value={pointsPerMatch}
                             onChange={(e) => setPointsPerMatch(Number(e.target.value))}
@@ -496,10 +498,11 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                             className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500"
                         />
                         <div className="relative text-[10px] text-slate-500 font-mono font-medium mt-2 h-6">
-                            <span className="absolute left-0">16</span>
-                            <span className="absolute left-[25%] -translate-x-1/2 text-center">24<br />({t('tournaments.setup.standard', { defaultValue: 'Standard' })})</span>
-                            <span className="absolute left-[50%] -translate-x-1/2 text-center">32<br />({t('tournaments.setup.long', { defaultValue: 'Long' })})</span>
-                            <span className="absolute right-0">48</span>
+                            <span className="absolute left-0">8</span>
+                            <span className="absolute left-[25%] -translate-x-1/2 text-center">16</span>
+                            <span className="absolute left-[50%] -translate-x-1/2 text-center">24<br />({t('tournaments.setup.standard', { defaultValue: 'Standard' })})</span>
+                            <span className="absolute left-[75%] -translate-x-1/2 text-center">32<br />({t('tournaments.setup.long', { defaultValue: 'Long' })})</span>
+                            <span className="absolute right-0">40</span>
                         </div>
                     </div>
                 </div>
