@@ -271,7 +271,7 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
             let newMatches = [];
 
             if (tournament.mode === 'americano') {
-                newMatches = generateAmericanoRound(nextRoundNum, updatedParticipants as TournamentParticipant[], tournament.id, allMatches || []);
+                newMatches = generateAmericanoRound(nextRoundNum, updatedParticipants as TournamentParticipant[], tournament.id);
             } else {
                 // Pass match history to Mexicano for smart partner rotation
                 newMatches = generateMexicanoRound(nextRoundNum, updatedParticipants as TournamentParticipant[], tournament.id, allMatches || []);
