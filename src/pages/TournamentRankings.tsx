@@ -27,15 +27,26 @@ const TournamentRankings = () => {
     const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'americano' | 'mexicano'>('americano');
+    const [selectedClubId, setSelectedClubId] = useState<number | string>('all');
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
+    // Fetch Clubs
+    const { data: clubs = [] } = useQuery({
+        queryKey: ['clubs'],
+        queryFn: async () => {
+            const { data } = await supabase.from('clubs').select('*').order('name');
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 60 // 1 hour
+    });
+
     // Fetch Tournament Rankings
     const { data: rankings = [], isLoading: loading } = useQuery({
-        queryKey: ['tournament-rankings', activeTab],
+        queryKey: ['tournament-rankings', activeTab, selectedClubId],
         queryFn: async () => {
             // Get all participants from completed public tournaments
-            const { data: participants, error } = await supabase
+            let query = supabase
                 .from('tournament_participants')
                 .select(`
                     player_id,
@@ -47,13 +58,20 @@ const TournamentRankings = () => {
                         visibility,
                         status,
                         created_at,
-                        mode
+                        mode,
+                        club_id
                     )
                 `)
                 .eq('tournaments.visibility', 'public')
                 .eq('tournaments.status', 'completed')
                 .eq('tournaments.mode', activeTab)
                 .not('player_id', 'is', null);
+
+            if (selectedClubId !== 'all') {
+                query = query.eq('tournaments.club_id', selectedClubId);
+            }
+
+            const { data: participants, error } = await query;
 
             if (error) throw error;
             if (!participants || participants.length === 0) return [];
@@ -209,16 +227,30 @@ const TournamentRankings = () => {
                         </button>
                     </div>
 
-                    {/* Search Bar */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder={t('rankings.search_placeholder') || 'Search players...'}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
-                        />
+                    {/* Search Bar & Club Filter */}
+                    <div className="flex gap-2 w-full">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder={t('rankings.search_placeholder') || 'Search players...'}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                            />
+                        </div>
+                        {clubs.length > 0 && (
+                            <select
+                                value={selectedClubId}
+                                onChange={(e) => setSelectedClubId(e.target.value)}
+                                className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all max-w-[150px] md:max-w-[200px]"
+                            >
+                                <option value="all">{t('clubs.all_clubs', { defaultValue: 'All Clubs' })}</option>
+                                {clubs.map((c: any) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                     <div className="flex items-center gap-4">
                         <span className="flex items-center gap-1"><Crown size={12} className="text-yellow-500" />{t('tournament_rankings.wins') || 'Wins'}</span>

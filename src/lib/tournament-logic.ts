@@ -62,7 +62,7 @@ export const generateAmericanoRound = (
   const template = getTemplateForSize(participants.length);
   if (!template) {
     throw new Error(
-      `The Americano tournament size ${participants.length} is not supported by static templates. Supported sizes: 8, 12, 16, 20.`,
+      `The Americano tournament size ${participants.length} is not available. Supported sizes: 8, 12, 16, 20.`,
     );
   }
 

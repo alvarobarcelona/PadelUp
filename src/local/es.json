@@ -426,6 +426,7 @@
       "dispute_prefix": "Disputa por Torneo",
       "reason": "Motivo",
       "round_history": "Historial de Rondas",
+      "round": "Ronda {{number}}",
       "share_full": "Rank + Rondas",
       "share_rank": "Ranking"
     },
@@ -439,6 +440,9 @@
     "create": "Crear",
     "name": "Nombre del Torneo",
     "start_date": "Fecha y Hora del Torneo",
+    "without_club": "Sin club",
+    "club": "Lugar del torneo",
+    "no_club_in_the_list": "Mi club no esta en la list, no te preocupes marca la opcion 'Sin club'. Si deseas ver tu club, comunicaselo a un administrador.",
     "creating": "Creando...",
     "cancel": "Cancelar",
     "public": "Público",
@@ -512,7 +516,10 @@
       "add_guest": "Añadir Jugador Invitado",
       "guest_name_placeholder": "Nombre del Invitado",
       "details": "Detalles Generales",
-      "visibility": "Visibilidad"
+      "visibility": "Visibilidad",
+      "club_required": "Club Requerido",
+      "club_required_desc": "Los torneos públicos requieren que se seleccione un club para los rankings.",
+      "needed_for_ranking": "Necesario para el ranking en torneos públicos"
     },
     "play": {
       "loading_matches": "Cargando partidos...",

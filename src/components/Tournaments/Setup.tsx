@@ -23,6 +23,17 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
     const [courtNames, setCourtNames] = useState<string[]>(tournament.settings?.courtNames || []);
     const [guestName, setGuestName] = useState('');
     const [name, setName] = useState(tournament.name || '');
+    const [selectedClubId, setSelectedClubId] = useState<number | null>(tournament.club_id || null);
+
+    // Fetch Clubs
+    const { data: clubs = [] } = useQuery({
+        queryKey: ['clubs'],
+        queryFn: async () => {
+            const { data } = await supabase.from('clubs').select('*').order('name');
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 60 // 1 hour
+    });
     const toLocalISOString = (dateString: string) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -54,6 +65,7 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
             setCourtNames(tournament.settings?.courtNames || []);
             setMode(tournament.mode || 'americano');
             setVisibility(tournament.visibility || 'public');
+            setSelectedClubId(tournament.club_id || null);
         }
     }, [tournament]);
 
@@ -270,6 +282,16 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
             return;
         }
 
+        if (visibility === 'public' && !selectedClubId) {
+            await alert({
+                title: t('tournaments.setup.club_required', { defaultValue: 'Club Required' }),
+                message: t('tournaments.setup.club_required_desc', { defaultValue: 'Public tournaments require a club to be selected for the rankings.' }),
+                type: 'warning',
+                hideButtons: true
+            });
+            return;
+        }
+
         startTournamentMutation.mutate();
     };
 
@@ -309,6 +331,26 @@ export default function Setup({ tournament, onModeChange }: SetupProps) {
                                 className="w-3/4 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-3 text-white focus:border-green-500 outline-none transition-colors"
                             />
                         </div>
+                    </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                        <label htmlFor='tournament-club' className="text-xs text-slate-400 font-bold ">{t('tournaments.club', { defaultValue: 'Club (Optional, needed for ranking)' })}</label>
+                        <select
+                            id='tournament-club'
+                            value={selectedClubId || ''}
+                            onChange={(e) => {
+                                const val = e.target.value ? Number(e.target.value) : null;
+                                setSelectedClubId(val);
+                                updateSettingsMutation.mutate({ club_id: val });
+                            }}
+                            className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-3 text-white focus:border-green-500 outline-none transition-colors"
+                        >
+                            <option value="">{t('tournaments.without_club', { defaultValue: 'Without club' })}</option>
+                            {clubs.map((c: any) => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-slate-400 ml-1">{t('tournaments.setup.needed_for_ranking', { defaultValue: 'Needed for ranking in public tournaments' })}</p>
                     </div>
                 </div>
             </div>

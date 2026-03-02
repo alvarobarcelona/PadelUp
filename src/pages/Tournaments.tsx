@@ -22,6 +22,17 @@ export default function Tournaments() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newTournamentName, setNewTournamentName] = useState('');
     const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 16));
+    const [selectedClubId, setSelectedClubId] = useState<number | null>(null);
+
+    // Fetch Clubs
+    const { data: clubs = [] } = useQuery({
+        queryKey: ['clubs'],
+        queryFn: async () => {
+            const { data } = await supabase.from('clubs').select('*').order('name');
+            return data || [];
+        },
+        staleTime: 1000 * 60 * 60 // 1 hour
+    });
 
     useEffect(() => {
         const checkUser = async () => {
@@ -106,20 +117,26 @@ export default function Tournaments() {
     });
 
     const createMutation = useMutation({
-        mutationFn: async ({ name, start_date }: { name: string, start_date: string }) => {
+        mutationFn: async ({ name, start_date, club_id }: { name: string, start_date: string, club_id: number | null }) => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
+            const insertData: any = {
+                name,
+                created_by: user.id,
+                mode: 'americano',
+                status: 'setup',
+                visibility: 'public', // Default to public
+                start_date: start_date
+            };
+
+            if (club_id) {
+                insertData.club_id = club_id;
+            }
+
             const { data, error } = await supabase
                 .from('tournaments')
-                .insert({
-                    name,
-                    created_by: user.id,
-                    mode: 'americano',
-                    status: 'setup',
-                    visibility: 'public', // Default to public
-                    start_date: start_date
-                })
+                .insert(insertData)
                 .select()
                 .single();
 
@@ -156,6 +173,7 @@ export default function Tournaments() {
             setShowCreateModal(false);
             setNewTournamentName('');
             setStartDate(new Date().toISOString().slice(0, 16));
+            setSelectedClubId(null);
             navigate(`/tournaments/${newTournament.id}`);
         }
     });
@@ -176,13 +194,14 @@ export default function Tournaments() {
 
     const handleCreateClick = () => {
         setStartDate(new Date().toISOString().slice(0, 16));
+        setSelectedClubId(null);
         setShowCreateModal(true);
     };
 
     const submitCreate = (e: React.FormEvent) => {
         e.preventDefault();
         if (newTournamentName.trim()) {
-            createMutation.mutate({ name: newTournamentName.trim(), start_date: startDate });
+            createMutation.mutate({ name: newTournamentName.trim(), start_date: startDate, club_id: selectedClubId });
         }
     };
 
@@ -234,8 +253,7 @@ export default function Tournaments() {
                                     placeholder={t('tournaments.placeholder_name', { defaultValue: 'e.g. Saturday Padel Cup' })}
                                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 transition-colors"
                                     value={newTournamentName}
-                                    onChange={(e) => setNewTournamentName(e.target.value)}
-                                    autoFocus
+                                    onChange={(e) => setNewTournamentName(e.target.value)}               
                                 />
                                 <div className="space-y-1">
                                     <label htmlFor="tournament-start-date" className="text-xs text-slate-400 ml-1">{t('tournaments.start_date', { defaultValue: 'Date & Time' })}</label>
@@ -246,6 +264,21 @@ export default function Tournaments() {
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                     />
+                                </div>
+                                <div className="space-y-1">
+                                    <label htmlFor="tournament-club" className="text-xs text-slate-400 ml-1">{t('tournaments.club', { defaultValue: 'Club (Optional)' })}</label>
+                                    <select
+                                        id="tournament-club"
+                                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 transition-colors"
+                                        value={selectedClubId || ''}
+                                        onChange={(e) => setSelectedClubId(e.target.value ? Number(e.target.value) : null)}
+                                    >
+                                        <option value="">{t('tournaments.without_club', { defaultValue: 'Without club' })}</option>
+                                        {clubs.map((c: any) => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-xs text-slate-400 ml-1">{t('tournaments.no_club_in_the_list', { defaultValue: 'Needed for ranking' })}</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <button

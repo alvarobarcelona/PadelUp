@@ -418,6 +418,9 @@
     "create": "Erstellen",
     "name": "Turniername",
     "start_date": "Datum und Uhrzeit des Turniers",
+    "without_club": "Ohne Club",
+    "club": "Ort des Turniers",
+    "no_club_in_the_list": "Mein Club ist nicht in der Liste, keine Sorge, wähle die Option 'Ohne Club'. Wenn du deinen Club sehen möchtest, sag es einem Administrator.",
     "creating": "Erstelle...",
     "no_friends": "Keine Turniere von Freunden",
     "cancel": "Abbrechen",
@@ -500,7 +503,10 @@
       "add_guest": "Gastspieler Hinzufügen",
       "guest_name_placeholder": "Gastname",
       "details": "Allgemeine Details",
-      "visibility": "Sichtbarkeit"
+      "visibility": "Sichtbarkeit",
+      "club_required": "Club erforderlich",
+      "club_required_desc": "Öffentliche Turniere erfordern die Auswahl eines Clubs für die Ranglisten.",
+      "needed_for_ranking": "Für die Rangliste in öffentlichen Turnieren erforderlich"
     },
     "play": {
       "loading_matches": "Lade Spiele...",

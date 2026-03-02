@@ -423,6 +423,9 @@
     "create": "Create",
     "name": "Tournament Name",
     "start_date": "Tournament Date & Time",
+    "without_club": "Without club",
+    "club": "Tournament location",
+    "no_club_in_the_list": "My club is not in the list, don't worry select the 'Without club' option. If you want to see your club, let an administrator know.",
     "creating": "Creating...",
     "no_friends": "No tournaments from friends",
     "cancel": "Cancel",
@@ -497,7 +500,10 @@
       "add_guest": "Add Guest Player",
       "guest_name_placeholder": "Guest Name",
       "details": "General Details",
-      "visibility": "Visibility"
+      "visibility": "Visibility",
+      "club_required": "Club Required",
+      "club_required_desc": "Public tournaments require a club to be selected for the rankings.",
+      "needed_for_ranking": "Needed for ranking in public tournaments"
     },
     "play": {
       "loading_matches": "Loading matches...",
