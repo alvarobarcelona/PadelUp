@@ -87,7 +87,10 @@ export const generateAmericanoRound = (
       // en función de la ronda actual. Esto evita que los jugadores
       // echen raíces en la misma pista en las plantillas cíclicas.
       const totalCourts = roundTemplate.length;
-      const assignedCourt = ((courtIdx + (roundNum - 1)) % totalCourts) + 1;
+      const assignedCourt =
+        participants.length === 8
+          ? courtIdx + 1 // Regla de 8 jugadores: usar asignación estática para max 5-2
+          : ((courtIdx + (roundNum - 1)) % totalCourts) + 1;
 
       return {
         tournament_id: tournamentId,

@@ -411,7 +411,7 @@ export default function TournamentPlay({ tournament }: TournamentPlayProps) {
             <div className="space-y-4">
                 {matches.map((match: any) => (
                     <div key={match.id} className={`relative bg-slate-800/60 rounded-xl border ${match.completed ? 'border-green-500/30' : 'border-slate-700'} p-4 transition-all`}>
-                        <div className="absolute top-2  right-2 text-xs font-bold text-slate-500 bg-slate-900/50 px-2 py-0.5 rounded">
+                        <div className="flex justify-center top-2 text-xs font-bold text-slate-500 bg-slate-900/50 px-2 py-0.5 rounded">
                             {tournament.settings?.courtNames?.[match.court_number - 1] || t('tournaments.play.court', { number: match.court_number, defaultValue: 'Court {{number}}' })}
                         </div>
 
