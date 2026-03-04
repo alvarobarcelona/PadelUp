@@ -288,6 +288,20 @@ export default function TournamentResults({ tournament }: ResultsProps) {
         enabled: !!tournament.created_by
     });
 
+    // Fetch Club Name
+    const { data: clubData } = useQuery({
+        queryKey: ['club', tournament.club_id],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('clubs')
+                .select('name')
+                .eq('id', tournament.club_id)
+                .single();
+            return data;
+        },
+        enabled: !!tournament.club_id
+    });
+
     // Fetch an Admin to chat with
     const { data: adminUser } = useQuery({
         queryKey: ['adminUser'],
@@ -442,6 +456,14 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                                 }`}>
                                 {t(`tournaments.visibility.${tournament.visibility}`, { defaultValue: tournament.visibility })}
                             </span>
+                            {clubData?.name && (
+                                <>
+                                    <span className="text-[10px] text-slate-500 font-bold">•</span>
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                        {clubData.name}
+                                    </span>
+                                </>
+                            )}
                         </div>
                     </div>
 

@@ -132,7 +132,7 @@
     "loss": "LOSS",
     "last_5": "Last 5 matches",
     "pending_verification": "Pending Verification",
-    "confirm_title": "Confirm Result",
+    "confirm_title": "Confirm",
     "auto_accept": "Auto-accepts in 24h",
     "match_number": "Match id: {{id}}",
     "confirm": "Confirm",

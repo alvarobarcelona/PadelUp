@@ -5,7 +5,7 @@ import InstallPrompt from '../components/Install/InstallPrompt';
 import IOSInstallGuide from '../components/Install/IOSInstallGuide';
 /* import AndroidInstallGuide from '../components/Install/AndroidInstallGuide'; */
 import ClubQR from '../components/QRCode/ClubQR';
-import { Download, Share2 } from 'lucide-react';
+import { Download, Info, Share2 } from 'lucide-react';
 
 const Install = () => {
     const [isIOS, setIsIOS] = useState(false);
@@ -75,12 +75,17 @@ const Install = () => {
 
                 {/* Features List */}
                 <div className="grid grid-cols-1 gap-4 w-full text-sm text-slate-400">
-                    <div className="flex items-center gap-3 bg-slate-800/30 p-3 rounded-lg border border-slate-700/30">
+                    <div className="flex items-center gap-3 bg-slate-800/30 p-2 rounded-lg border border-slate-700/30">
+                        <div className='text-center text-sm text-slate-400'>
+                            <Info size={16} />
+                        </div>
+                        <span>For android users we recommend open the web from google chrome to make possible the install with the button.</span>
                         <div className="p-2 bg-blue-500/20 rounded-full text-blue-400">
                             <Download size={16} />
                         </div>
                         <span>Instant access from home screen</span>
                     </div>
+                    
                     <div className="flex items-center gap-3 bg-slate-800/30 p-3 rounded-lg border border-slate-700/30">
                         <div className="p-2 bg-purple-500/20 rounded-full text-purple-400">
                             <Share2 size={16} />
