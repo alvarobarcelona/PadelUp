@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Trophy, Medal, AlertTriangle, Lock, Share2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { useModal } from '../../context/ModalContext';
@@ -15,10 +16,18 @@ type ResultsProps = {
 
 // Snapshot Component for Image Generation
 const ResultsSnapshot = ({ tournament, winner, participants, rounds, exportMode }: any) => {
+    const isFull = exportMode === 'full';
+
+    // For PDF (full), we want a narrower width (e.g. 800px) so when it fits to A4 width, 
+    // the text is scaled up and highly readable.
+    const containerWidth = !isFull ? 'w-[600px]' : 'w-[800px]';
+    // Single column for PDF to maximize text size per row
+    const columnsClass = !isFull ? '' : 'columns-1';
+
     return (
         <div
             id="results-snapshot"
-            className={`fixed top-0 left-0 ${exportMode === 'ranking' ? 'w-[600px]' : 'w-[1080px]'} h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 pointer-events-none opacity-0 -z-50 overflow-hidden`}
+            className={`fixed top-0 left-0 ${containerWidth} h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 pointer-events-none opacity-0 -z-50 overflow-hidden`}
             style={{ fontFamily: 'Inter, sans-serif' }}
         >
             {/* Header */}
@@ -47,12 +56,12 @@ const ResultsSnapshot = ({ tournament, winner, participants, rounds, exportMode 
                 </div>
             )}
 
-            <div className={`gap-8 items-start ${exportMode === 'ranking' ? 'flex justify-center' : 'grid grid-cols-2'}`}>
+            <div className={`gap-8 items-start ${!isFull ? 'flex justify-center' : 'flex flex-col'}`}>
                 {/* Rankings */}
-                <div className={`${exportMode === 'ranking' ? 'w-full max-w-lg' : ''}`}>
+                <div className={`${!isFull ? 'w-full max-w-lg' : 'w-full'}`}>
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Final Leaderboard</h3>
                     <div className="space-y-2">
-                        {participants.slice(0, 8).map((p: any, i: number) => (
+                        {participants.slice(0, 16).map((p: any, i: number) => (
                             <div key={i} className={`flex items-center justify-between p-3 rounded-lg ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' :
                                 i === 1 ? 'bg-slate-700/50' :
                                     i === 2 ? 'bg-slate-800/50' : 'bg-transparent border-b border-slate-800'
@@ -79,25 +88,25 @@ const ResultsSnapshot = ({ tournament, winner, participants, rounds, exportMode 
 
                 {/* Match History */}
                 {exportMode === 'full' && rounds && Object.keys(rounds).length > 0 && (
-                    <div>
+                    <div className="flex-1 w-full min-w-0">
                         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Match History</h3>
-                        <div className="space-y-6">
+                        <div className={`${columnsClass} gap-5`}>
                             {Object.entries(rounds).map(([roundNum, roundMatches]: [string, any]) => (
-                                <div key={roundNum}>
-                                    <div className="inline-block px-3 py-1 bg-slate-800 rounded mb-2">
+                                <div key={roundNum} className="break-inside-avoid mb-6 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
+                                    <div className="inline-block px-3 py-1 bg-slate-800 rounded mb-3">
                                         <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">Round {roundNum}</span>
                                     </div>
-                                    <div className="grid grid-cols-1 gap-2">
+                                    <div className="grid grid-cols-1 gap-1.5">
                                         {roundMatches.map((m: any, idx: number) => (
-                                            <div key={idx} className="bg-slate-800/40 p-3 rounded flex justify-between items-center text-sm border border-slate-700/50">
-                                                <div className={`flex-1 text-right ${Number(m.score_team1) > Number(m.score_team2) ? 'text-green-400 font-bold' : 'text-slate-300'}`}>
-                                                    {m.team1_p1_text} & {m.team1_p2_text}
+                                            <div key={idx} className="bg-slate-800/60 py-1.5 px-2 rounded flex justify-between items-center text-[13px] border border-slate-700/50 leading-normal">
+                                                <div className={`flex-1 text-right truncate min-w-0 pt-1 pb-1 ${Number(m.score_team1) > Number(m.score_team2) ? 'text-green-400 font-bold' : 'text-slate-300'}`}>
+                                                    {m.team1_p1_text} <span className="opacity-40 font-normal text-[11px] px-0.5">&</span> {m.team1_p2_text}
                                                 </div>
-                                                <div className="px-3 font-mono font-bold text-white whitespace-nowrap">
+                                                <div className="px-2 font-mono font-bold text-white whitespace-nowrap shrink-0 pt-1 pb-1">
                                                     {m.score_team1} - {m.score_team2}
                                                 </div>
-                                                <div className={`flex-1 text-left ${Number(m.score_team2) > Number(m.score_team1) ? 'text-green-400 font-bold' : 'text-slate-300'}`}>
-                                                    {m.team2_p1_text} & {m.team2_p2_text}
+                                                <div className={`flex-1 text-left truncate min-w-0 pt-1 pb-1 ${Number(m.score_team2) > Number(m.score_team1) ? 'text-green-400 font-bold' : 'text-slate-300'}`}>
+                                                    {m.team2_p1_text} <span className="opacity-40 font-normal text-[11px] px-0.5">&</span> {m.team2_p2_text}
                                                 </div>
                                             </div>
                                         ))}
@@ -135,8 +144,8 @@ export default function TournamentResults({ tournament }: ResultsProps) {
         if (!element) return;
 
         html2canvas(element, {
-            backgroundColor: null,
-            scale: 2,
+            backgroundColor: '#0f172a', // slate-900 fallback
+            scale: mode === 'full' ? 3 : 2, // Higher export resolution for PDF
             useCORS: true,
             // Make sure we capture the FULL content height
             height: element.scrollHeight,
@@ -155,27 +164,71 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                 }
             }
         }).then(canvas => {
-            canvas.toBlob(async (blob) => {
-                if (!blob) return;
+            if (mode === 'full') {
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
-                const file = new File([blob], `tournament-${mode}-PadelUp.png`, { type: 'image/png' });
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+
+                // Keep ratio when rendering the image into PDF width
+                const printHeight = (canvas.height * pdfWidth) / canvas.width;
+
+                let heightLeft = printHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, printHeight);
+                heightLeft -= pdfHeight;
+
+                while (heightLeft > 0) {
+                    position = heightLeft - printHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, printHeight);
+                    heightLeft -= pdfHeight;
+                }
+
+                const pdfBlob = pdf.output('blob');
+                const file = new File([pdfBlob], `results-${tournament.name}-PadelUp.pdf`, { type: 'application/pdf' });
 
                 if (navigator.share) {
-                    try {
-                        await navigator.share({
-                            files: [file],
-                            title: 'PadelUp Results',
-                        });
-                    } catch (err) {
+                    navigator.share({
+                        files: [file],
+                        title: 'PadelUp Results',
+                    }).catch(err => {
                         console.error('Share failed', err);
-                    }
+                        pdf.save(`results-${tournament.name}-PadelUp.pdf`);
+                    });
                 } else {
-                    const link = document.createElement('a');
-                    link.download = `results-${tournament.name}-${mode}-PadelUp.png`;
-                    link.href = canvas.toDataURL();
-                    link.click();
+                    pdf.save(`results-${tournament.name}-PadelUp.pdf`);
                 }
-            });
+            } else {
+                canvas.toBlob(async (blob) => {
+                    if (!blob) return;
+
+                    const file = new File([blob], `tournament-${mode}-PadelUp.png`, { type: 'image/png' });
+
+                    if (navigator.share) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: 'PadelUp Results',
+                            });
+                        } catch (err) {
+                            console.error('Share failed', err);
+                        }
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = `results-${tournament.name}-${mode}-PadelUp.png`;
+                        link.href = canvas.toDataURL();
+                        link.click();
+                    }
+                });
+            }
         });
     };
 
@@ -605,13 +658,13 @@ export default function TournamentResults({ tournament }: ResultsProps) {
                         <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest mb-4">{t('tournaments.results.round_history', { defaultValue: 'Round History' })}</h3>
                         {Object.entries(rounds).map(([roundNum, roundMatches]: [string, any]) => (
                             <div key={roundNum} className="space-y-2">
-                                <div className="flex justify-center text-xs font-bold text-orange-500 uppercase tracking-wider text-left pl-2 bg-slate-800/50 py-1 rounded inline-block px-3">
+                                <div className="flex justify-center text-sm ad font-bold text-orange-500 uppercase tracking-wider text-left pl-2 bg-slate-800/50 py-1 rounded inline-block px-3">
                                     {t('tournaments.results.round', { number: roundNum, defaultValue: 'Round {{number}}' })}
                                 </div>
                                 {roundMatches.map((m: any) => (
                                     <div key={m.id} className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 relative overflow-hidden">
                                         {/* Court Name Badge */}
-                                        <div className="absolute top-0 left-0 bg-slate-800 text-[10px] uppercase font-bold text-blue-500 px-2 py-0.5 rounded-br-lg">
+                                        <div className="absolute top-0 left-0 bg-slate-800 text-sm uppercase font-bold text-blue-500 px-2 py-0.5 rounded-br-lg">
                                             {tournament.settings?.courtNames?.[m.court_number - 1] || t('tournaments.play.court', { number: m.court_number, defaultValue: 'Court {{number}}' })}
                                         </div>
 
@@ -628,7 +681,7 @@ export default function TournamentResults({ tournament }: ResultsProps) {
 
                                             {/* VS */}
                                             <div className="w-[20%] flex flex-col items-center justify-center">
-                                                <span className="text-xs font-black text-slate-600 italic">{t('tournaments.results.vs', { defaultValue: 'VS' })}</span>
+                                                <span className="text-md font-black text-slate-600 italic">{t('tournaments.results.vs', { defaultValue: 'VS' })}</span>
                                             </div>
 
                                             {/* Team 2 */}
