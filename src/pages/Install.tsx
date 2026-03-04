@@ -74,12 +74,16 @@ const Install = () => {
                 </div>
 
                 {/* Features List */}
-                <div className="grid grid-cols-1 gap-4 w-full text-sm text-slate-400">
+                 
+                 <div className="grid grid-cols-1 gap-4 w-full text-sm text-slate-400">
                     <div className="flex items-center gap-3 bg-slate-800/30 p-2 rounded-lg border border-slate-700/30">
                         <div className='text-center text-sm text-slate-400'>
                             <Info size={16} />
                         </div>
-                        <span>For android users we recommend open the web from google chrome to make possible the install with the button.</span>
+                        <span>For android users we recommend open the web-app from google chrome to make possible the install with the button.</span>
+                    </div>
+
+                    <div className="flex items-center gap-3 bg-slate-800/30 p-2 rounded-lg border border-slate-700/30">
                         <div className="p-2 bg-blue-500/20 rounded-full text-blue-400">
                             <Download size={16} />
                         </div>
