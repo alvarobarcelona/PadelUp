@@ -9,6 +9,9 @@ import { logActivity, ACTIVITY_ACTIONS, type ActivityAction } from '../lib/logge
 import { normalizeForSearch } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useModal } from '../context/ModalContext';
+import templateEs from '../../supabase/lib/templates/notifications_email_template_es.html?raw';
+import templateEn from '../../supabase/lib/templates/notifications_email_template_en.html?raw';
+import templateDe from '../../supabase/lib/templates/notifications_email_template_de.html?raw';
 
 // Helper for ELO
 // const getExpected = (a: number, b: number) => 1 / (1 + Math.pow(10, (b - a) / 400));
@@ -60,6 +63,10 @@ const Admin = () => {
     // Activity Filter State
     const [selectedActions, setSelectedActions] = useState<ActivityAction[]>([...ACTIVITY_ACTIONS]);
     const [showLogFilters, setShowLogFilters] = useState(false);
+
+    const [isSendingEmails, setIsSendingEmails] = useState(false);
+    const [emailTargetMode, setEmailTargetMode] = useState<'all' | 'specific'>('all');
+    const [targetUserEmail, setTargetUserEmail] = useState('');
 
 
     useEffect(() => {
@@ -731,6 +738,64 @@ const Admin = () => {
             await alert({ title: 'Error', message: 'Cleanup failed: ' + error.message, type: 'danger' });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSendNotificationReminders = async () => {
+        const isSpecific = emailTargetMode === 'specific';
+        const targetPlayer = isSpecific ? players.find(p => p.email === targetUserEmail) : null;
+
+        if (isSpecific && !targetUserEmail) {
+            await alert({ title: 'Error', message: 'Please enter a valid email address.', type: 'danger' });
+            return;
+        }
+
+        const count = isSpecific ? 1 : (players.length - pushSubscriptions.length);
+        const confirmMsg = isSpecific ? `${t('admin.send_individual_reminder_title')} ${targetUserEmail}?` : t('admin.send_reminders_title', { count });
+
+        const confirmed = await confirm({
+            title: confirmMsg || 'Send Email Reminders',
+            confirmText: t('admin.send_reminders_btn') || 'Send Emails',
+        });
+        if (!confirmed) return;
+
+        setIsSendingEmails(true);
+        try {
+            const bodyPayload: any = {
+                emailTemplates: {
+                    es: templateEs,
+                    en: templateEn,
+                    de: templateDe
+                }
+            };
+
+            if (isSpecific) {
+                bodyPayload.targetEmail = targetUserEmail;
+                bodyPayload.targetName = targetPlayer?.username || targetPlayer?.first_name || 'padelero';
+                bodyPayload.targetLanguage = targetPlayer?.language || 'en';
+            }
+
+            const { data, error } = await supabase.functions.invoke('send-notification-reminder', {
+                body: bodyPayload
+            });
+
+            if (error) throw new Error(error.message || 'Failed to send reminders');
+
+            await alert({
+                title: t('admin.send_reminders_success', { count }) || 'Success',
+                message: data?.message || 'Reminders triggered successfully',
+                type: 'success'
+            });
+            if (isSpecific) setTargetUserEmail(''); // Clear input after success
+        } catch (error: any) {
+            console.error(t('admin.send_reminders_error', { error: error.message }) || 'Error sending reminders:', error);
+            await alert({
+                title: t('admin.send_reminders_error', { error: error.message }) || 'Error',
+                message: error.message || 'Failed to send reminders',
+                type: 'danger'
+            });
+        } finally {
+            setIsSendingEmails(false);
         }
     };
 
@@ -1474,6 +1539,90 @@ const Admin = () => {
                                         <span className="text-2xl font-bold text-slate-200 group-hover:text-orange-400 mb-1">90 Days</span>
                                         <span className="text-xs text-slate-500">Delete older than 90 days</span>
                                     </button>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
+                                <h3 className="text-white font-bold mb-4 text-lg flex items-center gap-2">
+                                    <Mail size={20} className="text-blue-500" />
+                                {t('admin.email_reminders')}
+                                </h3>
+
+
+                                <div className="space-y-6">
+                                    {/* Target Selection */}
+                                    <div className="bg-slate-900/50 p-4 border border-slate-700/50 rounded-lg">
+                                        <h4 className="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                                            {t('admin.select_target')}
+                                        </h4>
+                                        <div className="flex flex-col sm:flex-row gap-4">
+                                            <div className="flex bg-slate-900 border border-slate-700 rounded-xl p-1 shrink-0 h-min">
+                                                <button
+                                                    onClick={() => setEmailTargetMode('all')}
+                                                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors leading-none ${emailTargetMode === 'all' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                                >
+                                                    {t('admin.to_all')}
+                                                </button>
+                                                <button
+                                                    onClick={() => setEmailTargetMode('specific')}
+                                                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors leading-none ${emailTargetMode === 'specific' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                                                >
+                                                    {t('admin.specific_user')}
+                                                </button>
+                                            </div>
+
+                                            {emailTargetMode === 'specific' && (
+                                                <div className="flex-1 max-w-xs">
+                                                    <input
+                                                        type="email"
+                                                        value={targetUserEmail}
+                                                        onChange={(e) => setTargetUserEmail(e.target.value)}
+                                                        placeholder="user@example.com"
+                                                        className="w-full bg-slate-900 border border-slate-700 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500 transition-colors placeholder:text-slate-600"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div>
+                                        <h4 className="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                                            {t('admin.execute_function')}
+                                        </h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+
+                                            {/* Function 1: Push Reminders */}
+                                            <button
+                                                onClick={handleSendNotificationReminders}
+                                                disabled={isSendingEmails || (emailTargetMode === 'specific' && !targetUserEmail.trim())}
+                                                className="flex flex-col items-start justify-between p-5 bg-slate-900 border border-slate-700 hover:border-blue-500/50 rounded-xl transition-all hover:bg-slate-800 group disabled:opacity-50 text-left h-full"
+                                            >
+                                                <div className="w-full">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Bell size={18} className="text-blue-400 group-hover:text-blue-300" />
+                                                        <span className="text-base font-bold text-slate-200 group-hover:text-blue-400">
+                                                            {isSendingEmails ? t('common.loading') : t('admin.push_reminders_template')}
+                                                        </span>
+                                                    </div>
+                                                    <span className="inline-block text-[12px] text-blue-400 mb-3 font-mono bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
+                                                        {t('admin.function_name', { name: 'send-notification-reminder' })}
+                                                    </span>
+                                                    <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                                                        {t('admin.email_reminders_description')}
+                                                    </p>
+                                                    <p className="text-[10px] italic text-slate-600 border-t border-slate-800 pt-2 w-full">
+                                                        {emailTargetMode === 'all'
+                                                            ? t('admin.target_all_eligible')
+                                                            : (targetUserEmail ? t('admin.target_specific_needed', { email: targetUserEmail }) : t('admin.specific_email_needed'))}
+                                                    </p>
+                                                </div>
+                                            </button>
+
+                                            {/* Space for future buttons */}
+
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

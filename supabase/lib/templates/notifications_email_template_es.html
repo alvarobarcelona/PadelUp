@@ -96,7 +96,53 @@
 
             <!-- Content -->
             <tr>
-              <td align="center" style="padding: 40px 32px">
+              <td align="center" style="padding: 20px 32px">
+                <h1
+                  style="
+                    color: #f8fafc;
+                    font-size: 22px;
+                    font-weight: bold;                
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                  "
+                >
+                  Hola {{name}}!
+                </h1>
+                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td
+                      style="
+                        padding: 10px;
+                        background-color: #0f172a;
+                        border-radius: 8px;
+                        border: 1px solid #334155;
+                      "
+                    >
+                      <p
+                        style="
+                          margin: 0;
+                          color: #94a3b8;
+                          font-size: 14px;
+                          line-height: 1.7;
+                          font-family: Arial, sans-serif;
+                        "
+                      >
+                        <strong style="color: #e2e8f0"
+                          >🎾NOTA:</strong
+                        ><br />
+                     Queremos aprovechar este email para animarte a registrar tus partidos (es gratis! 😅) y probar a generar tus torneos para ir comprobando el buen funcionamiento de todo el sistema de la aplicacion.
+                     <br>
+                     Gracias por tu apoyo y mucho padel!                     
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+
+            <tr>
+              <td align="center" style="padding: 10px 32px">
                 <!-- Bell Icon (emoji-based for email compatibility) -->
                 <p
                   style="
@@ -118,7 +164,7 @@
                     text-align: center;
                   "
                 >
-                  Hola {{nombre}}, tienes notificaciones desactivadas
+                  ¿Tienes las notificaciones desactivadas?
                 </h1>
 
                 <p
@@ -131,12 +177,19 @@
                     text-align: left;
                   "
                 >
-                  Hemos visto que aún no tienes activadas las notificaciones en
-                  PadelUp y queríamos escribirte con total transparencia:
+                  Hemos detectado que no tienes las notificaciones activadas
+                   y queríamos escribirte con total transparencia:
                   <strong style="color: #e2e8f0"
                     >no nos gusta el spam, y PadelUp tampoco está diseñada para
                     eso.</strong
                   >
+                <div style="color: #e2e8f0">Importante:</div>
+                  <br />
+                  <span style="color: #ec1111"
+                    >Si ya has instalado (fijado) PadelUp a tu pantalla del telefono, no dudes en activarlas.</span
+                  >
+                  <br />
+                  
                 </p>
 
                 <p
@@ -199,7 +252,7 @@
                                 font-family: Arial, sans-serif;
                               "
                             >
-                              Tu partido está a punto de empezar
+                              Alguien de la comunidad introdujo el resultado de un partido donde participaste
                             </p>
                             <p
                               style="
@@ -209,8 +262,7 @@
                                 font-family: Arial, sans-serif;
                               "
                             >
-                              Te avisamos antes de que comience tu turno en el
-                              torneo.
+                              Te avisamos para que no te quedes con la duda y lo verifiques.
                             </p>
                           </td>
                         </tr>
@@ -259,7 +311,7 @@
                                 font-family: Arial, sans-serif;
                               "
                             >
-                              Alguien te ha invitado a un torneo
+                              Alguien te ha contactado por el chat de la comunidad.
                             </p>
                             <p
                               style="
@@ -319,7 +371,7 @@
                                 font-family: Arial, sans-serif;
                               "
                             >
-                              Resultados y clasificaciones actualizadas
+                              Auto recordatorios del sistema para que no olvides introducir tus resultados para tus estadisticas privadas.
                             </p>
                             <p
                               style="
@@ -329,8 +381,7 @@
                                 font-family: Arial, sans-serif;
                               "
                             >
-                              Entérate al instante cuando se publiquen los
-                              resultados finales.
+                
                             </p>
                           </td>
                         </tr>
@@ -379,7 +430,7 @@
                                 font-family: Arial, sans-serif;
                               "
                             >
-                              Recordatorio de inscripción
+                              Aviso para cuando tus torneos que cuenten para el ranking hayan sido verificados y confirmados
                             </p>
                             <p
                               style="
@@ -389,8 +440,7 @@
                                 font-family: Arial, sans-serif;
                               "
                             >
-                              Para que no se te pase el plazo de apuntarte a tu
-                              próximo torneo.
+                          
                             </p>
                           </td>
                         </tr>
@@ -413,7 +463,7 @@
                       style="border-radius: 8px"
                     >
                       <a
-                        href="{{app_url}}/settings/notifications"
+                        href="https://www.padelupcommunity.com/settings"
                         style="
                           display: inline-block;
                           padding: 16px 36px;
@@ -483,14 +533,6 @@
                 "
               >
                 &copy; 2026 PadelUp. Todos los derechos reservados.<br />
-                <p style="margin: 10px 0 0 0; color: #475569; font-size: 11px">
-                  Recibes este email porque tu cuenta {{email}} tiene las
-                  notificaciones desactivadas.<br />
-                  Si no quieres recibir este tipo de comunicaciones,
-                  <a href="{{unsubscribe_url}}" style="color: #39e55f"
-                    >haz clic aquí para cancelar la suscripción</a
-                  >.
-                </p>
               </td>
             </tr>
           </table>

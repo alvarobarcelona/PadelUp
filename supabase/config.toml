@@ -1,0 +1,18 @@
+[functions.send-notification-reminder]
+verify_jwt = false
+import_map = "./functions/deno.json"
+
+[functions.push-notification]
+import_map = "./functions/deno.json"
+
+[functions.ai-assistant]
+import_map = "./functions/deno.json"
+
+[functions.check-reminders]
+import_map = "./functions/deno.json"
+
+[functions.delete-user]
+import_map = "./functions/deno.json"
+
+[functions.notify-admin]
+import_map = "./functions/deno.json"
