@@ -705,7 +705,8 @@
     "system_messages": {
       "verify_request": "🏆 Turnier \"{{name}}\" muss von einem Administrator überprüft werden. Du wirst per Chat benachrichtigt, sobald es verifiziert ist.",
       "verified_approved": "✅ Dein Turnier \"{{name}}\" wurde überprüft und genehmigt!",
-      "verified_rejected": "❌ Dein Turnier \"{{name}}\" wurde abgelehnt. Grund: {{reason}}"
+      "verified_rejected": "❌ Dein Turnier \"{{name}}\" wurde abgelehnt. Grund: {{reason}}",
+      "match_reminder": "Hallo! Hast du dein letztes Spiel schon registriert? Mach es jetzt, damit deine Statistiken aktuell bleiben! 🎾"
     },
     "administrator": "Administrator",
     "contact_admins": "Admins kontaktieren",

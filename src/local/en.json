@@ -694,7 +694,8 @@
     "system_messages": {
       "verify_request": "🏆 Tournament \"{{name}}\" needs verification by an admin. You will be notified via chat when verified.",
       "verified_approved": "✅ Your tournament \"{{name}}\" has been verified and approved!",
-      "verified_rejected": "❌ Your tournament \"{{name}}\" was rejected. Reason: {{reason}}"
+      "verified_rejected": "❌ Your tournament \"{{name}}\" was rejected. Reason: {{reason}}",
+      "match_reminder": "Hi! Have you registered your latest match yet? Do it now to keep your stats updated! 🎾"
     },
     "administrator": "Administrator",
     "contact_admins": "Contact Admins",

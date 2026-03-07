@@ -16,3 +16,6 @@ import_map = "./functions/deno.json"
 
 [functions.notify-admin]
 import_map = "./functions/deno.json"
+
+[functions.send-chat-reminders]
+import_map = "./functions/deno.json"

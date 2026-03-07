@@ -698,7 +698,8 @@
     "system_messages": {
       "verify_request": "🏆 El torneo \"{{name}}\" necesita verificación de un administrador. Se te notificará por chat cuando sea verificado.",
       "verified_approved": "✅ ¡Tu torneo \"{{name}}\" ha sido verificado y aprobado!",
-      "verified_rejected": "❌ Tu torneo \"{{name}}\" fue rechazado. Razón: {{reason}}"
+      "verified_rejected": "❌ Tu torneo \"{{name}}\" fue rechazado. Razón: {{reason}}",
+      "match_reminder": "¡Hola! ¿Has registrado ya tu último partido? Hazlo ahora para que tus estadísticas no se queden atrás 🎾"
     },
     "administrator": "Administrador",
     "contact_admins": "Contactar Admins",
