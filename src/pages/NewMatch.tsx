@@ -88,11 +88,14 @@ const NewMatch = () => {
                 .order('username');
             if (error) throw error;
 
-            // Filter Expired Subscriptions
+            // Filter banned players
             const validPlayers = data?.filter(p => {
-                if (!p.subscription_end_date || p.banned) return false;
-                return new Date(p.subscription_end_date) >= new Date();
+                if (p.banned){
+                     return false
+                }
+                return true
             }) || [];
+
 
             setAvailablePlayers(validPlayers);
 
