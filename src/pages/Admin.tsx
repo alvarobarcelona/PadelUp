@@ -12,6 +12,9 @@ import { useModal } from '../context/ModalContext';
 import templateEs from '../../supabase/lib/templates/notifications_email_template_es.html?raw';
 import templateEn from '../../supabase/lib/templates/notifications_email_template_en.html?raw';
 import templateDe from '../../supabase/lib/templates/notifications_email_template_de.html?raw';
+import templateGenericEs from '../../supabase/lib/templates/generic_notification_es.html?raw';
+import templateGenericEn from '../../supabase/lib/templates/generic_notification_en.html?raw';
+import templateGenericDe from '../../supabase/lib/templates/generic_notification_de.html?raw';
 
 // Helper for ELO
 // const getExpected = (a: number, b: number) => 1 / (1 + Math.pow(10, (b - a) / 400));
@@ -67,6 +70,9 @@ const Admin = () => {
     const [isSendingEmails, setIsSendingEmails] = useState(false);
     const [emailTargetMode, setEmailTargetMode] = useState<'all' | 'specific'>('all');
     const [targetUserEmail, setTargetUserEmail] = useState('');
+    const [generalSubject, setGeneralSubject] = useState('');
+    const [generalHeader, setGeneralHeader] = useState('');
+    const [generalMessage, setGeneralMessage] = useState('');
 
 
     useEffect(() => {
@@ -792,6 +798,76 @@ const Admin = () => {
             await alert({
                 title: t('admin.send_reminders_error', { error: error.message }) || 'Error',
                 message: error.message || 'Failed to send reminders',
+                type: 'danger'
+            });
+        } finally {
+            setIsSendingEmails(false);
+        }
+    };
+
+    const handleSendGeneralNotification = async () => {
+        const isSpecific = emailTargetMode === 'specific';
+
+        if (isSpecific && !targetUserEmail) {
+            await alert({ title: 'Error', message: 'Please enter a valid email address.', type: 'danger' });
+            return;
+        }
+
+        if (!generalSubject.trim() || !generalHeader.trim() || !generalMessage.trim()) {
+            await alert({ title: 'Error', message: 'Subject, Header and Message are required.', type: 'danger' });
+            return;
+        }
+
+        const activeSubscribers = players.filter(p => p.email && p.subscription_end_date && new Date(p.subscription_end_date) > new Date());
+        const count = isSpecific ? 1 : activeSubscribers.length;
+        const confirmMsg = isSpecific ? `Send general notification to ${targetUserEmail}?` : `Send general notification to ALL ${count} users?`;
+
+        const confirmed = await confirm({
+            title: confirmMsg,
+            confirmText: 'Send Notification',
+        });
+        if (!confirmed) return;
+
+        setIsSendingEmails(true);
+        try {
+            const bodyPayload: any = {
+                emailTemplates: {
+                    es: templateGenericEs,
+                    en: templateGenericEn,
+                    de: templateGenericDe
+                },
+                subject: generalSubject,
+                headerTitle: generalHeader,
+                message: generalMessage
+            };
+
+            if (isSpecific) {
+                bodyPayload.targetEmail = targetUserEmail;
+            }
+
+            const { data, error } = await supabase.functions.invoke('send-general-notification', {
+                body: bodyPayload
+            });
+
+            if (error) throw new Error(error.message || 'Failed to send general notification');
+
+            await alert({
+                title: 'Success',
+                message: data?.message || 'General notifications sent successfully',
+                type: 'success'
+            });
+            
+            // Clear inputs after success
+            setGeneralSubject('');
+            setGeneralHeader('');
+            setGeneralMessage('');
+            if (isSpecific) setTargetUserEmail('');
+            
+        } catch (error: any) {
+            console.error('Error sending general notification:', error);
+            await alert({
+                title: 'Error',
+                message: error.message || 'Failed to send general notification',
                 type: 'danger'
             });
         } finally {
@@ -1619,7 +1695,66 @@ const Admin = () => {
                                                 </div>
                                             </button>
 
-                                            {/* Space for future buttons */}
+                                            {/* Function 2: General Notification */}
+                                            <div className="col-span-full bg-slate-900 border border-slate-700 rounded-xl p-6 mt-4">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Mail size={22} className="text-green-400" />
+                                                    <h3 className="text-lg font-bold text-white">{t('admin.general_notification')}</h3>
+                                                </div>
+                                                <div className="mb-6 bg-red-900 p-3 rounded-lg border border-slate-700/30"> 
+                                                    <p className="text-[11px] text-slate-400 italic">
+                                                        <Globe size={12} className="inline mr-1 text-blue-400" />
+                                                        {t('admin.general_notification_hint')}
+                                                    </p>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs text-slate-400 uppercase font-bold tracking-wider">{t('admin.email_subject')}</label>
+                                                        <input 
+                                                            type="text" 
+                                                            value={generalSubject}
+                                                            onChange={(e) => setGeneralSubject(e.target.value)}
+                                                            placeholder={t('admin.email_subject_placeholder')}
+                                                            className="w-full bg-slate-800 border border-slate-700 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs text-slate-400 uppercase font-bold tracking-wider">{t('admin.header_title')}</label>
+                                                        <input 
+                                                            type="text" 
+                                                            value={generalHeader}
+                                                            onChange={(e) => setGeneralHeader(e.target.value)}
+                                                            placeholder={t('admin.header_title_placeholder')}
+                                                            className="w-full bg-slate-800 border border-slate-700 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="space-y-2 mb-6">
+                                                    <label className="text-xs text-slate-400 uppercase font-bold tracking-wider">{t('admin.message_content')}</label>
+                                                    <textarea 
+                                                        rows={4}
+                                                        value={generalMessage}
+                                                        onChange={(e) => setGeneralMessage(e.target.value)}
+                                                        placeholder={t('admin.message_content_placeholder')}
+                                                        className="w-full bg-slate-800 border border-slate-700 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-green-500 transition-colors resize-none"
+                                                    />
+                                                </div>
+
+                                                <Button 
+                                                    onClick={handleSendGeneralNotification}
+                                                    disabled={isSendingEmails || !generalSubject.trim() || !generalHeader.trim() || !generalMessage.trim() || (emailTargetMode === 'specific' && !targetUserEmail.trim())}
+                                                    className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3"
+                                                >
+                                                    {isSendingEmails ? <Loader2 className="animate-spin mr-2" /> : <Mail className="mr-2" size={18} />}
+                                                    {isSendingEmails ? t('admin.sending') : t('admin.send_community_update')}
+                                                </Button>
+                                                
+                                                <p className="mt-3 text-[10px] text-slate-500 italic text-center">
+                                                    {t('admin.tip_test_email')}
+                                                </p>
+                                            </div>
 
                                         </div>
                                     </div>

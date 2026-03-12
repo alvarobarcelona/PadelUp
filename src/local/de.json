@@ -398,7 +398,18 @@
     "send_individual_reminder_title": "Individuelle Erinnerung senden",
     "send_reminders_title": "Erinnerungen an {{count}} Benutzer senden.",
     "send_reminders_btn": "E-Mails senden",
-    "send_reminders_confirm": "Sind Sie sicher, dass Sie Erinnerungen an alle Benutzer ohne Push-Abonnements senden möchten?"
+    "send_reminders_confirm": "Sind Sie sicher, dass Sie Erinnerungen an alle Benutzer ohne Push-Abonnements senden möchten?",
+    "general_notification": "Benutzerdefinierte allgemeine Benachrichtigung",
+    "email_subject": "E-Mail Betreff",
+    "header_title": "Kopfzeile (Inhalt)",
+    "message_content": "Nachrichteninhalt",
+    "send_community_update": "Community-Update senden",
+    "tip_test_email": "Tipp: Verwenden Sie die Zielauswahl oben, um zuerst mit einer bestimmten E-Mail zu testen.",
+    "general_notification_hint": "Sowohl der Titel als auch der Text werden genau in der Sprache gesendet, in der Sie hier schreiben.",
+    "sending": "Senden...",
+    "email_subject_placeholder": "Betreff...",
+    "header_title_placeholder": "Kopfzeile...",
+    "message_content_placeholder": "Geben Sie hier Ihre Nachricht ein..."
   },
   "rankings": {
     "title": "Rangliste",

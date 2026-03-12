@@ -403,7 +403,18 @@
     "send_individual_reminder_title": "Send individual reminder",
     "send_reminders_title": "Send reminders to {{count}} users.",
     "send_reminders_btn": "Send Emails",
-    "send_reminders_confirm": "Are you sure you want to send reminders to all users without push subscriptions?"
+    "send_reminders_confirm": "Are you sure you want to send reminders to all users without push subscriptions?",
+    "general_notification": "Custom General Notification",
+    "email_subject": "Email Subject",
+    "header_title": "Header Title (Body)",
+    "message_content": "Message Content",
+    "send_community_update": "Send Community Update",
+    "tip_test_email": "Use the target selection above to test first with a specific email.",
+    "general_notification_hint": "Both the title and body will be sent exactly in the language you write here.",
+    "sending": "Sending...",
+    "email_subject_placeholder": "Subject line...",
+    "header_title_placeholder": "Header title...",
+    "message_content_placeholder": "Type your message here..."
   },
   "rankings": {
     "title": "Leaderboard",

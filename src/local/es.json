@@ -405,7 +405,18 @@
     "send_reminders_btn": "Enviar Correos",
     "send_reminders_confirm": "¿Estás seguro de querer enviar recordatorios por correo electrónico a todos los usuarios sin notificaciones push?",
     "send_reminders_success": "Recordatorio enviado correctamente a {{count}} usuarios.",
-    "send_reminders_error": "Error al enviar recordatorios: {{error}}"
+    "send_reminders_error": "Error al enviar recordatorios: {{error}}",
+    "general_notification": "Notificación General Personalizada",
+    "email_subject": "Asunto del Email",
+    "header_title": "Título de Cabecera (Cuerpo)",
+    "message_content": "Contenido del Mensaje",
+    "send_community_update": "Enviar Actualización a la Comunidad",
+    "tip_test_email": "Truco: Usa el selector de arriba para enviar primero a un email específico.",
+    "general_notification_hint": "Tanto el título como el cuerpo se enviarán exactamente en el idioma que escribas aquí.",
+    "sending": "Enviando...",
+    "email_subject_placeholder": "Asunto...",
+    "header_title_placeholder": "Título de cabecera...",
+    "message_content_placeholder": "Escribe aquí tu mensaje..."
   },
   "rankings": {
     "title": "Clasificación",
