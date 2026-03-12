@@ -408,7 +408,7 @@
     "email_subject": "Email Subject",
     "header_title": "Header Title (Body)",
     "message_content": "Message Content",
-    "send_community_update": "Send Community Update",
+    "send_community_update": "Send Update",
     "tip_test_email": "Use the target selection above to test first with a specific email.",
     "general_notification_hint": "Both the title and body will be sent exactly in the language you write here.",
     "sending": "Sending...",

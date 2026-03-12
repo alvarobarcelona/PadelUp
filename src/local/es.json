@@ -410,7 +410,7 @@
     "email_subject": "Asunto del Email",
     "header_title": "Título de Cabecera (Cuerpo)",
     "message_content": "Contenido del Mensaje",
-    "send_community_update": "Enviar Actualización a la Comunidad",
+    "send_community_update": "Enviar Actualización",
     "tip_test_email": "Truco: Usa el selector de arriba para enviar primero a un email específico.",
     "general_notification_hint": "Tanto el título como el cuerpo se enviarán exactamente en el idioma que escribas aquí.",
     "sending": "Enviando...",

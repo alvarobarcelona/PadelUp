@@ -403,7 +403,7 @@
     "email_subject": "E-Mail Betreff",
     "header_title": "Kopfzeile (Inhalt)",
     "message_content": "Nachrichteninhalt",
-    "send_community_update": "Community-Update senden",
+    "send_community_update": "Update senden",
     "tip_test_email": "Tipp: Verwenden Sie die Zielauswahl oben, um zuerst mit einer bestimmten E-Mail zu testen.",
     "general_notification_hint": "Sowohl der Titel als auch der Text werden genau in der Sprache gesendet, in der Sie hier schreiben.",
     "sending": "Senden...",
